@@ -26,6 +26,13 @@ interface PriorityStats {
   color: string;
 }
 
+interface Category {
+  name: string;
+  color: string;
+  icon: string;
+  custom?: boolean;
+}
+
 @Component({
   selector: 'app-tasks',
   standalone: true,
@@ -40,7 +47,7 @@ interface PriorityStats {
               + Add New Task
             </button>
             <button class="btn btn-secondary" (click)="showTagManager = !showTagManager">
-              🏷️ Manage Tags
+              🏷️ Manage Tags & Categories
             </button>
           </div>
         </div>
@@ -229,10 +236,10 @@ interface PriorityStats {
                       <div 
                         class="category-item" 
                         (click)="filterByCategory(category.name)"
-                        [style.--color]="category.color"
+                        [style.--color]="getCategoryColor(category.name)"
                       >
                         <div class="category-main">
-                          <div class="category-color" [style.background]="category.color"></div>
+                          <div class="category-icon-small">{{ getCategoryIcon(category.name) }}</div>
                           <span class="category-name">{{ category.name }}</span>
                           <span class="category-count">{{ category.count }}</span>
                         </div>
@@ -259,7 +266,7 @@ interface PriorityStats {
                         <span 
                           class="tag-cloud-item"
                           [style.background]="getTagColor(tag.name)"
-[style.transform]="getTagScale(tag.count)"
+                          [style.transform]="getTagScale(tag.count)"
                           (click)="filterByTag(tag.name)"
                         >
                           {{ tag.name }}
@@ -305,7 +312,14 @@ interface PriorityStats {
                             </span>
                             <span class="activity-time">{{ formatRelativeDate(task.completed ? task.completedAt! : task.createdAt) }}</span>
                             @if (task.category) {
-                              <span class="activity-category">{{ task.category }}</span>
+                              <span 
+                                class="activity-category"
+                                [style.background]="getCategoryColor(task.category) + '20'"
+                                [style.color]="getCategoryColor(task.category)"
+                                [style.border]="'1px solid ' + getCategoryColor(task.category)"
+                              >
+                                {{ getCategoryIcon(task.category) }} {{ task.category }}
+                              </span>
                             }
                             @if (task.priority === 3) {
                               <span class="activity-priority high">High</span>
@@ -363,65 +377,180 @@ interface PriorityStats {
           </div>
         }
 
-        <!-- Tag Manager Modal -->
+        <!-- Tag & Category Manager Modal -->
         @if (showTagManager) {
           <div class="modal-overlay" (click)="showTagManager = false">
             <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
-                <h3>Manage Tags</h3>
+                <h3>Manage Tags & Categories</h3>
                 <button class="btn-close" (click)="showTagManager = false">×</button>
               </div>
               
               <div class="modal-body">
-                <!-- Create New Tag -->
-                <div class="create-tag-section">
-                  <h4>Create New Tag</h4>
-                  <div class="tag-create-form">
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="Enter tag name"
-                      [(ngModel)]="newTagName"
-                      (keydown.enter)="createNewTag()"
-                    />
-                    <button class="btn btn-primary" (click)="createNewTag()">Create Tag</button>
-                  </div>
+                <!-- Tabs for Tags and Categories -->
+                <div class="management-tabs">
+                  <button 
+                    class="tab-button" 
+                    [class.active]="activeTab === 'tags'"
+                    (click)="activeTab = 'tags'"
+                  >
+                    📑 Tags
+                  </button>
+                  <button 
+                    class="tab-button" 
+                    [class.active]="activeTab === 'categories'"
+                    (click)="activeTab = 'categories'"
+                  >
+                    🗂️ Categories
+                  </button>
                 </div>
 
-                <!-- Tag Cloud -->
-                <div class="tag-cloud-section">
-                  <h4>All Tags ({{ tagsWithCount.length }})</h4>
-                  <div class="tag-cloud">
-                    @for (tag of tagsWithCount; track tag.name) {
-                      <div class="tag-cloud-item">
-                        <span class="tag-name" (click)="toggleTagSelection(tag.name)">
-                          {{ tag.name }}
-                        </span>
-                        <span class="tag-count">{{ tag.count }}</span>
-                        <button 
-                          class="btn-tag-delete"
-                          (click)="deleteTag(tag.name)"
-                          [disabled]="tag.count > 0"
-                          [title]="tag.count > 0 ? 'Cannot delete - tag is in use' : 'Delete tag'"
-                        >
-                          ×
-                        </button>
+                <!-- Tags Tab Content -->
+                @if (activeTab === 'tags') {
+                  <div class="tab-content">
+                    <!-- Create New Tag -->
+                    <div class="create-tag-section">
+                      <h4>Create New Tag</h4>
+                      <div class="tag-create-form">
+                        <input
+                          type="text"
+                          class="form-control"
+                          placeholder="Enter tag name"
+                          [(ngModel)]="newTagName"
+                          (keydown.enter)="createNewTag()"
+                        />
+                        <button class="btn btn-primary" (click)="createNewTag()">Create Tag</button>
+                      </div>
+                    </div>
+
+                    <!-- Tag Cloud -->
+                    <div class="tag-cloud-section">
+                      <h4>All Tags ({{ tagsWithCount.length }})</h4>
+                      <div class="tag-cloud">
+                        @for (tag of tagsWithCount; track tag.name) {
+                          <div class="tag-cloud-item">
+                            <span class="tag-name" (click)="toggleTagSelection(tag.name)">
+                              {{ tag.name }}
+                            </span>
+                            <span class="tag-count">{{ tag.count }}</span>
+                            <button 
+                              class="btn-tag-delete"
+                              (click)="deleteTag(tag.name)"
+                              [disabled]="tag.count > 0"
+                              [title]="tag.count > 0 ? 'Cannot delete - tag is in use' : 'Delete tag'"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        }
+                        @if (tagsWithCount.length === 0) {
+                          <div class="empty-state">
+                            No tags created yet. Create your first tag above!
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Selected Tags Actions -->
+                    @if (selectedTags.length > 0) {
+                      <div class="selected-tags-actions">
+                        <h4>Selected Tags ({{ selectedTags.length }})</h4>
+                        <div class="action-buttons">
+                          <button class="btn btn-primary" (click)="applySelectedTags()">
+                            Filter with Selected Tags
+                          </button>
+                          <button class="btn btn-secondary" (click)="clearSelectedTags()">
+                            Clear Selection
+                          </button>
+                        </div>
                       </div>
                     }
                   </div>
-                </div>
+                }
 
-                <!-- Selected Tags Actions -->
-                @if (selectedTags.length > 0) {
-                  <div class="selected-tags-actions">
-                    <h4>Selected Tags ({{ selectedTags.length }})</h4>
-                    <div class="action-buttons">
-                      <button class="btn btn-primary" (click)="applySelectedTags()">
-                        Filter with Selected Tags
-                      </button>
-                      <button class="btn btn-secondary" (click)="clearSelectedTags()">
-                        Clear Selection
-                      </button>
+                <!-- Categories Tab Content -->
+                @if (activeTab === 'categories') {
+                  <div class="tab-content">
+                    <!-- Predefined Categories -->
+                    <div class="categories-section">
+                      <h4>Predefined Categories</h4>
+                      <div class="categories-list">
+                        @for (category of categories; track category.name) {
+                          @if (!category.custom) {
+                            <div class="category-manager-item">
+                              <div class="category-visual">
+                                <span class="category-manager-icon">{{ category.icon }}</span>
+                                <span 
+                                  class="category-color-preview"
+                                  [style.background]="category.color"
+                                ></span>
+                              </div>
+                              <span class="category-manager-name">{{ category.name }}</span>
+                              <div class="category-manager-actions">
+                                <span class="category-badge-system">System</span>
+                              </div>
+                            </div>
+                          }
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Custom Categories -->
+                    <div class="categories-section">
+                      <h4>Custom Categories</h4>
+                      <div class="categories-list">
+                        @for (category of categories; track category.name) {
+                          @if (category.custom) {
+                            <div class="category-manager-item custom">
+                              <div class="category-visual">
+                                <span class="category-manager-icon">{{ category.icon }}</span>
+                                <span 
+                                  class="category-color-preview"
+                                  [style.background]="category.color"
+                                ></span>
+                              </div>
+                              <span class="category-manager-name">{{ category.name }}</span>
+                              <div class="category-manager-actions">
+                                <button 
+                                  class="btn-category-delete"
+                                  (click)="deleteCategory(category.name)"
+                                  [disabled]="isCategoryInUse(category.name)"
+                                  [title]="isCategoryInUse(category.name) ? 'Category is in use' : 'Delete category'"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        }
+                        @if (!hasCustomCategories()) {
+                          <div class="empty-state">
+                            No custom categories yet. Create your first one below!
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    
+                    <!-- Add New Category -->
+                    <div class="add-category-form">
+                      <h5>Add New Category</h5>
+                      <div class="category-create-form">
+                        <input
+                          type="text"
+                          class="form-control"
+                          placeholder="Category name"
+                          [(ngModel)]="newCategoryName"
+                          (keydown.enter)="createNewCategory()"
+                        />
+                        <button class="btn btn-primary" (click)="createNewCategory()">
+                          Add Category
+                        </button>
+                      </div>
+                     @if (hasDuplicateCategory()) { 
+                        <div class="error-message">
+                          A category with this name already exists.
+                        </div>
+                      }
                     </div>
                   </div>
                 }
@@ -455,7 +584,7 @@ interface PriorityStats {
                 />
               </div>
 
-              <!-- Category Filter -->
+              <!-- Enhanced Category Filter -->
               <div class="filter-group">
                 <label class="filter-label">Category</label>
                 <select
@@ -464,8 +593,10 @@ interface PriorityStats {
                   (change)="onFiltersChange()"
                 >
                   <option value="">All Categories</option>
-                  @for (category of availableCategories; track category) {
-                    <option [value]="category">{{ category }}</option>
+                  @for (category of availableCategoriesWithIcons; track category.name) {
+                    <option [value]="category.name">
+                      {{ category.icon }} {{ category.name }}
+                    </option>
                   }
                 </select>
               </div>
@@ -650,7 +781,7 @@ interface PriorityStats {
                 ></textarea>
               </div>
               
-              <!-- Category Dropdown -->
+              <!-- Enhanced Category Dropdown -->
               <div class="form-group">
                 <label class="form-label">Category</label>
                 <select 
@@ -659,8 +790,10 @@ interface PriorityStats {
                   name="category"
                 >
                   <option value="">Select Category</option>
-                  @for (category of categories; track category) {
-                    <option [value]="category">{{ category }}</option>
+                  @for (category of categories; track category.name) {
+                    <option [value]="category.name">
+                      {{ category.icon }} {{ category.name }}
+                    </option>
                   }
                 </select>
               </div>
@@ -753,14 +886,19 @@ interface PriorityStats {
                     </div>
                   </div>
                   
-                  <!-- Category Badge -->
+                  <!-- Enhanced Category Badge -->
                   @if (task.category) {
                     <div class="task-category">
-                      <span class="category-badge">{{ task.category }}</span>
+                      <span 
+                        class="category-badge" 
+                        [style.background]="getCategoryColor(task.category)"
+                        [style.border-color]="getCategoryColor(task.category)"
+                      >
+                        <span class="category-icon">{{ getCategoryIcon(task.category) }}</span>
+                        {{ task.category }}
+                      </span>
                     </div>
                   }
-                  
-                  <p class="task-description">{{ task.description }}</p>
                   
                   <!-- Tags Display -->
                   @if (task.tags && task.tags.length > 0) {
@@ -817,7 +955,7 @@ interface PriorityStats {
   `,
   styles: [`
     /* Your Existing Styles */
-    .tasks-container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .tasks-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
     .tasks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .tasks-header h1 { color: #333; font-size: 2.5rem; font-weight: 700; }
     .task-list { display: flex; flex-direction: column; gap: 1rem; }
@@ -931,11 +1069,7 @@ interface PriorityStats {
       border: 1px solid #fcc;
     }
 
-    /* Category and Tags Styles */
-    .task-category {
-      margin-bottom: 0.5rem;
-    }
-    
+    /* Enhanced Category Styles */
     .category-badge {
       background: #667eea;
       color: white;
@@ -943,7 +1077,30 @@ interface PriorityStats {
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 600;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .category-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .category-icon {
+      font-size: 0.9rem;
+    }
+
+    .category-icon-small {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .task-category {
+      margin-bottom: 0.5rem;
     }
     
     .task-tags {
@@ -1286,7 +1443,7 @@ interface PriorityStats {
       padding: 0;
     }
 
-    /* Tag Manager Modal Styles */
+    /* Tag & Category Manager Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -1343,6 +1500,186 @@ interface PriorityStats {
       padding: 1.5rem;
       max-height: calc(80vh - 80px);
       overflow-y: auto;
+    }
+
+    /* Management Tabs */
+    .management-tabs {
+      display: flex;
+      border-bottom: 1px solid #e1e5e9;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-button {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-weight: 600;
+      color: #6c757d;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button:hover {
+      color: #495057;
+      background: #f8f9fa;
+    }
+
+    .tab-button.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      background: #f8f9fa;
+    }
+
+    .tab-content {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Categories Sections */
+    .categories-section {
+      margin-bottom: 2rem;
+    }
+
+    .categories-section h4 {
+      margin-bottom: 1rem;
+      color: #495057;
+      font-size: 1.1rem;
+      border-bottom: 2px solid #f1f3f4;
+      padding-bottom: 0.5rem;
+    }
+
+    .categories-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .category-manager-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .category-manager-item.custom {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+    }
+
+    .category-manager-item:hover {
+      background: #e9ecef;
+    }
+
+    .category-visual {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .category-manager-icon {
+      font-size: 1.2rem;
+    }
+
+    .category-color-preview {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .category-manager-name {
+      flex: 1;
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .category-manager-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .category-badge-system {
+      background: #6c757d;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .btn-category-delete {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-category-delete:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+
+    .btn-category-delete:hover:not(:disabled) {
+      background: #c0392b;
+      transform: scale(1.1);
+    }
+
+    .add-category-form {
+      margin-top: 1rem;
+    }
+
+    .add-category-form h5 {
+      margin-bottom: 0.75rem;
+      color: #495057;
+    }
+
+    .category-create-form {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .category-create-form .form-control {
+      flex: 1;
+    }
+
+    /* Empty States */
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #6c757d;
+      font-style: italic;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px dashed #dee2e6;
+    }
+
+    /* Error Message */
+    .error-message {
+      color: #e74c3c;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #fdf2f2;
+      border-radius: 4px;
+      border-left: 3px solid #e74c3c;
     }
 
     .create-tag-section {
@@ -1841,13 +2178,6 @@ interface PriorityStats {
       flex: 1;
     }
 
-    .category-color {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
     .category-name {
       font-weight: 600;
       color: #2d3748;
@@ -2140,6 +2470,28 @@ interface PriorityStats {
         gap: 1rem;
         align-items: flex-start;
       }
+      
+      .management-tabs {
+        flex-direction: column;
+      }
+      
+      .tab-button {
+        border-bottom: 1px solid #e1e5e9;
+        border-left: 3px solid transparent;
+      }
+      
+      .tab-button.active {
+        border-left-color: #667eea;
+        border-bottom-color: #e1e5e9;
+      }
+      
+      .category-create-form {
+        flex-direction: column;
+      }
+      
+      .tag-create-form {
+        flex-direction: column;
+      }
     }
   `]
 })
@@ -2152,6 +2504,7 @@ export class TasksComponent implements OnInit {
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
   activeView: 'list' | 'stats' = 'list';
+  activeTab: 'tags' | 'categories' = 'tags';
 
   // Form fields
   newTaskTitle: string = '';
@@ -2162,6 +2515,7 @@ export class TasksComponent implements OnInit {
   newTaskTagInput: string = '';
   newTaskTags: string[] = [];
   newTagName: string = '';
+  newCategoryName: string = '';
 
   // Filter fields
   searchTerm: string = '';
@@ -2173,15 +2527,16 @@ export class TasksComponent implements OnInit {
   filteredTags: string[] = [];
   selectedTagNames: string[] = [];
 
-  // Available categories
-  categories: string[] = [
-    'Personal',
-    'Work', 
-    'Shopping',
-    'Health',
-    'Education',
-    'Finance',
-    'Other'
+  // Enhanced Categories System
+  categories: Category[] = [
+    { name: 'Personal', color: '#667eea', icon: '🏠' },
+    { name: 'Work', color: '#764ba2', icon: '💼' },
+    { name: 'Shopping', color: '#f093fb', icon: '🛒' },
+    { name: 'Health', color: '#4facfe', icon: '🏥' },
+    { name: 'Education', color: '#43e97b', icon: '🎓' },
+    { name: 'Finance', color: '#fa709a', icon: '💰' },
+    { name: 'Travel', color: '#30cfd0', icon: '✈️' },
+    { name: 'Other', color: '#a8edea', icon: '📦' }
   ];
 
   // Statistics computed properties
@@ -2214,6 +2569,81 @@ export class TasksComponent implements OnInit {
     ).length;
   }
 
+  // Category helper methods
+  getCategoryColor(categoryName: string): string {
+    const category = this.categories.find(c => c.name === categoryName);
+    return category ? category.color : '#6c757d';
+  }
+
+  getCategoryIcon(categoryName: string): string {
+    const category = this.categories.find(c => c.name === categoryName);
+    return category ? category.icon : '📦';
+  }
+
+  // Enhanced computed property for categories with icons
+  get availableCategoriesWithIcons(): Category[] {
+    const usedCategories = this.tasks
+      .map(task => task.category)
+      .filter(category => category && category.trim() !== '');
+    
+    const uniqueCategories = [...new Set(usedCategories)];
+    
+    return uniqueCategories.map(categoryName => {
+      const existingCategory = this.categories.find(c => c.name === categoryName);
+      return existingCategory || { 
+        name: categoryName, 
+        color: this.generateColor(categoryName), 
+        icon: '📦',
+        custom: true 
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // Generate a consistent color for custom categories
+  private generateColor(text: string): string {
+    const colors = [
+      '#667eea', '#764ba2', '#f093fb', '#4facfe', 
+      '#43e97b', '#fa709a', '#30cfd0', '#a8edea',
+      '#fed6e3', '#5ee7df', '#b490ca', '#f5576c',
+      '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = text.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  // Category management methods
+  createNewCategory(): void {
+    if (!this.newCategoryName.trim()) return;
+    
+    const categoryName = this.newCategoryName.trim();
+    const existingCategory = this.categories.find(c => c.name === categoryName);
+    
+    if (!existingCategory) {
+      this.categories.push({
+        name: categoryName,
+        color: this.generateColor(categoryName),
+        icon: '📦',
+        custom: true
+      });
+      this.newCategoryName = '';
+    }
+  }
+
+  deleteCategory(categoryName: string): void {
+    if (!this.isCategoryInUse(categoryName)) {
+      this.categories = this.categories.filter(c => c.name !== categoryName);
+    }
+  }
+
+  isCategoryInUse(categoryName: string): boolean {
+    return this.tasks.some(task => task.category === categoryName);
+  }
+
   get completionCircleBackground(): string {
     return `conic-gradient(#28a745 ${this.completionRate}%, #e1e5e9 0%)`;
   }
@@ -2232,15 +2662,14 @@ export class TasksComponent implements OnInit {
     });
 
     const totalTasks = this.totalTasks;
-    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#38f9d7', '#ffecd2', '#fcb69f'];
     
     return Array.from(categoryMap.entries())
-      .map(([name, stats], index) => ({
+      .map(([name, stats]) => ({
         name,
         count: stats.count,
         completed: stats.completed,
         percentage: totalTasks > 0 ? Math.round((stats.count / totalTasks) * 100) : 0,
-        color: colors[index % colors.length]
+        color: this.getCategoryColor(name)
       }))
       .sort((a, b) => b.count - a.count);
   }
@@ -2267,6 +2696,14 @@ export class TasksComponent implements OnInit {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
   }
+
+  hasCustomCategories(): boolean {
+  return this.categories.some(c => c.custom);
+}
+
+hasDuplicateCategory(): boolean {
+  return !!this.newCategoryName && this.categories.some(c => c.name === this.newCategoryName.trim());
+}
 
   // Existing computed properties from filtering
   get availableCategories(): string[] {
@@ -2301,16 +2738,13 @@ export class TasksComponent implements OnInit {
   }
 
   getTagScale(count: number): string {
-  if (this.popularTags.length === 0) return 'scale(1)';
-  
-  // Find the maximum tag count
-  const maxCount = Math.max(...this.popularTags.map(t => t.count));
-  
-  // Calculate scale: 0.8 (minimum) to 1.2 (maximum) based on tag popularity
-  const scale = 0.8 + (count / maxCount) * 0.4;
-  
-  return `scale(${scale})`;
-}
+    if (this.popularTags.length === 0) return 'scale(1)';
+    
+    const maxCount = Math.max(...this.popularTags.map(t => t.count));
+    const scale = 0.8 + (count / maxCount) * 0.4;
+    
+    return `scale(${scale})`;
+  }
 
   get selectedTags(): TagWithCount[] {
     return this.tagsWithCount.filter(tag => tag.selected);
@@ -2466,7 +2900,6 @@ export class TasksComponent implements OnInit {
   getProductivityScore(): number {
     return Math.min(10, Math.floor(this.completionRate / 10));
   }
-  
 
   getAverageCompletionTime(): string {
     return '2 days';
@@ -2476,7 +2909,6 @@ export class TasksComponent implements OnInit {
     return 'Monday';
   }
 
-  
   getBestCategory(): string {
     const bestCategory = this.categoryStats.reduce((prev, current) => 
       (prev.completed > current.completed) ? prev : current
