@@ -50,52 +50,14 @@ import { Task, UpdateTaskRequest } from '../../models/task.model';
                 ></textarea>
               </div>
 
-              <!-- NEW: Category Dropdown -->
-              <div class="form-group">
-                <label class="form-label">Category</label>
-                <select 
-                  class="form-control"
-                  [(ngModel)]="editData.category"
-                  name="category"
-                >
-                  <option value="">Select Category</option>
-                  @for (category of categories; track category) {
-                    <option [value]="category">{{ category }}</option>
-                  }
-                </select>
-              </div>
-
-              <!-- NEW: Tag Input -->
-              <div class="form-group">
-                <label class="form-label">Tags</label>
-                <div class="tag-input-container">
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    placeholder="Add tags (comma separated)"
-                    [(ngModel)]="tagInput"
-                    name="tagInput"
-                    (keydown)="onTagInputKeydown($event)"
-                  />
-                  <div class="tag-hint">Press Enter or comma to add tags</div>
-                </div>
-                <div class="tag-preview">
-                  @for (tag of editData.tags; track tag) {
-                    <span class="tag-badge">
-                      {{ tag }}
-                      <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
-                    </span>
-                  }
-                </div>
-              </div>
-
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Due Date</label>
                   <input 
                     type="date" 
                     class="form-control"
-                    [(ngModel)]="editData.dueDate"
+                    [value]="getDueDateForInput()"
+                    (input)="onDueDateChange($any($event.target).value)"
                     name="dueDate"
                   />
                 </div>
@@ -107,9 +69,9 @@ import { Task, UpdateTaskRequest } from '../../models/task.model';
                     [(ngModel)]="editData.priority"
                     name="priority"
                   >
-                    <option [value]="1">Low</option>
-                    <option [value]="2">Medium</option>
-                    <option [value]="3">High</option>
+                    <option [ngValue]="1">Low</option>
+                    <option [ngValue]="2">Medium</option>
+                    <option [ngValue]="3">High</option>
                   </select>
                 </div>
               </div>
@@ -227,55 +189,6 @@ import { Task, UpdateTaskRequest } from '../../models/task.model';
       margin-right: 0.5rem;
     }
 
-    /* NEW STYLES FOR TAG INPUT */
-    .tag-input-container {
-      position: relative;
-    }
-    
-    .tag-hint {
-      font-size: 0.75rem;
-      color: #6c757d;
-      margin-top: 0.25rem;
-    }
-    
-    .tag-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-    
-    .tag-badge {
-      background: #667eea;
-      color: white;
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    
-    .tag-remove {
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      padding: 0;
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-    }
-    
-    .tag-remove:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
     .form-actions {
       display: flex;
       gap: 1rem;
@@ -370,26 +283,12 @@ export class EditTaskComponent implements OnInit {
   isLoading: boolean = false;
   errorMessage: string = '';
 
-  // NEW: Add categories and tag input
-  categories: string[] = [
-    'Personal',
-    'Work', 
-    'Shopping',
-    'Health',
-    'Education',
-    'Finance',
-    'Other'
-  ];
-  tagInput: string = '';
-
   editData: UpdateTaskRequest = {
     title: '',
     description: '',
     dueDate: null,
     priority: 1,
-    completed: false,
-    category: '',    // NEW
-    tags: []        // NEW
+    completed: false
   };
 
   ngOnInit(): void {
@@ -408,12 +307,10 @@ export class EditTaskComponent implements OnInit {
         this.task = task;
         this.editData = {
           title: task.title,
-          description: task.description,
-          dueDate: task.dueDate || null,
-          priority: task.priority,
-          completed: task.completed,
-          category: task.category,           // NEW
-          tags: task.tags || []             // NEW
+          description: task.description || '',
+          dueDate: task.dueDate ? task.dueDate.toString() : null,
+          priority: this.getPriorityNumber(task.priority),
+          completed: task.completed
         };
         this.isLoading = false;
       },
@@ -425,24 +322,24 @@ export class EditTaskComponent implements OnInit {
     });
   }
 
-  // NEW: Tag handling methods
-  onTagInputKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ',') {
-      event.preventDefault();
-      this.addTag();
+  private getPriorityNumber(priority: string): number {
+    switch (priority) {
+      case 'low': return 1;
+      case 'medium': return 2;
+      case 'high': return 3;
+      default: return 1;
     }
   }
 
-  addTag(): void {
-    const tag = this.tagInput.trim();
-    if (tag && !this.editData.tags!.includes(tag)) {
-      this.editData.tags!.push(tag);
-      this.tagInput = '';
-    }
+  getDueDateForInput(): string {
+    if (!this.editData.dueDate) return '';
+    
+    const date = new Date(this.editData.dueDate);
+    return date.toISOString().split('T')[0];
   }
 
-  removeTag(tagToRemove: string): void {
-    this.editData.tags = this.editData.tags!.filter(tag => tag !== tagToRemove);
+  onDueDateChange(value: string): void {
+    this.editData.dueDate = value ? value : null;
   }
 
   onUpdateTask(): void {

@@ -62,17 +62,17 @@ import { Task } from '../../models/task.model';
               </div>
             }
             
-            <div class="task-meta">
-              <div class="meta-item">
-                <strong>Priority:</strong> 
-                @if (task.priority === 3) {
-                  <span class="priority-high">High 🔥</span>
-                } @else if (task.priority === 2) {
-                  <span class="priority-medium">Medium ⚡</span>
-                } @else {
-                  <span class="priority-low">Low</span>
-                }
-              </div>
+           <div class="task-meta">
+  <div class="meta-item">
+    <strong>Priority:</strong> 
+    @if (+task.priority === 3) {
+      <span class="priority-high">High 🔥</span>
+    } @else if (+task.priority === 2) {
+      <span class="priority-medium">Medium ⚡</span>
+    } @else {
+      <span class="priority-low">Low</span>
+    }
+  </div>
               
               <div class="meta-item">
                 <strong>Created:</strong> {{ formatDate(task.createdAt) }}
@@ -477,19 +477,20 @@ export class TaskDetailComponent implements OnInit {
     this.router.navigate(['/tasks']);
   }
 
-  formatDate(dateString: string): string {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return 'Invalid date';
-    }
-  }
+ formatDate(date: string | Date): string {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (isNaN(dateObj.getTime())) return '';
+  
+  // Your date formatting logic here
+  return dateObj.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
 
   isOverdue(dueDate: string | null | undefined): boolean {
     if (!dueDate) return false;

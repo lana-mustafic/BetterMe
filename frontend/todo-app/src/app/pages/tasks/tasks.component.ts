@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TaskService } from '../../services/task.service';
@@ -310,7 +310,7 @@ interface Category {
                                 Created
                               }
                             </span>
-                            <span class="activity-time">{{ formatRelativeDate(task.completed ? task.completedAt! : task.createdAt) }}</span>
+                            <span class="activity-time">{{ formatRelativeDate(task.completed ? (task.completedAt || '') : task.createdAt) }}</span>
                             @if (task.category) {
                               <span 
                                 class="activity-category"
@@ -321,15 +321,15 @@ interface Category {
                                 {{ getCategoryIcon(task.category) }} {{ task.category }}
                               </span>
                             }
-                            @if (task.priority === 3) {
-                              <span class="activity-priority high">High</span>
-                            }
+                         @if (parseInt(task.priority) === 3) {
+  <span class="activity-priority high">High</span>
+}
                           </div>
                         </div>
                         <div class="activity-actions">
-                          <button class="btn-icon" (click)="onToggleComplete(task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
-                            {{ task.completed ? '↶' : '✓' }}
-                          </button>
+                          <button class="btn-icon" (click)="onToggleComplete(+task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
+  {{ task.completed ? '↶' : '✓' }}
+</button>
                         </div>
                       </div>
                     }
@@ -523,7 +523,7 @@ interface Category {
                             </div>
                           }
                         }
-                        @if (!hasCustomCategories()) {
+                        @if (getCustomCategoriesCount() === 0) {
                           <div class="empty-state">
                             No custom categories yet. Create your first one below!
                           </div>
@@ -546,7 +546,7 @@ interface Category {
                           Add Category
                         </button>
                       </div>
-                     @if (hasDuplicateCategory()) { 
+                      @if (hasDuplicateCategory()) {
                         <div class="error-message">
                           A category with this name already exists.
                         </div>
@@ -876,13 +876,13 @@ interface Category {
                   <div class="task-header">
                     <h3 class="task-title">{{ task.title }}</h3>
                     <div class="task-actions">
-                      <button 
-                        class="btn-status" 
-                        (click)="onToggleComplete(task.id)"
-                        [class.completed]="task.completed"
-                      >
-                        {{ task.completed ? '✅' : '⏳' }}
-                      </button>
+                     <button 
+  class="btn-status" 
+  (click)="onToggleComplete(+task.id)"
+  [class.completed]="task.completed"
+>
+  {{ task.completed ? '✅' : '⏳' }}
+</button>
                     </div>
                   </div>
                   
@@ -911,23 +911,23 @@ interface Category {
                   
                   <div class="task-meta">
                     <span class="task-date">
-                      Created: {{ formatDate(task.createdAt) }}
+                      Created: {{ formatDate(task.createdAt.toString()) }}
                     </span>
                     @if (task.dueDate) {
                       <span class="task-date">
                         Due: {{ formatDate(task.dueDate) }}
                       </span>
                     }
-                    @if (task.priority === 3) {
-                      <span class="priority-high">🔥 High Priority</span>
-                    } @else if (task.priority === 2) {
-                      <span class="priority-medium">⚡ Medium Priority</span>
-                    }
+                    @if (+task.priority === 3) {
+  <span class="priority-high">🔥 High Priority</span>
+} @else if (+task.priority === 2) {
+  <span class="priority-medium">⚡ Medium Priority</span>
+}
                   </div>
                   <div class="task-actions-bottom">
                     <a [routerLink]="['/tasks', task.id]" class="btn-link">View Details</a>
                     <a [routerLink]="['/tasks', task.id, 'edit']" class="btn-small">Edit</a>
-                    <button class="btn-small btn-danger" (click)="onDeleteTask(task.id)">
+                   <button class="btn-small btn-danger" (click)="onDeleteTask(+task.id)">
                       Delete
                     </button>
                   </div>
@@ -2556,9 +2556,9 @@ export class TasksComponent implements OnInit {
     return this.totalTasks > 0 ? Math.round((this.completedTasks / this.totalTasks) * 100) : 0;
   }
 
-  get highPriorityTasks(): number {
-    return this.tasks.filter(task => task.priority === 3).length;
-  }
+ get highPriorityTasks(): number {
+  return this.tasks.filter(task => +task.priority === 3).length;
+}
 
   get overdueTasks(): number {
     const today = new Date();
@@ -2584,7 +2584,7 @@ export class TasksComponent implements OnInit {
   get availableCategoriesWithIcons(): Category[] {
     const usedCategories = this.tasks
       .map(task => task.category)
-      .filter(category => category && category.trim() !== '');
+      .filter((category): category is string => category != null && category.trim() !== '');
     
     const uniqueCategories = [...new Set(usedCategories)];
     
@@ -2644,6 +2644,14 @@ export class TasksComponent implements OnInit {
     return this.tasks.some(task => task.category === categoryName);
   }
 
+  getCustomCategoriesCount(): number {
+    return this.categories.filter(c => c.custom).length;
+  }
+
+hasDuplicateCategory(): boolean {
+  return !!this.newCategoryName && this.categories.some(c => c.name === this.newCategoryName.trim());
+}
+
   get completionCircleBackground(): string {
     return `conic-gradient(#28a745 ${this.completionRate}%, #e1e5e9 0%)`;
   }
@@ -2681,12 +2689,12 @@ export class TasksComponent implements OnInit {
       { priority: 1, name: 'Low', color: '#27ae60' }
     ];
 
-    return priorities.map(p => {
-      const tasksInPriority = this.tasks.filter(task => task.priority === p.priority);
-      return {
-        ...p,
-        count: tasksInPriority.length,
-        completed: tasksInPriority.filter(task => task.completed).length
+  return priorities.map(p => {
+  const tasksInPriority = this.tasks.filter(task => +task.priority === p.priority);
+  return {
+    ...p,
+    count: tasksInPriority.length,
+    completed: tasksInPriority.filter(task => task.completed).length
       };
     });
   }
@@ -2697,19 +2705,11 @@ export class TasksComponent implements OnInit {
       .slice(0, 5);
   }
 
-  hasCustomCategories(): boolean {
-  return this.categories.some(c => c.custom);
-}
-
-hasDuplicateCategory(): boolean {
-  return !!this.newCategoryName && this.categories.some(c => c.name === this.newCategoryName.trim());
-}
-
   // Existing computed properties from filtering
   get availableCategories(): string[] {
     const categories = this.tasks
       .map(task => task.category)
-      .filter(category => category && category.trim() !== '');
+      .filter((category): category is string => category != null && category.trim() !== '');
     return [...new Set(categories)].sort();
   }
 
@@ -2757,7 +2757,7 @@ hasDuplicateCategory(): boolean {
         const searchLower = this.searchTerm.toLowerCase();
         const matchesSearch = 
           task.title.toLowerCase().includes(searchLower) ||
-          task.description.toLowerCase().includes(searchLower) ||
+          (task.description && task.description.toLowerCase().includes(searchLower)) ||
           (task.tags && task.tags.some(tag => tag.toLowerCase().includes(searchLower)));
         if (!matchesSearch) return false;
       }
@@ -2786,12 +2786,13 @@ hasDuplicateCategory(): boolean {
         if (this.selectedStatus === 'active' && task.completed) return false;
       }
 
-      // Priority filter
-      if (this.selectedPriority !== 'all') {
-        if (task.priority !== parseInt(this.selectedPriority)) return false;
-      }
+      // Priority filter - Fixed: Convert string to number for comparison
+   if (this.selectedPriority !== 'all') {
+  const priorityNum = +this.selectedPriority;
+  if (+task.priority !== priorityNum) return false;
+}
 
-      return true;
+return true;
     });
   }
 
@@ -2841,18 +2842,39 @@ hasDuplicateCategory(): boolean {
     return minSize + ((count / maxCount) * (maxSize - minSize));
   }
 
-  formatRelativeDate(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'today';
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
+formatRelativeDate(date: string | Date): string {
+  // Handle empty/null/undefined cases
+  if (!date) return '';
+  
+  // Convert to Date object if it's a string
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if it's a valid date
+  if (isNaN(dateObj.getTime())) return '';
+  
+  const now = new Date();
+  const diffInMs = now.getTime() - dateObj.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  const diffInDays = diffInHours / 24;
+  
+  if (diffInHours < 1) {
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    return `${diffInMinutes} min ago`;
+  } else if (diffInHours < 24) {
+    const hours = Math.floor(diffInHours);
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  } else if (diffInDays < 7) {
+    const days = Math.floor(diffInDays);
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  } else {
+    // Format as absolute date for older dates
+    return dateObj.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: diffInDays > 365 ? 'numeric' : undefined
+    });
   }
+}
 
   // Dashboard interaction methods
   getTagColor(tagName: string): string {
@@ -2910,6 +2932,7 @@ hasDuplicateCategory(): boolean {
   }
 
   getBestCategory(): string {
+    if (this.categoryStats.length === 0) return 'None';
     const bestCategory = this.categoryStats.reduce((prev, current) => 
       (prev.completed > current.completed) ? prev : current
     );
@@ -2957,10 +2980,12 @@ hasDuplicateCategory(): boolean {
   clearPriority(): void { this.selectedPriority = 'all'; }
   
   getPriorityText(priority: string): string {
-    switch (priority) {
-      case '3': return 'High';
-      case '2': return 'Medium';
-      case '1': return 'Low';
+    // Convert priority to number for comparison
+    const priorityNum = +priority;
+    switch (priorityNum) {
+      case 3: return 'High';
+      case 2: return 'Medium';
+      case 1: return 'Low';
       default: return 'All';
     }
   }
@@ -3045,34 +3070,37 @@ hasDuplicateCategory(): boolean {
     });
   }
   
-  onToggleComplete(taskId: number): void {
-    this.taskService.toggleTaskCompletion(taskId).subscribe({
-      next: (updatedTask: Task) => {
-        const index = this.tasks.findIndex(t => t.id === taskId);
-        if (index !== -1) {
-          this.tasks[index] = updatedTask;
-        }
+onToggleComplete(taskId: number): void {
+  this.taskService.toggleTaskCompletion(taskId).subscribe({
+    next: (updatedTask: Task) => {
+      const index = this.tasks.findIndex(t => +t.id === taskId);
+      if (index !== -1) {
+        this.tasks[index] = updatedTask;
+      }
+    },
+    error: (error: any) => {
+      this.errorMessage = 'Failed to update task. Please try again.';
+      console.error('Error updating task:', error);
+    }
+  });
+}
+  
+onDeleteTask(taskId: number): void {
+  if (confirm('Are you sure you want to delete this task?')) {
+    this.taskService.deleteTask(taskId).subscribe({
+      next: () => {
+        // Fix 1: Convert taskId to string for comparison, or convert t.id to number
+        this.tasks = this.tasks.filter(t => +t.id !== taskId);
+        
+        // this.loadTasks(); // Uncomment this if the filter above doesn't work
       },
       error: (error: any) => {
-        this.errorMessage = 'Failed to update task. Please try again.';
-        console.error('Error updating task:', error);
+        this.errorMessage = 'Failed to delete task. Please try again.';
+        console.error('Error deleting task:', error);
       }
     });
   }
-  
-  onDeleteTask(taskId: number): void {
-    if (confirm('Are you sure you want to delete this task?')) {
-      this.taskService.deleteTask(taskId).subscribe({
-        next: () => {
-          this.tasks = this.tasks.filter(t => t.id !== taskId);
-        },
-        error: (error: any) => {
-          this.errorMessage = 'Failed to delete task. Please try again.';
-          console.error('Error deleting task:', error);
-        }
-      });
-    }
-  }
+}
   
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -3081,6 +3109,10 @@ hasDuplicateCategory(): boolean {
       day: 'numeric'
     });
   }
+
+  parseInt(value: string): number {
+  return Number(value);
+}
 
   private resetForm(): void {
     this.newTaskTitle = '';

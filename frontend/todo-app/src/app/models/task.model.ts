@@ -1,18 +1,18 @@
 // task.model.ts
 export interface Task {
-  id: number;
-  ownerId: number;
+  id: string;
   title: string;
   description: string;
-  dueDate?: string | null;
-  priority: number;
   completed: boolean;
-  createdAt: string;
-  updatedAt?: string | null;
-  completedAt?: string | null;
-  category: string;           // NEW: Add category
-  tags: string[];            // NEW: Add tags
-}
+  priority: 'low' | 'medium' | 'high';
+  dueDate?: string;
+  dueTime?: string; // New: Specific time for reminders
+  reminders: string[]; // New: Array of reminder timestamps
+  category?: string;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt?: Date;}
 
 export interface CreateTaskRequest {
   title: string;
