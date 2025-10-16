@@ -6,22 +6,25 @@ namespace ToDoApi.DTOs.Task
     {
         [Required]
         [MaxLength(100)]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; }
 
         [MaxLength(500)]
-        public string Description { get; set; } = string.Empty;
+        public string Description { get; set; }
 
         public DateTime? DueDate { get; set; }
 
         [Range(1, 3)]
         public int Priority { get; set; } = 1;
 
-        // NEW: Add Category
-        [Required]
         [MaxLength(50)]
         public string Category { get; set; } = "Other";
 
-        // NEW: Add Tags (list of tag names)
         public List<string> Tags { get; set; } = new List<string>();
+
+        // NEW: Recurrence fields
+        public bool IsRecurring { get; set; } = false;
+        public string RecurrencePattern { get; set; } = "none";
+        public int RecurrenceInterval { get; set; } = 1;
+        public DateTime? RecurrenceEndDate { get; set; }
     }
 }

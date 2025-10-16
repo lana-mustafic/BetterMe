@@ -1,5 +1,8 @@
 ﻿using ToDoApi.DTOs.Task;
 using ToDoApi.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ToDoApi.Services.Interfaces
 {
@@ -10,5 +13,9 @@ namespace ToDoApi.Services.Interfaces
         Task<TodoTask> GetByIdAsync(int id);
         Task<TodoTask> UpdateTaskAsync(int id, UpdateTaskRequest request, int userId);
         Task<bool> DeleteTaskAsync(int id, int userId);
+        Task<TodoTask> CompleteRecurringInstanceAsync(int taskId, int userId, DateTime completionDate);
+        Task<List<TodoTask>> GenerateNextRecurringInstancesAsync();
+        Task<int> CalculateHabitStreakAsync(int taskId);
+        Task<TaskStatsResponse> GetTaskStatsAsync(int userId);
     }
 }

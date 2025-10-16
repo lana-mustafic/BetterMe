@@ -12,11 +12,16 @@
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
-
-        // NEW: Add Category
         public string Category { get; set; } = "Other";
-
-        // NEW: Add Tags
         public List<string> Tags { get; set; } = new List<string>();
+
+        // Recurrence fields
+        public bool IsRecurring { get; set; }
+        public string RecurrencePattern { get; set; } = "none";
+        public int RecurrenceInterval { get; set; } = 1;
+        public DateTime? RecurrenceEndDate { get; set; }
+        public List<string> CompletedInstances { get; set; } = new List<string>();
+        public DateTime? NextDueDate { get; set; }
+        public int? OriginalTaskId { get; set; }
     }
 }

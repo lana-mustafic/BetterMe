@@ -143,5 +143,55 @@ namespace ToDoApi.Controllers
             if (!removed) return NotFound();
             return NoContent();
         }
+        // POST: api/tasks/{id}/complete-instance
+        [HttpPost("{id:int}/complete-instance")]
+        public async Task<IActionResult> CompleteRecurringInstance(int id, [FromBody] CompleteInstanceRequest request)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var completionDate = request.CompletionDate ?? DateTime.UtcNow;
+            var updatedTask = await _taskService.CompleteRecurringInstanceAsync(id, userId, completionDate);
+
+            if (updatedTask == null) return NotFound();
+
+            return Ok(_mapper.Map<TaskResponse>(updatedTask));
+        }
+
+        // GET: api/tasks/{id}/streak
+        [HttpGet("{id:int}/streak")]
+        public async Task<IActionResult> GetHabitStreak(int id)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var task = await _taskService.GetByIdAsync(id);
+            if (task == null || task.UserId != userId) return NotFound();
+
+            var streak = await _taskService.CalculateHabitStreakAsync(id);
+            return Ok(new { streak });
+        }
+
+        // GET: api/tasks/habits
+        [HttpGet("habits")]
+        public async Task<IActionResult> GetHabits()
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var allTasks = await _taskService.GetAllTasksByUserAsync(userId);
+            var habits = allTasks.Where(t => t.IsRecurring && t.RecurrencePattern != "none").ToList();
+
+            return Ok(_mapper.Map<List<TaskResponse>>(habits));
+        }
+
+        // DTO for complete instance request
+        public class CompleteInstanceRequest
+        {
+            public DateTime? CompletionDate { get; set; }
+        }
     }
 }

@@ -91,14 +91,27 @@ export class TaskService {
     );
   }
 
-  toggleTaskCompletion(id: number): Observable<Task> {
-    return this.getTaskById(id).pipe(
-      switchMap(currentTask => {
-        return this.updateTask(id, { completed: !currentTask.completed });
-      }),
-      catchError((error: HttpErrorResponse) => this.handleError('toggleTaskCompletion', error))
-    );
-  }
+ toggleTaskCompletion(id: number): Observable<Task> {
+  return this.getTaskById(id).pipe(
+    switchMap(currentTask => {
+      if (currentTask.completed) {
+        // Mark as incomplete
+        return this.updateTask(id, { completed: false });
+      } else {
+        // Mark as complete
+        if (currentTask.isRecurring) {
+          // For recurring tasks, complete the instance
+          const completionDate = new Date().toISOString();
+          return this.completeRecurringInstance(id, completionDate);
+        } else {
+          // For non-recurring tasks, just mark as completed
+          return this.updateTask(id, { completed: true });
+        }
+      }
+    }),
+    catchError((error: HttpErrorResponse) => this.handleError('toggleTaskCompletion', error))
+  );
+}
 
   private handleError(operation: string, error: HttpErrorResponse): Observable<never> {
     console.error(`❌ [TaskService] ${operation} failed:`, error);
@@ -125,4 +138,37 @@ export class TaskService {
       originalError: error
     };
   }
+  // Add these methods to your TaskService class:
+
+completeRecurringInstance(taskId: number, completionDate: string): Observable<Task> {
+  return this.http.post<Task>(`${this.apiUrl}/tasks/${taskId}/complete-instance`, {
+    completionDate
+  }, {
+    headers: {
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    }
+  }).pipe(
+    catchError((error: HttpErrorResponse) => this.handleError('completeRecurringInstance', error))
+  );
+}
+
+getHabitStreak(taskId: number): Observable<number> {
+  return this.http.get<number>(`${this.apiUrl}/tasks/${taskId}/streak`, {
+    headers: {
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    }
+  }).pipe(
+    catchError((error: HttpErrorResponse) => this.handleError('getHabitStreak', error))
+  );
+}
+
+generateRecurringInstances(): Observable<Task[]> {
+  return this.http.post<Task[]>(`${this.apiUrl}/tasks/generate-recurring`, {}, {
+    headers: {
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    }
+  }).pipe(
+    catchError((error: HttpErrorResponse) => this.handleError('generateRecurringInstances', error))
+  );
+}
 }

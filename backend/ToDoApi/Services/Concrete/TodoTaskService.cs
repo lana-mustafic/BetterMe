@@ -1,11 +1,11 @@
 ﻿using ToDoApi.DTOs.Task;
 using ToDoApi.Models;
 using ToDoApi.Repositories.Interfaces;
+using ToDoApi.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ToDoApi.Services.Interfaces;
 
 namespace ToDoApi.Services
 {
@@ -33,13 +33,24 @@ namespace ToDoApi.Services
                 Category = request.Category,
                 UserId = userId,
                 CreatedAt = DateTime.UtcNow,
-                Completed = false
+                UpdatedAt = DateTime.UtcNow,
+                Completed = false,
+                CompletedAt = null,
+                // NEW: Recurrence fields
+                IsRecurring = request.IsRecurring,
+                RecurrencePattern = request.RecurrencePattern ?? "none",
+                RecurrenceInterval = request.RecurrenceInterval,
+                RecurrenceEndDate = request.RecurrenceEndDate,
+                NextDueDate = request.DueDate,
+                CompletedInstances = new List<string>(),
+                OriginalTaskId = null,
+                TaskTags = new List<TaskTag>()
             };
 
             await _tasksRepo.AddAsync(task);
             await _tasksRepo.SaveChangesAsync();
 
-            if (request.Tags != null && request.Tags.Any())
+            if (request.Tags != null && request.Tags.Count > 0) // FIXED: Use Count > 0 instead of Any()
             {
                 await AssignTagsToTaskAsync(task, request.Tags, userId);
                 await _tasksRepo.SaveChangesAsync();
@@ -63,28 +74,43 @@ namespace ToDoApi.Services
             var task = await _tasksRepo.GetByIdWithTagsAsync(id);
             if (task == null || task.UserId != userId) return null;
 
+            // Update basic fields
             task.Title = request.Title ?? task.Title;
             task.Description = request.Description ?? task.Description;
             task.DueDate = request.DueDate ?? task.DueDate;
-            task.Priority = request.Priority ?? task.Priority;
-            task.Completed = request.Completed ?? task.Completed;
+            if (request.Priority.HasValue) task.Priority = request.Priority.Value;
+            if (request.Completed.HasValue) task.Completed = request.Completed.Value;
 
             if (request.Category != null)
             {
                 task.Category = request.Category;
             }
 
+            // Handle completion
             if (request.Completed.HasValue)
             {
                 if (request.Completed.Value && !task.Completed)
                 {
                     task.CompletedAt = DateTime.UtcNow;
+
+                    // If this is a recurring task and it's being marked complete, handle instance tracking
+                    if (task.IsRecurring)
+                    {
+                        await CompleteRecurringInstanceAsync(task.Id, userId, DateTime.UtcNow);
+                    }
                 }
                 else if (!request.Completed.Value && task.Completed)
                 {
                     task.CompletedAt = null;
                 }
             }
+
+            // NEW: Update recurrence fields
+            if (request.IsRecurring.HasValue) task.IsRecurring = request.IsRecurring.Value;
+            if (!string.IsNullOrEmpty(request.RecurrencePattern)) task.RecurrencePattern = request.RecurrencePattern;
+            if (request.RecurrenceInterval.HasValue) task.RecurrenceInterval = request.RecurrenceInterval.Value;
+            if (request.RecurrenceEndDate.HasValue) task.RecurrenceEndDate = request.RecurrenceEndDate;
+            if (request.CompletedInstances != null) task.CompletedInstances = request.CompletedInstances;
 
             task.UpdatedAt = DateTime.UtcNow;
 
@@ -107,6 +133,142 @@ namespace ToDoApi.Services
             return true;
         }
 
+        // NEW: Complete a specific instance of a recurring task
+        public async Task<TodoTask> CompleteRecurringInstanceAsync(int taskId, int userId, DateTime completionDate)
+        {
+            var task = await _tasksRepo.GetByIdAsync(taskId);
+            if (task == null || task.UserId != userId || !task.IsRecurring) return null;
+
+            var dateString = completionDate.ToString("yyyy-MM-dd");
+            var completedInstances = task.CompletedInstances ?? new List<string>();
+
+            if (!completedInstances.Contains(dateString))
+            {
+                completedInstances.Add(dateString);
+                task.CompletedInstances = completedInstances;
+
+                // Calculate next due date
+                task.NextDueDate = CalculateNextDueDate(task.RecurrencePattern, task.RecurrenceInterval, completionDate);
+
+                await _tasksRepo.SaveChangesAsync();
+            }
+
+            return task;
+        }
+
+        // NEW: Generate next instances for recurring tasks
+        public async Task<List<TodoTask>> GenerateNextRecurringInstancesAsync()
+        {
+            var now = DateTime.UtcNow;
+            var recurringTasks = await _tasksRepo.GetRecurringTasksDueForGenerationAsync(now);
+
+            var newInstances = new List<TodoTask>();
+
+            foreach (var task in recurringTasks)
+            {
+                // Only generate new instance if recurrence hasn't ended
+                if (task.RecurrenceEndDate.HasValue && task.RecurrenceEndDate.Value < now)
+                    continue;
+
+                var newInstance = new TodoTask
+                {
+                    UserId = task.UserId,
+                    Title = task.Title,
+                    Description = task.Description,
+                    DueDate = task.NextDueDate,
+                    Priority = task.Priority,
+                    Category = task.Category,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    Completed = false,
+                    CompletedAt = null,
+                    IsRecurring = true,
+                    RecurrencePattern = task.RecurrencePattern,
+                    RecurrenceInterval = task.RecurrenceInterval,
+                    RecurrenceEndDate = task.RecurrenceEndDate,
+                    OriginalTaskId = task.OriginalTaskId ?? task.Id,
+                    NextDueDate = CalculateNextDueDate(task.RecurrencePattern, task.RecurrenceInterval, task.NextDueDate ?? now),
+                    CompletedInstances = new List<string>(),
+                    TaskTags = new List<TaskTag>()
+                };
+
+                newInstances.Add(newInstance);
+
+                // Update the original task's NextDueDate
+                task.NextDueDate = newInstance.NextDueDate;
+                task.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (newInstances.Count > 0) // FIXED: Use Count > 0 instead of Any()
+            {
+                foreach (var instance in newInstances)
+                {
+                    await _tasksRepo.AddAsync(instance);
+                }
+                await _tasksRepo.SaveChangesAsync();
+            }
+
+            return newInstances;
+        }
+
+        // NEW: Calculate habit streak
+        public async Task<int> CalculateHabitStreakAsync(int taskId)
+        {
+            var task = await _tasksRepo.GetByIdAsync(taskId);
+            if (task == null || !task.IsRecurring || task.RecurrencePattern == "none") return 0;
+
+            var completedInstances = task.CompletedInstances ?? new List<string>();
+            if (completedInstances.Count == 0) return 0;
+
+            var completedDates = completedInstances
+                .Select(d => DateTime.Parse(d))
+                .OrderByDescending(d => d)
+                .ToList();
+
+            var streak = 0;
+            var currentDate = DateTime.UtcNow.Date;
+
+            // Check if today is completed
+            var todayStr = currentDate.ToString("yyyy-MM-dd");
+            var todayCompleted = completedInstances.Contains(todayStr);
+
+            if (todayCompleted)
+            {
+                streak = 1;
+                currentDate = currentDate.AddDays(-1);
+            }
+
+            // Count consecutive days
+            foreach (var completedDate in completedDates)
+            {
+                if (completedDate.Date == currentDate)
+                {
+                    streak++;
+                    currentDate = currentDate.AddDays(-1);
+                }
+                else if (completedDate.Date < currentDate)
+                {
+                    // We've found a gap in the streak
+                    break;
+                }
+            }
+
+            return streak;
+        }
+
+        // Helper method to calculate next due date
+        private DateTime? CalculateNextDueDate(string pattern, int interval, DateTime fromDate)
+        {
+            return pattern?.ToLower() switch
+            {
+                "daily" => fromDate.AddDays(interval),
+                "weekly" => fromDate.AddDays(interval * 7),
+                "monthly" => fromDate.AddMonths(interval),
+                "yearly" => fromDate.AddYears(interval),
+                _ => null
+            };
+        }
+
         private async Task AssignTagsToTaskAsync(TodoTask task, List<string> tagNames, int userId)
         {
             foreach (var tagName in tagNames.Distinct())
@@ -118,7 +280,6 @@ namespace ToDoApi.Services
 
                 if (!task.TaskTags.Any(tt => tt.TagId == tag.Id))
                 {
-                    // FIXED: Use TodoTaskId instead of TaskId
                     task.TaskTags.Add(new TaskTag { TodoTaskId = task.Id, TagId = tag.Id });
                 }
             }
@@ -126,6 +287,10 @@ namespace ToDoApi.Services
 
         private async Task UpdateTaskTagsAsync(TodoTask task, List<string> newTagNames, int userId)
         {
+            // Initialize TaskTags if null
+            task.TaskTags ??= new List<TaskTag>();
+
+            var currentTagNames = task.TaskTags.Select(tt => tt.Tag.Name).ToList();
             var tagsToRemove = task.TaskTags
                 .Where(tt => !newTagNames.Contains(tt.Tag.Name))
                 .ToList();
@@ -140,10 +305,9 @@ namespace ToDoApi.Services
                 var trimmedName = tagName.Trim();
                 if (string.IsNullOrEmpty(trimmedName)) continue;
 
-                if (!task.TaskTags.Any(tt => tt.Tag.Name == trimmedName))
+                if (!currentTagNames.Contains(trimmedName))
                 {
                     var tag = await GetOrCreateTagAsync(trimmedName, userId);
-                    // FIXED: Use TodoTaskId instead of TaskId
                     task.TaskTags.Add(new TaskTag { TodoTaskId = task.Id, TagId = tag.Id });
                 }
             }
@@ -179,27 +343,27 @@ namespace ToDoApi.Services
                 .Select(g => new CategoryResponse
                 {
                     Name = g.Key,
-                    TaskCount = g.Count() // FIXED: Added parentheses
+                    TaskCount = g.Count() // FIXED: This should work now
                 })
                 .ToList();
 
             var popularTags = tags
-                .OrderByDescending(t => t.TaskTags.Count) // FIXED: Added parentheses
+                .OrderByDescending(t => t.TaskTags.Count) // FIXED: This should work now
                 .Take(5)
                 .Select(t => new TagResponse
                 {
                     Id = t.Id,
                     Name = t.Name,
                     CreatedAt = t.CreatedAt,
-                    TaskCount = t.TaskTags.Count() // FIXED: Added parentheses
+                    TaskCount = t.TaskTags.Count // FIXED: Removed parentheses
                 })
                 .ToList();
 
             return new TaskStatsResponse
             {
-                TotalTasks = tasks.Count, // FIXED: Added parentheses
-                CompletedTasks = tasks.Count(t => t.Completed), // FIXED: Added parentheses
-                PendingTasks = tasks.Count(t => !t.Completed), // FIXED: Added parentheses
+                TotalTasks = tasks.Count, // FIXED: Removed parentheses
+                CompletedTasks = tasks.Count(t => t.Completed),
+                PendingTasks = tasks.Count(t => !t.Completed),
                 Categories = categoryStats,
                 PopularTags = popularTags
             };

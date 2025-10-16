@@ -309,7 +309,7 @@ export class EditTaskComponent implements OnInit {
           title: task.title,
           description: task.description || '',
           dueDate: task.dueDate ? task.dueDate.toString() : null,
-          priority: this.getPriorityNumber(task.priority),
+          priority: task.priority,
           completed: task.completed
         };
         this.isLoading = false;

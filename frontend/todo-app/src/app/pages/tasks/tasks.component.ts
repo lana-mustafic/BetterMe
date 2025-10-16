@@ -254,7 +254,58 @@ interface Category {
                     }
                   </div>
                 </div>
-
+<!-- Add this after the priority section in your create task form -->
+<div class="form-group">
+  <label class="form-label">Recurrence</label>
+  <div class="recurrence-options">
+    <label class="checkbox-label">
+      <input 
+        type="checkbox" 
+        [(ngModel)]="newTaskIsRecurring" 
+        name="isRecurring"
+        (change)="onRecurrenceToggle()"
+      >
+      Repeating Task
+    </label>
+    
+    @if (newTaskIsRecurring) {
+      <div class="recurrence-settings">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Pattern</label>
+            <select 
+              class="form-control"
+              [(ngModel)]="newTaskRecurrencePattern"
+              name="recurrencePattern"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Interval</label>
+            <select 
+              class="form-control"
+              [(ngModel)]="newTaskRecurrenceInterval"
+              name="recurrenceInterval"
+            >
+              <option value="1">Every</option>
+              <option value="2">Every 2nd</option>
+              <option value="3">Every 3rd</option>
+              <option value="4">Every 4th</option>
+              <option value="5">Every 5th</option>
+              <option value="6">Every 6th</option>
+              <option value="7">Every 7th</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
                 <!-- Popular Tags -->
                 <div class="chart-widget">
                   <div class="chart-header">
@@ -282,61 +333,62 @@ interface Category {
             <!-- Bottom Section -->
             <div class="bottom-section">
               <!-- Recent Activity -->
-              <div class="chart-widget full-width">
-                <div class="chart-header">
-                  <h3>Recent Activity</h3>
-                  <div class="chart-actions">
-                    <button class="chart-action-btn" (click)="activeView = 'list'">View All Tasks</button>
-                  </div>
-                </div>
-                <div class="activity-widget">
-                  <div class="activity-list">
-                    @for (task of recentTasks; track task.id) {
-                      <div class="activity-item">
-                        <div class="activity-icon" [class.completed]="task.completed">
-                          @if (task.completed) {
-                            <div class="icon-completed">✓</div>
-                          } @else {
-                            <div class="icon-created">+</div>
-                          }
-                        </div>
-                        <div class="activity-content">
-                          <div class="activity-title">{{ task.title }}</div>
-                          <div class="activity-details">
-                            <span class="activity-type">
-                              @if (task.completed) {
-                                Completed
-                              } @else {
-                                Created
-                              }
-                            </span>
-                            <span class="activity-time">{{ formatRelativeDate(task.completed ? (task.completedAt || '') : task.createdAt) }}</span>
-                            @if (task.category) {
-                              <span 
-                                class="activity-category"
-                                [style.background]="getCategoryColor(task.category) + '20'"
-                                [style.color]="getCategoryColor(task.category)"
-                                [style.border]="'1px solid ' + getCategoryColor(task.category)"
-                              >
-                                {{ getCategoryIcon(task.category) }} {{ task.category }}
-                              </span>
-                            }
-                         @if (parseInt(task.priority) === 3) {
-  <span class="activity-priority high">High</span>
-}
-                          </div>
-                        </div>
-                        <div class="activity-actions">
-                          <button class="btn-icon" (click)="onToggleComplete(+task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
-  {{ task.completed ? '↶' : '✓' }}
-</button>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-              </div>
-
+           <!-- Recent Activity -->
+<div class="chart-widget full-width">
+  <div class="chart-header">
+    <h3>Recent Activity</h3>
+    <div class="chart-actions">
+      <button class="chart-action-btn" (click)="activeView = 'list'">View All Tasks</button>
+    </div>
+  </div>
+  <div class="activity-widget">
+    <div class="activity-list">
+      @for (task of recentTasks; track task.id) {
+        <div class="activity-item">
+          <div class="activity-icon" [class.completed]="task.completed">
+            @if (task.completed) {
+              <div class="icon-completed">✓</div>
+            } @else {
+              <div class="icon-created">+</div>
+            }
+          </div>
+          <div class="activity-content">
+            <div class="activity-title">{{ task.title }}</div>
+            <div class="activity-details">
+              <span class="activity-type">
+                @if (task.completed) {
+                  Completed
+                } @else {
+                  Created
+                }
+              </span>
+              <!-- FIXED LINE: Use only createdAt -->
+              <span class="activity-time">{{ formatRelativeDate(task.createdAt) }}</span>
+              @if (task.category) {
+                <span 
+                  class="activity-category"
+                  [style.background]="getCategoryColor(task.category) + '20'"
+                  [style.color]="getCategoryColor(task.category)"
+                  [style.border]="'1px solid ' + getCategoryColor(task.category)"
+                >
+                  {{ getCategoryIcon(task.category) }} {{ task.category }}
+                </span>
+              }
+              @if (task.priority === 3) {
+                <span class="activity-priority high">High</span>
+              }
+            </div>
+          </div>
+          <div class="activity-actions">
+            <button class="btn-icon" (click)="onToggleComplete(task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
+              {{ task.completed ? '↶' : '✓' }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
               <!-- Quick Insights -->
               <div class="chart-widget">
                 <div class="chart-header">
@@ -843,6 +895,64 @@ interface Category {
                   <option value="3">High</option>
                 </select>
               </div>
+              <!-- Recurrence Section -->
+<div class="form-group">
+  <label class="form-label">Repeat Task</label>
+  <div class="recurrence-options">
+    <label class="checkbox-label">
+      <input 
+        type="checkbox" 
+        [(ngModel)]="newTaskIsRecurring" 
+        name="isRecurring"
+      >
+      This is a repeating task
+    </label>
+    
+    @if (newTaskIsRecurring) {
+      <div class="recurrence-settings">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Repeat every</label>
+            <select 
+              class="form-control"
+              [(ngModel)]="newTaskRecurrenceInterval"
+              name="recurrenceInterval"
+            >
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Time period</label>
+            <select 
+              class="form-control"
+              [(ngModel)]="newTaskRecurrencePattern"
+              name="recurrencePattern"
+            >
+              <option value="daily">Day(s)</option>
+              <option value="weekly">Week(s)</option>
+              <option value="monthly">Month(s)</option>
+              <option value="yearly">Year(s)</option>
+            </select>
+          </div>
+        </div>
+        <div class="recurrence-hint">
+          @if (newTaskRecurrenceInterval === 1) {
+            <span>Repeats every {{ newTaskRecurrencePattern.slice(0, -2) }}</span>
+          } @else {
+            <span>Repeats every {{ newTaskRecurrenceInterval }} {{ newTaskRecurrencePattern.slice(0, -2) }}s</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Task</button>
                 <button type="button" class="btn btn-secondary" (click)="showCreateForm = false">
@@ -876,13 +986,13 @@ interface Category {
                   <div class="task-header">
                     <h3 class="task-title">{{ task.title }}</h3>
                     <div class="task-actions">
-                     <button 
-  class="btn-status" 
-  (click)="onToggleComplete(+task.id)"
-  [class.completed]="task.completed"
->
-  {{ task.completed ? '✅' : '⏳' }}
-</button>
+                      <button 
+                        class="btn-status" 
+                        (click)="onToggleComplete(task.id)"
+                        [class.completed]="task.completed"
+                      >
+                        {{ task.completed ? '✅' : '⏳' }}
+                      </button>
                     </div>
                   </div>
                   
@@ -911,23 +1021,36 @@ interface Category {
                   
                   <div class="task-meta">
                     <span class="task-date">
-                      Created: {{ formatDate(task.createdAt.toString()) }}
+                      Created: {{ formatDate(task.createdAt) }}
                     </span>
                     @if (task.dueDate) {
                       <span class="task-date">
                         Due: {{ formatDate(task.dueDate) }}
                       </span>
                     }
-                    @if (+task.priority === 3) {
-  <span class="priority-high">🔥 High Priority</span>
-} @else if (+task.priority === 2) {
-  <span class="priority-medium">⚡ Medium Priority</span>
-}
+                    @if (task.priority === 3) {
+                      <span class="priority-high">🔥 High Priority</span>
+                    } @else if (task.priority === 2) {
+                      <span class="priority-medium">⚡ Medium Priority</span>
+                    }
+
+                    @if (task.isRecurring) {
+                      <div class="recurrence-info">
+                        <span class="recurrence-badge">
+                          🔄 {{ getRecurrenceText(task) }}
+                        </span>
+                        @if (calculateHabitStreak(task) > 0) {
+                          <span class="streak-badge" [class.hot-streak]="calculateHabitStreak(task) >= 7">
+                            🔥 {{ calculateHabitStreak(task) }} day streak
+                          </span>
+                        }
+                      </div>
+                    }
                   </div>
                   <div class="task-actions-bottom">
                     <a [routerLink]="['/tasks', task.id]" class="btn-link">View Details</a>
                     <a [routerLink]="['/tasks', task.id, 'edit']" class="btn-small">Edit</a>
-                   <button class="btn-small btn-danger" (click)="onDeleteTask(+task.id)">
+                    <button class="btn-small btn-danger" (click)="onDeleteTask(task.id)">
                       Delete
                     </button>
                   </div>
@@ -954,7 +1077,7 @@ interface Category {
     </div>
   `,
   styles: [`
-    /* Your Existing Styles */
+    /* Your existing styles remain exactly the same */
     .tasks-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
     .tasks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .tasks-header h1 { color: #333; font-size: 2.5rem; font-weight: 700; }
@@ -1033,6 +1156,7 @@ interface Category {
       gap: 1rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .task-date {
@@ -2419,6 +2543,87 @@ interface Category {
       }
     }
 
+    .recurrence-info {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .recurrence-badge {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .streak-badge {
+      background: #ffd700;
+      color: #333;
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .streak-badge.hot-streak {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    .recurrence-options {
+  margin-top: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.recurrence-settings {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
     @media (max-width: 768px) {
       .stats-grid {
         grid-template-columns: 1fr;
@@ -2516,6 +2721,10 @@ export class TasksComponent implements OnInit {
   newTaskTags: string[] = [];
   newTagName: string = '';
   newCategoryName: string = '';
+  newTaskIsRecurring: boolean = false;
+newTaskRecurrencePattern: string = 'daily';
+newTaskRecurrenceInterval: number = 1;
+
 
   // Filter fields
   searchTerm: string = '';
@@ -2556,9 +2765,9 @@ export class TasksComponent implements OnInit {
     return this.totalTasks > 0 ? Math.round((this.completedTasks / this.totalTasks) * 100) : 0;
   }
 
- get highPriorityTasks(): number {
-  return this.tasks.filter(task => +task.priority === 3).length;
-}
+  get highPriorityTasks(): number {
+    return this.tasks.filter(task => task.priority === 3).length;
+  }
 
   get overdueTasks(): number {
     const today = new Date();
@@ -2648,9 +2857,9 @@ export class TasksComponent implements OnInit {
     return this.categories.filter(c => c.custom).length;
   }
 
-hasDuplicateCategory(): boolean {
-  return !!this.newCategoryName && this.categories.some(c => c.name === this.newCategoryName.trim());
-}
+  hasDuplicateCategory(): boolean {
+    return !!this.newCategoryName && this.categories.some(c => c.name === this.newCategoryName.trim());
+  }
 
   get completionCircleBackground(): string {
     return `conic-gradient(#28a745 ${this.completionRate}%, #e1e5e9 0%)`;
@@ -2689,12 +2898,12 @@ hasDuplicateCategory(): boolean {
       { priority: 1, name: 'Low', color: '#27ae60' }
     ];
 
-  return priorities.map(p => {
-  const tasksInPriority = this.tasks.filter(task => +task.priority === p.priority);
-  return {
-    ...p,
-    count: tasksInPriority.length,
-    completed: tasksInPriority.filter(task => task.completed).length
+    return priorities.map(p => {
+      const tasksInPriority = this.tasks.filter(task => task.priority === p.priority);
+      return {
+        ...p,
+        count: tasksInPriority.length,
+        completed: tasksInPriority.filter(task => task.completed).length
       };
     });
   }
@@ -2786,13 +2995,13 @@ hasDuplicateCategory(): boolean {
         if (this.selectedStatus === 'active' && task.completed) return false;
       }
 
-      // Priority filter - Fixed: Convert string to number for comparison
-   if (this.selectedPriority !== 'all') {
-  const priorityNum = +this.selectedPriority;
-  if (+task.priority !== priorityNum) return false;
-}
+      // Priority filter
+      if (this.selectedPriority !== 'all') {
+        const priorityNum = Number(this.selectedPriority);
+        if (task.priority !== priorityNum) return false;
+      }
 
-return true;
+      return true;
     });
   }
 
@@ -2808,12 +3017,14 @@ return true;
     this.loadTasks();
   }
 
+  // UPDATED: Load tasks without mock data
   loadTasks(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
     this.taskService.getTasks().subscribe({
       next: (tasks: Task[]) => {
+        // Use only real data from backend - no mock data
         this.tasks = tasks;
         this.isLoading = false;
       },
@@ -2823,6 +3034,60 @@ return true;
         console.error('Error loading tasks:', error);
       }
     });
+  }
+
+  // UPDATED: Calculate habit streak using new flat recurrence fields
+  calculateHabitStreak(task: Task): number {
+    if (!task.isRecurring || task.recurrencePattern === 'none' || !task.completedInstances) return 0;
+    
+    const completedDates = task.completedInstances
+      .map((instance: string) => new Date(instance))
+      .sort((a: Date, b: Date) => b.getTime() - a.getTime());
+    
+    if (completedDates.length === 0) return 0;
+    
+    // Start with the most recent completion
+    let currentDate = new Date(completedDates[0]);
+    let streak = 1;
+    
+    // Check previous days for consecutive completions
+    for (let i = 1; i < completedDates.length; i++) {
+      const previousDay = new Date(currentDate);
+      previousDay.setDate(previousDay.getDate() - 1);
+      
+      const completedDate = new Date(completedDates[i]);
+      
+      // Compare dates without time
+      if (completedDate.toDateString() === previousDay.toDateString()) {
+        streak++;
+        currentDate = completedDate;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }
+
+  // UPDATED: Get recurrence text using new flat recurrence fields
+  getRecurrenceText(task: Task): string {
+    if (!task.isRecurring || task.recurrencePattern === 'none') return '';
+    
+    const pattern = task.recurrencePattern;
+    const interval = task.recurrenceInterval;
+    
+    switch (pattern) {
+      case 'daily':
+        return interval === 1 ? 'Daily' : `Every ${interval} days`;
+      case 'weekly':
+        return interval === 1 ? 'Weekly' : `Every ${interval} weeks`;
+      case 'monthly':
+        return interval === 1 ? 'Monthly' : `Every ${interval} months`;
+      case 'yearly':
+        return interval === 1 ? 'Yearly' : `Every ${interval} years`;
+      default:
+        return '';
+    }
   }
 
   // Statistics helper methods
@@ -2842,39 +3107,39 @@ return true;
     return minSize + ((count / maxCount) * (maxSize - minSize));
   }
 
-formatRelativeDate(date: string | Date): string {
-  // Handle empty/null/undefined cases
-  if (!date) return '';
-  
-  // Convert to Date object if it's a string
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  // Check if it's a valid date
-  if (isNaN(dateObj.getTime())) return '';
-  
-  const now = new Date();
-  const diffInMs = now.getTime() - dateObj.getTime();
-  const diffInHours = diffInMs / (1000 * 60 * 60);
-  const diffInDays = diffInHours / 24;
-  
-  if (diffInHours < 1) {
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    return `${diffInMinutes} min ago`;
-  } else if (diffInHours < 24) {
-    const hours = Math.floor(diffInHours);
-    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-  } else if (diffInDays < 7) {
-    const days = Math.floor(diffInDays);
-    return `${days} day${days !== 1 ? 's' : ''} ago`;
-  } else {
-    // Format as absolute date for older dates
-    return dateObj.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: diffInDays > 365 ? 'numeric' : undefined
-    });
+  formatRelativeDate(date: string | Date): string {
+    // Handle empty/null/undefined cases
+    if (!date) return '';
+    
+    // Convert to Date object if it's a string
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check if it's a valid date
+    if (isNaN(dateObj.getTime())) return '';
+    
+    const now = new Date();
+    const diffInMs = now.getTime() - dateObj.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    const diffInDays = diffInHours / 24;
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      return `${diffInMinutes} min ago`;
+    } else if (diffInHours < 24) {
+      const hours = Math.floor(diffInHours);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else if (diffInDays < 7) {
+      const days = Math.floor(diffInDays);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    } else {
+      // Format as absolute date for older dates
+      return dateObj.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: diffInDays > 365 ? 'numeric' : undefined
+      });
+    }
   }
-}
 
   // Dashboard interaction methods
   getTagColor(tagName: string): string {
@@ -2939,6 +3204,14 @@ formatRelativeDate(date: string | Date): string {
     return bestCategory.name;
   }
 
+  onRecurrenceToggle(): void {
+  if (!this.newTaskIsRecurring) {
+    // Reset recurrence settings when turning off recurrence
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+  }
+}
+
   // EXISTING methods from filtering
   onTagSearchChange(): void {}
 
@@ -2981,7 +3254,7 @@ formatRelativeDate(date: string | Date): string {
   
   getPriorityText(priority: string): string {
     // Convert priority to number for comparison
-    const priorityNum = +priority;
+    const priorityNum = Number(priority);
     switch (priorityNum) {
       case 3: return 'High';
       case 2: return 'Medium';
@@ -3045,62 +3318,65 @@ formatRelativeDate(date: string | Date): string {
   }
   
   onCreateTask(): void {
-    if (!this.newTaskTitle.trim()) {
-      this.errorMessage = 'Task title is required';
-      return;
-    }
-    this.taskService.createTask({
-      title: this.newTaskTitle,
-      description: this.newTaskDescription,
-      dueDate: this.newTaskDueDate || null,
-      priority: this.newTaskPriority,
-      category: this.newTaskCategory || 'Other',
-      tags: this.newTaskTags
-    }).subscribe({
-      next: (newTask: Task) => {
-        this.tasks.unshift(newTask);
-        this.resetForm();
-        this.showCreateForm = false;
-        this.errorMessage = '';
-      },
-      error: (error: any) => {
-        this.errorMessage = 'Failed to create task. Please try again.';
-        console.error('Error creating task:', error);
-      }
-    });
+  if (!this.newTaskTitle.trim()) {
+    this.errorMessage = 'Task title is required';
+    return;
   }
   
-onToggleComplete(taskId: number): void {
-  this.taskService.toggleTaskCompletion(taskId).subscribe({
-    next: (updatedTask: Task) => {
-      const index = this.tasks.findIndex(t => +t.id === taskId);
-      if (index !== -1) {
-        this.tasks[index] = updatedTask;
-      }
+  this.taskService.createTask({
+    title: this.newTaskTitle,
+    description: this.newTaskDescription,
+    dueDate: this.newTaskDueDate || null,
+    priority: this.newTaskPriority,
+    category: this.newTaskCategory || 'Other',
+    tags: this.newTaskTags,
+    isRecurring: this.newTaskIsRecurring,
+    recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
+    recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
+  }).subscribe({
+    next: (newTask: Task) => {
+      this.tasks.unshift(newTask);
+      this.resetForm();
+      this.showCreateForm = false;
+      this.errorMessage = '';
     },
     error: (error: any) => {
-      this.errorMessage = 'Failed to update task. Please try again.';
-      console.error('Error updating task:', error);
+      this.errorMessage = 'Failed to create task. Please try again.';
+      console.error('Error creating task:', error);
     }
   });
 }
   
-onDeleteTask(taskId: number): void {
-  if (confirm('Are you sure you want to delete this task?')) {
-    this.taskService.deleteTask(taskId).subscribe({
-      next: () => {
-        // Fix 1: Convert taskId to string for comparison, or convert t.id to number
-        this.tasks = this.tasks.filter(t => +t.id !== taskId);
-        
-        // this.loadTasks(); // Uncomment this if the filter above doesn't work
+  // UPDATED: Fixed task ID handling (numbers instead of strings)
+  onToggleComplete(taskId: number): void {
+    this.taskService.toggleTaskCompletion(taskId).subscribe({
+      next: (updatedTask: Task) => {
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
       },
       error: (error: any) => {
-        this.errorMessage = 'Failed to delete task. Please try again.';
-        console.error('Error deleting task:', error);
+        this.errorMessage = 'Failed to update task. Please try again.';
+        console.error('Error updating task:', error);
       }
     });
   }
-}
+  
+  // UPDATED: Fixed task ID handling (numbers instead of strings)
+  onDeleteTask(taskId: number): void {
+    if (confirm('Are you sure you want to delete this task?')) {
+      this.taskService.deleteTask(taskId).subscribe({
+        next: () => {
+          this.tasks = this.tasks.filter(t => t.id !== taskId);
+        },
+        error: (error: any) => {
+          this.errorMessage = 'Failed to delete task. Please try again.';
+          console.error('Error deleting task:', error);
+        }
+      });
+    }
+  }
   
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -3110,17 +3386,16 @@ onDeleteTask(taskId: number): void {
     });
   }
 
-  parseInt(value: string): number {
-  return Number(value);
+private resetForm(): void {
+  this.newTaskTitle = '';
+  this.newTaskDescription = '';
+  this.newTaskDueDate = '';
+  this.newTaskPriority = 1;
+  this.newTaskCategory = '';
+  this.newTaskTags = [];
+  this.newTaskTagInput = '';
+  this.newTaskIsRecurring = false;
+  this.newTaskRecurrencePattern = 'daily';
+  this.newTaskRecurrenceInterval = 1;
 }
-
-  private resetForm(): void {
-    this.newTaskTitle = '';
-    this.newTaskDescription = '';
-    this.newTaskDueDate = '';
-    this.newTaskPriority = 1;
-    this.newTaskCategory = '';
-    this.newTaskTags = [];
-    this.newTaskTagInput = '';
-  }
 }

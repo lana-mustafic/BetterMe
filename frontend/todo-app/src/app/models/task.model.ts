@@ -1,36 +1,64 @@
-// task.model.ts
+
+  // Basic task fields
 export interface Task {
-  id: string;
+  id: number; // Change from number to string if needed
   title: string;
-  description: string;
+  description?: string;
   completed: boolean;
-  priority: 'low' | 'medium' | 'high';
+  completedAt?: string;
+  priority: number; // Ensure this is number, not string
+  createdAt: string; 
+  updatedAt?: string; 
   dueDate?: string;
-  dueTime?: string; // New: Specific time for reminders
-  reminders: string[]; // New: Array of reminder timestamps
-  category?: string;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  completedAt?: Date;}
+  category?: string; 
+  tags?: string[];
+  isRecurring: boolean;
+  recurrencePattern?: string; // Add this
+  recurrenceInterval?: number; // Add this
+  completedInstances?: string[]; // Add this as string array
+  nextDueDate?: string;
+  originalTaskId?: number; // CHANGED: from string to number
+
+  // REMOVED: Old nested recurrence structure
+  // recurrence?: { ... } // DELETE THIS
+}
 
 export interface CreateTaskRequest {
   title: string;
   description: string;
   dueDate?: string | null;
-  priority?: number;
-  category?: string;         // NEW: Add category
-  tags?: string[];          // NEW: Add tags
+  priority: number; // CHANGED: from optional to required, number instead of string
+  category?: string;
+  tags?: string[];
+  
+  // NEW: Recurrence fields for creation
+  isRecurring?: boolean;
+  recurrencePattern?: string;
+  recurrenceInterval?: number;
+  recurrenceEndDate?: string | null;
+
+  // REMOVED: Old nested recurrence
+  // recurrence?: { ... } // DELETE THIS
 }
 
 export interface UpdateTaskRequest {
   title?: string;
   description?: string;
   dueDate?: string | null;
-  priority?: number;
+  priority?: number; // CHANGED: number instead of string
   completed?: boolean;
-  category?: string;         // NEW: Add category
-  tags?: string[];          // NEW: Add tags
+  category?: string;
+  tags?: string[];
+  
+  // NEW: Recurrence fields for updates
+  isRecurring?: boolean;
+  recurrencePattern?: string;
+  recurrenceInterval?: number;
+  recurrenceEndDate?: string | null;
+  completedInstances?: string[];
+
+  // REMOVED: Old nested recurrence
+  // recurrence?: { ... } // DELETE THIS
 }
 
 export interface TaskResponse {
