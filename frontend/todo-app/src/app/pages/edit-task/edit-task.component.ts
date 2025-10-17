@@ -76,6 +76,66 @@ import { Task, UpdateTaskRequest } from '../../models/task.model';
                 </div>
               </div>
 
+              <!-- Recurrence Section -->
+              <div class="form-group">
+                <label class="form-label">Repeat Task</label>
+                <div class="recurrence-options">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="editData.isRecurring"
+                      name="isRecurring"
+                      (change)="onRecurrenceToggle()"
+                    >
+                    This is a repeating task
+                  </label>
+                  
+                  @if (editData.isRecurring) {
+                    <div class="recurrence-settings">
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label">Repeat every</label>
+                          <select 
+                            class="form-control"
+                            [(ngModel)]="editData.recurrenceInterval"
+                            name="recurrenceInterval"
+                          >
+                            <option [ngValue]="1">1</option>
+                            <option [ngValue]="2">2</option>
+                            <option [ngValue]="3">3</option>
+                            <option [ngValue]="4">4</option>
+                            <option [ngValue]="5">5</option>
+                            <option [ngValue]="6">6</option>
+                            <option [ngValue]="7">7</option>
+                          </select>
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Time period</label>
+                          <select 
+                            class="form-control"
+                            [(ngModel)]="editData.recurrencePattern"
+                            name="recurrencePattern"
+                          >
+                            <option value="daily">Day(s)</option>
+                            <option value="weekly">Week(s)</option>
+                            <option value="monthly">Month(s)</option>
+                            <option value="yearly">Year(s)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="recurrence-hint">
+                        @if (editData.recurrenceInterval === 1) {
+                          <span>Repeats every {{ editData.recurrencePattern?.slice(0, -2) }}</span>
+                        } @else {
+                          <span>Repeats every {{ editData.recurrenceInterval }} {{ editData.recurrencePattern?.slice(0, -2) }}s</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
               <div class="form-group">
                 <label class="checkbox-label">
                   <input 
@@ -252,6 +312,29 @@ import { Task, UpdateTaskRequest } from '../../models/task.model';
       border: 1px solid #fcc;
     }
 
+    /* Recurrence Styles */
+    .recurrence-options {
+      margin-top: 0.5rem;
+    }
+
+    .recurrence-settings {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e1e5e9;
+      margin-top: 1rem;
+    }
+
+    .recurrence-hint {
+      font-size: 0.9rem;
+      color: #667eea;
+      font-weight: 500;
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 4px;
+    }
+
     @media (max-width: 768px) {
       .edit-task-header {
         flex-direction: column;
@@ -288,7 +371,10 @@ export class EditTaskComponent implements OnInit {
     description: '',
     dueDate: null,
     priority: 1,
-    completed: false
+    completed: false,
+    isRecurring: false,
+    recurrencePattern: 'daily',
+    recurrenceInterval: 1
   };
 
   ngOnInit(): void {
@@ -310,7 +396,10 @@ export class EditTaskComponent implements OnInit {
           description: task.description || '',
           dueDate: task.dueDate ? task.dueDate.toString() : null,
           priority: task.priority,
-          completed: task.completed
+          completed: task.completed,
+          isRecurring: task.isRecurring || false,
+          recurrencePattern: task.recurrencePattern || 'daily',
+          recurrenceInterval: task.recurrenceInterval || 1
         };
         this.isLoading = false;
       },
@@ -322,12 +411,11 @@ export class EditTaskComponent implements OnInit {
     });
   }
 
-  private getPriorityNumber(priority: string): number {
-    switch (priority) {
-      case 'low': return 1;
-      case 'medium': return 2;
-      case 'high': return 3;
-      default: return 1;
+  onRecurrenceToggle(): void {
+    if (!this.editData.isRecurring) {
+      // Reset recurrence settings when turning off recurrence
+      this.editData.recurrencePattern = 'daily';
+      this.editData.recurrenceInterval = 1;
     }
   }
 
