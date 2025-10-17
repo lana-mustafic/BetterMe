@@ -591,4 +591,5 @@ export class ProfileComponent implements OnInit, OnDestroy {
   goToTasks(): void {
     this.router.navigate(['/tasks']);
   }
+  
 }

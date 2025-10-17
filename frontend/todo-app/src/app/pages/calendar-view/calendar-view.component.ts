@@ -3,14 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task } from '../../models/task.model';
-import { 
-  CdkDragDrop, 
-  moveItemInArray, 
-  transferArrayItem, 
-  CdkDrag, 
-  CdkDropList, 
-  CdkDropListGroup 
-} from '@angular/cdk/drag-drop';
+
+// Import each drag-drop component individually
+import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 interface CalendarDay {
   date: Date;
@@ -25,10 +20,11 @@ interface CalendarDay {
   imports: [
     CommonModule, 
     FormsModule,
-    // Import drag and drop directives
+    // Import drag and drop directives individually
     CdkDrag,
-    CdkDropList,
-    CdkDropListGroup
+    CdkDropList, 
+    CdkDropListGroup,
+    CdkDragPlaceholder
   ],
   template: `
     <div class="calendar-container">
@@ -155,19 +151,12 @@ interface CalendarDay {
         </div>
       }
 
-      <!-- Year View with Drag & Drop -->
+      <!-- Year View -->
       @if (viewMode === 'year') {
-        <div class="year-view" cdkDropListGroup>
+        <div class="year-view">
           <div class="year-grid">
             @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
-              <div 
-                class="year-month"
-                cdkDropList
-                [cdkDropListData]="{ monthData: monthData, monthIndex: i }"
-                (cdkDropListDropped)="onYearViewTaskDrop($event)"
-                [cdkDropListConnectedTo]="getYearDropLists()"
-                id="month-{{i}}"
-              >
+              <div class="year-month">
                 <div class="month-header">
                   <h4>{{ monthData.month }}</h4>
                   <span class="task-count">{{ monthData.tasks.length }} tasks</span>
@@ -177,8 +166,6 @@ interface CalendarDay {
                   @for (task of monthData.tasks.slice(0, 5); track task.id) {
                     <div 
                       class="year-task-item"
-                      cdkDrag
-                      [cdkDragData]="{ task: task, sourceMonth: i }"
                       [style.background]="getPriorityColor(task.priority)"
                     >
                       <div class="year-task-title">{{ task.title }}</div>
@@ -244,10 +231,12 @@ interface CalendarDay {
   `,
   styles: [`
     .calendar-container {
-      background: white;
+      background: var(--bg-primary);
       border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-normal);
     }
 
     .calendar-header {
@@ -264,8 +253,8 @@ interface CalendarDay {
     }
 
     .nav-btn {
-      background: #667eea;
-      color: white;
+      background: var(--accent-primary);
+      color: var(--text-light);
       border: none;
       width: 40px;
       height: 40px;
@@ -275,17 +264,18 @@ interface CalendarDay {
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
     }
 
     .nav-btn:hover {
-      background: #5a6fd8;
+      background: var(--accent-hover);
       transform: scale(1.1);
+      box-shadow: var(--shadow-accent);
     }
 
     .calendar-title {
       margin: 0;
-      color: #333;
+      color: var(--text-primary);
       font-size: 1.5rem;
       font-weight: 700;
       min-width: 200px;
@@ -295,9 +285,10 @@ interface CalendarDay {
     .view-options {
       display: flex;
       gap: 0.5rem;
-      background: #f8f9fa;
+      background: var(--bg-secondary);
       padding: 0.25rem;
       border-radius: 8px;
+      border: 1px solid var(--border-color);
     }
 
     .view-option {
@@ -307,18 +298,19 @@ interface CalendarDay {
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      color: #666;
-      transition: all 0.2s ease;
+      color: var(--text-muted);
+      transition: all var(--transition-normal);
     }
 
     .view-option.active {
-      background: white;
-      color: #667eea;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: var(--bg-primary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
     }
 
     .view-option:hover:not(.active) {
-      color: #333;
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
     }
 
     /* Month View Styles */
@@ -330,57 +322,63 @@ interface CalendarDay {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 1px;
-      background: #e1e5e9;
-      border: 1px solid #e1e5e9;
+      background: var(--border-color);
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       overflow: hidden;
     }
 
     .weekday-header {
-      background: #f8f9fa;
+      background: var(--bg-secondary);
       padding: 1rem;
       text-align: center;
       font-weight: 600;
-      color: #495057;
-      border-bottom: 2px solid #e1e5e9;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-color);
     }
 
     .calendar-day {
-      background: white;
+      background: var(--bg-primary);
       padding: 0.75rem;
       min-height: 120px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
       border: 1px solid transparent;
     }
 
     .calendar-day:hover {
-      background: #f8f9fa;
-      border-color: #667eea;
+      background: var(--bg-secondary);
+      border-color: var(--accent-primary);
     }
 
     .calendar-day.current-month {
-      background: white;
+      background: var(--bg-primary);
     }
 
     .calendar-day:not(.current-month) {
-      background: #f8f9fa;
-      color: #adb5bd;
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
     }
 
     .calendar-day.today {
-      background: #e7f1ff;
-      border-color: #667eea;
+      background: var(--accent-primary);
+      color: var(--text-light);
+      border-color: var(--accent-primary);
+    }
+
+    .calendar-day.today .day-number {
+      color: var(--text-light);
     }
 
     .calendar-day.has-tasks {
-      border-bottom: 3px solid #667eea;
+      border-bottom: 3px solid var(--accent-primary);
     }
 
     .day-number {
       font-weight: 600;
       margin-bottom: 0.5rem;
       font-size: 1.1rem;
+      color: var(--text-primary);
     }
 
     .task-indicators {
@@ -399,7 +397,7 @@ interface CalendarDay {
 
     .more-tasks {
       font-size: 0.7rem;
-      color: #666;
+      color: var(--text-muted);
       margin-left: 2px;
     }
 
@@ -411,15 +409,15 @@ interface CalendarDay {
     .week-header {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      background: #f8f9fa;
+      background: var(--bg-secondary);
       border-radius: 8px 8px 0 0;
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--border-color);
     }
 
     .week-day-header {
       padding: 1rem;
       text-align: center;
-      border-right: 1px solid #e1e5e9;
+      border-right: 1px solid var(--border-color);
     }
 
     .week-day-header:last-child {
@@ -428,29 +426,30 @@ interface CalendarDay {
 
     .week-day-name {
       font-weight: 600;
-      color: #495057;
+      color: var(--text-secondary);
       margin-bottom: 0.25rem;
     }
 
     .week-date {
       font-size: 1.2rem;
       font-weight: 700;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--border-color);
       border-top: none;
       border-radius: 0 0 8px 8px;
       min-height: 400px;
     }
 
     .week-day-column {
-      border-right: 1px solid #e1e5e9;
+      border-right: 1px solid var(--border-color);
       min-height: 400px;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
+      background: var(--bg-primary);
     }
 
     .week-day-column:last-child {
@@ -458,7 +457,7 @@ interface CalendarDay {
     }
 
     .week-day-column.cdk-drop-list-dragging {
-      background: rgba(102, 126, 234, 0.05);
+      background: var(--bg-tertiary);
     }
 
     .week-day-tasks {
@@ -467,68 +466,73 @@ interface CalendarDay {
     }
 
     .week-task-item {
-      background: white;
+      background: var(--bg-primary);
       padding: 0.75rem;
       margin-bottom: 0.5rem;
       border-radius: 6px;
-      border-left: 4px solid #667eea;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid var(--accent-primary);
+      box-shadow: var(--shadow-sm);
       cursor: grab;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
+      border: 1px solid var(--border-color);
     }
 
     .week-task-item:hover {
       transform: translateX(2px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      box-shadow: var(--shadow-md);
+      background: var(--bg-secondary);
     }
 
     .week-task-item:active {
       cursor: grabbing;
       transform: rotate(5deg);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      box-shadow: var(--shadow-lg);
     }
 
     .week-task-title {
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 0.25rem;
     }
 
     .week-task-time {
       font-size: 0.8rem;
-      color: #666;
+      color: var(--text-muted);
     }
 
     .task-drag-placeholder {
       opacity: 0.3;
-      background: #667eea;
+      background: var(--accent-primary);
       border-radius: 6px;
       min-height: 50px;
       margin-bottom: 0.5rem;
     }
 
     .drop-zone {
-      border: 2px dashed #ddd;
+      border: 2px dashed var(--border-color);
       border-radius: 6px;
       padding: 2rem;
       text-align: center;
-      color: #666;
+      color: var(--text-muted);
       margin: 0.5rem;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
+      background: var(--bg-secondary);
     }
 
     .week-day-column.cdk-drop-list-dragging .drop-zone {
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.1);
+      border-color: var(--accent-primary);
+      background: var(--bg-tertiary);
+      color: var(--accent-primary);
     }
 
     /* Drag & Drop Global Styles */
     .cdk-drag-preview {
       box-sizing: border-box;
       border-radius: 6px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      background: white;
+      box-shadow: var(--shadow-lg);
+      background: var(--bg-primary);
       padding: 0.75rem;
+      border: 1px solid var(--border-color);
     }
 
     .cdk-drag-animating {
@@ -551,24 +555,20 @@ interface CalendarDay {
     }
 
     .year-month {
-      background: white;
-      border: 1px solid #e1e5e9;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 1rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
       min-height: 150px;
     }
 
     .year-month:hover {
-      border-color: #667eea;
+      border-color: var(--accent-primary);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .year-month.cdk-drop-list-dragging {
-      background: rgba(102, 126, 234, 0.05);
-      border-color: #667eea;
+      box-shadow: var(--shadow-lg);
+      background: var(--bg-secondary);
     }
 
     .month-header {
@@ -577,18 +577,18 @@ interface CalendarDay {
       align-items: center;
       margin-bottom: 0.75rem;
       padding-bottom: 0.5rem;
-      border-bottom: 1px solid #e1e5e9;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .month-header h4 {
       margin: 0;
-      color: #333;
+      color: var(--text-primary);
       font-size: 1rem;
     }
 
     .task-count {
-      background: #667eea;
-      color: white;
+      background: var(--accent-primary);
+      color: var(--text-light);
       padding: 0.2rem 0.5rem;
       border-radius: 12px;
       font-size: 0.7rem;
@@ -604,18 +604,14 @@ interface CalendarDay {
     .year-task-item {
       padding: 0.5rem;
       border-radius: 4px;
-      color: white;
+      color: var(--text-light);
       font-size: 0.8rem;
-      cursor: grab;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
     }
 
     .year-task-item:hover {
       transform: translateX(2px);
-    }
-
-    .year-task-item:active {
-      cursor: grabbing;
+      opacity: 0.9;
     }
 
     .year-task-title {
@@ -627,7 +623,7 @@ interface CalendarDay {
 
     .more-tasks-year {
       text-align: center;
-      color: #666;
+      color: var(--text-muted);
       font-size: 0.8rem;
       font-style: italic;
       padding: 0.5rem;
@@ -635,17 +631,18 @@ interface CalendarDay {
 
     .empty-month {
       text-align: center;
-      color: #999;
+      color: var(--text-muted);
       font-style: italic;
       padding: 1rem;
     }
 
     /* Day Details Styles */
     .day-details {
-      background: #f8f9fa;
+      background: var(--bg-secondary);
       border-radius: 8px;
       padding: 1.5rem;
-      border: 1px solid #e1e5e9;
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-normal);
     }
 
     .day-details-header {
@@ -654,12 +651,12 @@ interface CalendarDay {
       align-items: center;
       margin-bottom: 1rem;
       padding-bottom: 1rem;
-      border-bottom: 1px solid #e1e5e9;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .day-details-header h3 {
       margin: 0;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .close-btn {
@@ -667,13 +664,15 @@ interface CalendarDay {
       border: none;
       font-size: 1.5rem;
       cursor: pointer;
-      color: #666;
+      color: var(--text-muted);
       padding: 0.25rem;
       border-radius: 4px;
+      transition: all var(--transition-normal);
     }
 
     .close-btn:hover {
-      background: #e9ecef;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
     }
 
     .day-tasks-list {
@@ -687,29 +686,32 @@ interface CalendarDay {
       align-items: center;
       gap: 1rem;
       padding: 1rem;
-      background: white;
+      background: var(--bg-primary);
       border-radius: 8px;
-      border: 1px solid #e1e5e9;
-      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      transition: all var(--transition-normal);
     }
 
     .day-task-item:hover {
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
+      background: var(--bg-secondary);
     }
 
     .day-task-item.completed {
       opacity: 0.7;
-      background: #f8f9fa;
+      background: var(--bg-tertiary);
     }
 
     .day-task-item.completed .task-title {
       text-decoration: line-through;
+      color: var(--text-muted);
     }
 
     .task-checkbox input {
       width: 18px;
       height: 18px;
       cursor: pointer;
+      accent-color: var(--accent-primary);
     }
 
     .task-content {
@@ -718,7 +720,7 @@ interface CalendarDay {
 
     .task-title {
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 0.25rem;
     }
 
@@ -729,10 +731,11 @@ interface CalendarDay {
     }
 
     .task-category {
-      background: #e9ecef;
-      color: #495057;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
       padding: 0.2rem 0.5rem;
       border-radius: 12px;
+      border: 1px solid var(--border-color);
     }
 
     .task-priority {
@@ -746,23 +749,25 @@ interface CalendarDay {
 
     .btn-small {
       padding: 0.4rem 0.8rem;
-      border: 1px solid #ddd;
-      background: white;
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.8rem;
-      transition: all 0.2s ease;
+      transition: all var(--transition-normal);
+      color: var(--text-primary);
     }
 
     .btn-small:hover {
-      background: #f8f9fa;
-      border-color: #667eea;
+      background: var(--bg-secondary);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
     }
 
     .no-tasks {
       text-align: center;
       padding: 2rem;
-      color: #666;
+      color: var(--text-muted);
       font-style: italic;
     }
 
@@ -800,7 +805,7 @@ interface CalendarDay {
       .week-day-header,
       .week-day-column {
         border-right: none;
-        border-bottom: 1px solid #e1e5e9;
+        border-bottom: 1px solid var(--border-color);
       }
 
       .week-day-header:last-child,
@@ -1059,22 +1064,6 @@ export class CalendarViewComponent implements OnInit {
         tasks: monthTasks
       };
     });
-  }
-
-  getYearDropLists(): string[] {
-    return this.months.map((_, index) => `month-${index}`);
-  }
-
-  onYearViewTaskDrop(event: CdkDragDrop<any>): void {
-    const draggedData = event.item.data;
-    const task = draggedData.task;
-    const targetMonthIndex = event.container.data.monthIndex;
-    
-    // Calculate new due date (middle of target month)
-    const currentYear = this.currentDate.getFullYear();
-    const newDueDate = new Date(currentYear, targetMonthIndex, 15);
-    
-    this.updateTaskDueDate(task.id, newDueDate);
   }
 
   // Common method to update task due date

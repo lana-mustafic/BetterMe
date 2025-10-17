@@ -149,6 +149,48 @@ import { Task } from '../../models/task.model';
       padding: 20px;
     }
 
+    .tasks-container {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.task-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.task-input {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.task-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: var(--accent-hover);
+}
+
     .header-actions {
       margin-bottom: 1rem;
     }
