@@ -80,6 +80,7 @@ interface CalendarDay {
                 [class.current-month]="day.isCurrentMonth"
                 [class.today]="day.isToday"
                 [class.has-tasks]="day.tasks.length > 0"
+                [class.has-completed-tasks]="hasCompletedTasks(day.tasks)"
                 (click)="selectDay(day)"
               >
                 <div class="day-number">{{ day.date.getDate() }}</div>
@@ -89,8 +90,9 @@ interface CalendarDay {
                     @for (task of getTopTasks(day.tasks, 3); track task.id) {
                       <div 
                         class="task-indicator"
-                        [style.background]="getPriorityColor(task.priority)"
-                        [title]="task.title"
+                        [class.completed]="task.completed"
+                        [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
+                        [title]="getTaskTooltip(task)"
                       ></div>
                     }
                     @if (day.tasks.length > 3) {
@@ -112,6 +114,10 @@ interface CalendarDay {
               <div class="week-day-header">
                 <div class="week-day-name">{{ getWeekdayName(day) }}</div>
                 <div class="week-date">{{ day.getDate() }}</div>
+                <div class="day-stats">
+                  <span class="completed-count">{{ getCompletedTasksForDate(day) }}✓</span>
+                  <span class="total-count">{{ getTasksForDate(day).length }}</span>
+                </div>
               </div>
             }
           </div>
@@ -130,13 +136,27 @@ interface CalendarDay {
                   @for (task of getTasksForDate(day); track task.id) {
                     <div 
                       class="week-task-item"
+                      [class.completed]="task.completed"
                       cdkDrag
                       [cdkDragData]="task"
-                      [style.border-left-color]="getPriorityColor(task.priority)"
+                      [style.border-left-color]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
+                      [style.opacity]="task.completed ? '0.7' : '1'"
                     >
-                      <div class="week-task-title">{{ task.title }}</div>
-                      <div class="week-task-time">
-                        {{ formatTime(task.dueDate) }}
+                      <div class="week-task-content">
+                        <div class="week-task-title">
+                          @if (task.completed) {
+                            <span class="completion-check">✓</span>
+                          }
+                          {{ task.title }}
+                        </div>
+                        <div class="week-task-meta">
+                          <span class="week-task-time">
+                            {{ formatTime(task.dueDate) }}
+                          </span>
+                          @if (task.completed) {
+                            <span class="completed-badge">Done</span>
+                          }
+                        </div>
                       </div>
                       <div *cdkDragPlaceholder class="task-drag-placeholder"></div>
                     </div>
@@ -159,16 +179,25 @@ interface CalendarDay {
               <div class="year-month">
                 <div class="month-header">
                   <h4>{{ monthData.month }}</h4>
-                  <span class="task-count">{{ monthData.tasks.length }} tasks</span>
+                  <div class="month-stats">
+                    <span class="completed-count">{{ getCompletedTasksForMonth(monthData.tasks) }}✓</span>
+                    <span class="task-count">{{ monthData.tasks.length }} tasks</span>
+                  </div>
                 </div>
                 
                 <div class="month-tasks">
                   @for (task of monthData.tasks.slice(0, 5); track task.id) {
                     <div 
                       class="year-task-item"
-                      [style.background]="getPriorityColor(task.priority)"
+                      [class.completed]="task.completed"
+                      [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
                     >
-                      <div class="year-task-title">{{ task.title }}</div>
+                      <div class="year-task-title">
+                        @if (task.completed) {
+                          <span class="completion-check">✓</span>
+                        }
+                        {{ task.title }}
+                      </div>
                     </div>
                   }
                   @if (monthData.tasks.length > 5) {
@@ -189,6 +218,11 @@ interface CalendarDay {
         <div class="day-details">
           <div class="day-details-header">
             <h3>Tasks for {{ formatDate(selectedDay.date) }}</h3>
+            <div class="day-summary">
+              <span class="completed-summary">
+                {{ getCompletedTasks(selectedDay.tasks) }} of {{ selectedDay.tasks.length }} completed
+              </span>
+            </div>
             <button class="close-btn" (click)="selectedDay = null">×</button>
           </div>
           
@@ -204,7 +238,12 @@ interface CalendarDay {
                 </div>
                 
                 <div class="task-content">
-                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-title">
+                    @if (task.completed) {
+                      <span class="completion-check">✓</span>
+                    }
+                    {{ task.title }}
+                  </div>
                   <div class="task-meta">
                     @if (task.category) {
                       <span class="task-category">{{ task.category }}</span>
@@ -212,6 +251,9 @@ interface CalendarDay {
                     <span class="task-priority" [style.color]="getPriorityColor(task.priority)">
                       {{ getPriorityText(task.priority) }}
                     </span>
+                    @if (task.completed) {
+                      <span class="completed-badge">Completed</span>
+                    }
                   </div>
                 </div>
                 
@@ -374,6 +416,10 @@ interface CalendarDay {
       border-bottom: 3px solid var(--accent-primary);
     }
 
+    .calendar-day.has-completed-tasks {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
+    }
+
     .day-number {
       font-weight: 600;
       margin-bottom: 0.5rem;
@@ -393,6 +439,29 @@ interface CalendarDay {
       height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .task-indicator.completed {
+      border: 1px solid white;
+      box-shadow: 0 0 2px rgba(40, 167, 69, 0.5);
+    }
+
+    .task-indicator:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      z-index: 1000;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-md);
     }
 
     .more-tasks {
@@ -436,6 +505,23 @@ interface CalendarDay {
       color: var(--text-primary);
     }
 
+    .day-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      justify-content: center;
+    }
+
+    .completed-count {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .total-count {
+      color: var(--text-muted);
+    }
+
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -477,6 +563,16 @@ interface CalendarDay {
       border: 1px solid var(--border-color);
     }
 
+    .week-task-item.completed {
+      opacity: 0.8;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
+    }
+
+    .week-task-item.completed .week-task-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
     .week-task-item:hover {
       transform: translateX(2px);
       box-shadow: var(--shadow-md);
@@ -489,15 +585,42 @@ interface CalendarDay {
       box-shadow: var(--shadow-lg);
     }
 
+    .week-task-content {
+      flex: 1;
+    }
+
     .week-task-title {
       font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .completion-check {
+      color: #28a745;
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    .week-task-meta {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      align-items: center;
     }
 
     .week-task-time {
-      font-size: 0.8rem;
       color: var(--text-muted);
+    }
+
+    .completed-badge {
+      background: #28a745;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
     }
 
     .task-drag-placeholder {
@@ -586,13 +709,10 @@ interface CalendarDay {
       font-size: 1rem;
     }
 
-    .task-count {
-      background: var(--accent-primary);
-      color: var(--text-light);
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 600;
+    .month-stats {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.8rem;
     }
 
     .month-tasks {
@@ -609,6 +729,14 @@ interface CalendarDay {
       transition: all var(--transition-normal);
     }
 
+    .year-task-item.completed {
+      opacity: 0.8;
+    }
+
+    .year-task-item.completed .year-task-title {
+      text-decoration: line-through;
+    }
+
     .year-task-item:hover {
       transform: translateX(2px);
       opacity: 0.9;
@@ -619,6 +747,8 @@ interface CalendarDay {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
     }
 
     .more-tasks-year {
@@ -659,6 +789,16 @@ interface CalendarDay {
       color: var(--text-primary);
     }
 
+    .day-summary {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .completed-summary {
+      color: #28a745;
+      font-weight: 600;
+    }
+
     .close-btn {
       background: none;
       border: none;
@@ -692,19 +832,18 @@ interface CalendarDay {
       transition: all var(--transition-normal);
     }
 
-    .day-task-item:hover {
-      box-shadow: var(--shadow-md);
-      background: var(--bg-secondary);
-    }
-
     .day-task-item.completed {
-      opacity: 0.7;
-      background: var(--bg-tertiary);
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
     }
 
     .day-task-item.completed .task-title {
       text-decoration: line-through;
       color: var(--text-muted);
+    }
+
+    .day-task-item:hover {
+      box-shadow: var(--shadow-md);
+      background: var(--bg-secondary);
     }
 
     .task-checkbox input {
@@ -722,12 +861,15 @@ interface CalendarDay {
       font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
     }
 
     .task-meta {
       display: flex;
       gap: 1rem;
       font-size: 0.8rem;
+      align-items: center;
     }
 
     .task-category {
@@ -815,6 +957,15 @@ interface CalendarDay {
 
       .year-grid {
         grid-template-columns: 1fr;
+      }
+
+      .day-stats, .month-stats {
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      
+      .week-day-header {
+        padding: 0.5rem;
       }
     }
   `]
@@ -960,8 +1111,36 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
+  // NEW METHODS FOR COMPLETED TASKS
+
+  hasCompletedTasks(tasks: Task[]): boolean {
+    return tasks.some(task => task.completed);
+  }
+
+  getCompletedTasks(tasks: Task[]): number {
+    return tasks.filter(task => task.completed).length;
+  }
+
+  getCompletedTasksForDate(date: Date): number {
+    return this.getTasksForDate(date).filter(task => task.completed).length;
+  }
+
+  getCompletedTasksForMonth(tasks: Task[]): number {
+    return tasks.filter(task => task.completed).length;
+  }
+
+  getTaskTooltip(task: Task): string {
+    const status = task.completed ? '✓ Completed' : '○ Pending';
+    const priority = this.getPriorityText(task.priority);
+    return `${task.title} - ${status} - ${priority} Priority`;
+  }
+
+  // Enhanced getTopTasks to show completed status
   getTopTasks(tasks: Task[], limit: number): Task[] {
-    return tasks.slice(0, limit);
+    // Show a mix of completed and pending tasks
+    const completed = tasks.filter(t => t.completed).slice(0, Math.ceil(limit / 2));
+    const pending = tasks.filter(t => !t.completed).slice(0, limit - completed.length);
+    return [...completed, ...pending].slice(0, limit);
   }
 
   getPriorityColor(priority: number): string {
