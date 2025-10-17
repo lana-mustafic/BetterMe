@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
     <nav class="navbar">
       <div class="nav-container">
         <div class="nav-brand">
-          <h1>✅ TodoApp</h1>
+          <h1>✅ BetterMe</h1>
         </div>
         
         <div class="nav-links">

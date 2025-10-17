@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
     <div class="container">
       <div class="hero-section">
         <div class="hero-content">
-          <h1 class="hero-title">Welcome to TodoApp</h1>
+          <h1 class="hero-title">Welcome to BetterMe</h1>
           <p class="hero-subtitle">The simplest way to organize your life and work</p>
           
           <div class="hero-features">
@@ -32,7 +32,7 @@ import { RouterLink } from '@angular/router';
           
           <div class="hero-actions">
             <a routerLink="/register" class="btn btn-primary btn-large">Get Started</a>
-            <a routerLink="/login" class="btn" style="background: transparent; border: 2px solid white; color: white; margin-left: 1rem;">Login</a>
+            <a routerLink="/login" class="btn btn-large">Login</a>
           </div>
         </div>
       </div>
@@ -62,11 +62,11 @@ import { RouterLink } from '@angular/router';
     }
 
     .hero-features {
-      display: flex; /* Changed from grid to flex */
-      justify-content: center; /* Center the boxes */
+      display: flex;
+      justify-content: center;
       gap: 2rem;
       margin: 3rem 0;
-      flex-wrap: wrap; /* Allow wrapping on small screens */
+      flex-wrap: wrap;
     }
 
     .feature {
@@ -75,9 +75,9 @@ import { RouterLink } from '@angular/router';
       padding: 2rem;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      flex: 1; /* Make boxes equal width */
-      min-width: 250px; /* Minimum width for each box */
-      max-width: 300px; /* Maximum width for each box */
+      flex: 1;
+      min-width: 250px;
+      max-width: 300px;
     }
 
     .feature-icon {
@@ -98,11 +98,51 @@ import { RouterLink } from '@angular/router';
 
     .hero-actions {
       margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      font-size: 1.1rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
     }
 
     .btn-large {
-      padding: 15px 30px;
-      font-size: 1.1rem;
+      min-width: 140px;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:not(.btn-primary) {
+      background: transparent;
+      border: 2px solid white;
+      color: white;
+    }
+
+    .btn:not(.btn-primary):hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
 
     @media (max-width: 768px) {
@@ -111,13 +151,22 @@ import { RouterLink } from '@angular/router';
       }
       
       .hero-features {
-        flex-direction: column; /* Stack vertically on mobile */
+        flex-direction: column;
         align-items: center;
       }
       
       .feature {
-        min-width: 100%; /* Full width on mobile */
+        min-width: 100%;
         max-width: 100%;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .btn {
+        width: 200px;
       }
     }
   `]
