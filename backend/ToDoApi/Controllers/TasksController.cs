@@ -14,7 +14,7 @@ namespace ToDoApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // protect all endpoints here by default
+    [Authorize]
     public class TasksController : ControllerBase
     {
         private readonly ITodoTaskService _taskService;
@@ -26,7 +26,6 @@ namespace ToDoApi.Controllers
             _mapper = mapper;
         }
 
-        // ADD THIS DEBUG ENDPOINT
         [HttpGet("debug")]
         public IActionResult Debug()
         {
@@ -42,7 +41,6 @@ namespace ToDoApi.Controllers
             });
         }
 
-        // POST: api/tasks
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTaskRequest req)
         {
@@ -65,7 +63,6 @@ namespace ToDoApi.Controllers
         [HttpGet("test-simple")]
         public IActionResult TestSimple()
         {
-            // Simple test - just return the first claim we can find
             var claims = User.Claims.ToList();
             if (claims.Any())
             {
@@ -78,11 +75,9 @@ namespace ToDoApi.Controllers
             return Unauthorized(new { Message = "No claims found" });
         }
 
-        // GET: api/tasks
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            // FIXED: Use ClaimTypes.NameIdentifier instead of JwtRegisteredClaimNames.Sub
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                       User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             Console.WriteLine($"[DEBUG TASKS GETALL] Sub claim value: {sub}");
@@ -98,52 +93,47 @@ namespace ToDoApi.Controllers
             return Ok(dtos);
         }
 
-        // GET: api/tasks/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            // FIXED: Use ClaimTypes.NameIdentifier instead of JwtRegisteredClaimNames.Sub
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                       User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             if (!int.TryParse(sub, out var userId)) return Unauthorized();
 
-            var task = await _taskService.GetByIdAsync(id); // implement this on service if needed
+            var task = await _taskService.GetByIdAsync(id);
             if (task == null) return NotFound();
             if (task.UserId != userId) return Forbid();
 
             return Ok(_mapper.Map<TaskResponse>(task));
         }
 
-        // PATCH: api/tasks/{id}
-        [HttpPatch("{id:int}")]
+        // FIXED: Changed from HttpPatch to HttpPut
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskRequest req)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // FIXED: Use ClaimTypes.NameIdentifier instead of JwtRegisteredClaimNames.Sub
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                       User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             if (!int.TryParse(sub, out var userId)) return Unauthorized();
 
-            var updated = await _taskService.UpdateTaskAsync(id, req, userId); // implement in service
-            if (updated == null) return NotFound(); // or Forbid if ownership fails
+            var updated = await _taskService.UpdateTaskAsync(id, req, userId);
+            if (updated == null) return NotFound();
             return Ok(_mapper.Map<TaskResponse>(updated));
         }
 
-        // DELETE: api/tasks/{id}
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            // FIXED: Use ClaimTypes.NameIdentifier instead of JwtRegisteredClaimNames.Sub
             var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
                       User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             if (!int.TryParse(sub, out var userId)) return Unauthorized();
 
-            var removed = await _taskService.DeleteTaskAsync(id, userId); // implement in service
+            var removed = await _taskService.DeleteTaskAsync(id, userId);
             if (!removed) return NotFound();
             return NoContent();
         }
-        // POST: api/tasks/{id}/complete-instance
+
         [HttpPost("{id:int}/complete-instance")]
         public async Task<IActionResult> CompleteRecurringInstance(int id, [FromBody] CompleteInstanceRequest request)
         {
@@ -159,7 +149,6 @@ namespace ToDoApi.Controllers
             return Ok(_mapper.Map<TaskResponse>(updatedTask));
         }
 
-        // GET: api/tasks/{id}/streak
         [HttpGet("{id:int}/streak")]
         public async Task<IActionResult> GetHabitStreak(int id)
         {
@@ -174,7 +163,6 @@ namespace ToDoApi.Controllers
             return Ok(new { streak });
         }
 
-        // GET: api/tasks/habits
         [HttpGet("habits")]
         public async Task<IActionResult> GetHabits()
         {
@@ -188,7 +176,6 @@ namespace ToDoApi.Controllers
             return Ok(_mapper.Map<List<TaskResponse>>(habits));
         }
 
-        // DTO for complete instance request
         public class CompleteInstanceRequest
         {
             public DateTime? CompletionDate { get; set; }
