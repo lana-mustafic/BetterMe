@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TaskService } from '../../services/task.service';
 import { Task } from '../../models/task.model';
+import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
 
 interface TagWithCount {
   name: string;
@@ -36,7 +37,7 @@ interface Category {
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, CalendarViewComponent],
   template: `
     <div class="container">
       <div class="tasks-container">
@@ -71,8 +72,21 @@ interface Category {
               <span class="toggle-icon">📊</span>
               <span class="toggle-text">Analytics</span>
             </button>
+            <button 
+              class="toggle-btn" 
+              [class.active]="activeView === 'calendar'"
+              (click)="activeView = 'calendar'"
+            >
+              <span class="toggle-icon">📅</span>
+              <span class="toggle-text">Calendar</span>
+            </button>
           </div>
         </div>
+
+        <!-- Calendar View -->
+        @if (activeView === 'calendar') {
+          <app-calendar-view></app-calendar-view>
+        }
 
         <!-- Beautiful Statistics Dashboard -->
         @if (activeView === 'stats') {
@@ -254,58 +268,7 @@ interface Category {
                     }
                   </div>
                 </div>
-<!-- Add this after the priority section in your create task form -->
-<div class="form-group">
-  <label class="form-label">Recurrence</label>
-  <div class="recurrence-options">
-    <label class="checkbox-label">
-      <input 
-        type="checkbox" 
-        [(ngModel)]="newTaskIsRecurring" 
-        name="isRecurring"
-        (change)="onRecurrenceToggle()"
-      >
-      Repeating Task
-    </label>
-    
-    @if (newTaskIsRecurring) {
-      <div class="recurrence-settings">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Pattern</label>
-            <select 
-              class="form-control"
-              [(ngModel)]="newTaskRecurrencePattern"
-              name="recurrencePattern"
-            >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Interval</label>
-            <select 
-              class="form-control"
-              [(ngModel)]="newTaskRecurrenceInterval"
-              name="recurrenceInterval"
-            >
-              <option value="1">Every</option>
-              <option value="2">Every 2nd</option>
-              <option value="3">Every 3rd</option>
-              <option value="4">Every 4th</option>
-              <option value="5">Every 5th</option>
-              <option value="6">Every 6th</option>
-              <option value="7">Every 7th</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    }
-  </div>
-</div>
+
                 <!-- Popular Tags -->
                 <div class="chart-widget">
                   <div class="chart-header">
@@ -333,62 +296,61 @@ interface Category {
             <!-- Bottom Section -->
             <div class="bottom-section">
               <!-- Recent Activity -->
-           <!-- Recent Activity -->
-<div class="chart-widget full-width">
-  <div class="chart-header">
-    <h3>Recent Activity</h3>
-    <div class="chart-actions">
-      <button class="chart-action-btn" (click)="activeView = 'list'">View All Tasks</button>
-    </div>
-  </div>
-  <div class="activity-widget">
-    <div class="activity-list">
-      @for (task of recentTasks; track task.id) {
-        <div class="activity-item">
-          <div class="activity-icon" [class.completed]="task.completed">
-            @if (task.completed) {
-              <div class="icon-completed">✓</div>
-            } @else {
-              <div class="icon-created">+</div>
-            }
-          </div>
-          <div class="activity-content">
-            <div class="activity-title">{{ task.title }}</div>
-            <div class="activity-details">
-              <span class="activity-type">
-                @if (task.completed) {
-                  Completed
-                } @else {
-                  Created
-                }
-              </span>
-              <!-- FIXED LINE: Use only createdAt -->
-              <span class="activity-time">{{ formatRelativeDate(task.createdAt) }}</span>
-              @if (task.category) {
-                <span 
-                  class="activity-category"
-                  [style.background]="getCategoryColor(task.category) + '20'"
-                  [style.color]="getCategoryColor(task.category)"
-                  [style.border]="'1px solid ' + getCategoryColor(task.category)"
-                >
-                  {{ getCategoryIcon(task.category) }} {{ task.category }}
-                </span>
-              }
-              @if (task.priority === 3) {
-                <span class="activity-priority high">High</span>
-              }
-            </div>
-          </div>
-          <div class="activity-actions">
-            <button class="btn-icon" (click)="onToggleComplete(task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
-              {{ task.completed ? '↶' : '✓' }}
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
-</div>
+              <div class="chart-widget full-width">
+                <div class="chart-header">
+                  <h3>Recent Activity</h3>
+                  <div class="chart-actions">
+                    <button class="chart-action-btn" (click)="activeView = 'list'">View All Tasks</button>
+                  </div>
+                </div>
+                <div class="activity-widget">
+                  <div class="activity-list">
+                    @for (task of recentTasks; track task.id) {
+                      <div class="activity-item">
+                        <div class="activity-icon" [class.completed]="task.completed">
+                          @if (task.completed) {
+                            <div class="icon-completed">✓</div>
+                          } @else {
+                            <div class="icon-created">+</div>
+                          }
+                        </div>
+                        <div class="activity-content">
+                          <div class="activity-title">{{ task.title }}</div>
+                          <div class="activity-details">
+                            <span class="activity-type">
+                              @if (task.completed) {
+                                Completed
+                              } @else {
+                                Created
+                              }
+                            </span>
+                            <span class="activity-time">{{ formatRelativeDate(task.createdAt) }}</span>
+                            @if (task.category) {
+                              <span 
+                                class="activity-category"
+                                [style.background]="getCategoryColor(task.category) + '20'"
+                                [style.color]="getCategoryColor(task.category)"
+                                [style.border]="'1px solid ' + getCategoryColor(task.category)"
+                              >
+                                {{ getCategoryIcon(task.category) }} {{ task.category }}
+                              </span>
+                            }
+                            @if (task.priority === 3) {
+                              <span class="activity-priority high">High</span>
+                            }
+                          </div>
+                        </div>
+                        <div class="activity-actions">
+                          <button class="btn-icon" (click)="onToggleComplete(task.id)" [title]="task.completed ? 'Mark as pending' : 'Mark as completed'">
+                            {{ task.completed ? '↶' : '✓' }}
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+              
               <!-- Quick Insights -->
               <div class="chart-widget">
                 <div class="chart-header">
@@ -896,63 +858,63 @@ interface Category {
                 </select>
               </div>
               <!-- Recurrence Section -->
-<div class="form-group">
-  <label class="form-label">Repeat Task</label>
-  <div class="recurrence-options">
-    <label class="checkbox-label">
-      <input 
-        type="checkbox" 
-        [(ngModel)]="newTaskIsRecurring" 
-        name="isRecurring"
-      >
-      This is a repeating task
-    </label>
-    
-    @if (newTaskIsRecurring) {
-      <div class="recurrence-settings">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Repeat every</label>
-            <select 
-              class="form-control"
-              [(ngModel)]="newTaskRecurrenceInterval"
-              name="recurrenceInterval"
-            >
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Time period</label>
-            <select 
-              class="form-control"
-              [(ngModel)]="newTaskRecurrencePattern"
-              name="recurrencePattern"
-            >
-              <option value="daily">Day(s)</option>
-              <option value="weekly">Week(s)</option>
-              <option value="monthly">Month(s)</option>
-              <option value="yearly">Year(s)</option>
-            </select>
-          </div>
-        </div>
-        <div class="recurrence-hint">
-          @if (newTaskRecurrenceInterval === 1) {
-            <span>Repeats every {{ newTaskRecurrencePattern.slice(0, -2) }}</span>
-          } @else {
-            <span>Repeats every {{ newTaskRecurrenceInterval }} {{ newTaskRecurrencePattern.slice(0, -2) }}s</span>
-          }
-        </div>
-      </div>
-    }
-  </div>
-</div>
+              <div class="form-group">
+                <label class="form-label">Repeat Task</label>
+                <div class="recurrence-options">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="newTaskIsRecurring" 
+                      name="isRecurring"
+                    >
+                    This is a repeating task
+                  </label>
+                  
+                  @if (newTaskIsRecurring) {
+                    <div class="recurrence-settings">
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label">Repeat every</label>
+                          <select 
+                            class="form-control"
+                            [(ngModel)]="newTaskRecurrenceInterval"
+                            name="recurrenceInterval"
+                          >
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                          </select>
+                        </div>
+                        
+                        <div class="form-group">
+                          <label class="form-label">Time period</label>
+                          <select 
+                            class="form-control"
+                            [(ngModel)]="newTaskRecurrencePattern"
+                            name="recurrencePattern"
+                          >
+                            <option value="daily">Day(s)</option>
+                            <option value="weekly">Week(s)</option>
+                            <option value="monthly">Month(s)</option>
+                            <option value="yearly">Year(s)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="recurrence-hint">
+                        @if (newTaskRecurrenceInterval === 1) {
+                          <span>Repeats every {{ newTaskRecurrencePattern.slice(0, -2) }}</span>
+                        } @else {
+                          <span>Repeats every {{ newTaskRecurrenceInterval }} {{ newTaskRecurrencePattern.slice(0, -2) }}s</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Create Task</button>
                 <button type="button" class="btn btn-secondary" (click)="showCreateForm = false">
@@ -2708,7 +2670,7 @@ export class TasksComponent implements OnInit {
   errorMessage: string = '';
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
-  activeView: 'list' | 'stats' = 'list';
+  activeView: 'list' | 'stats' | 'calendar' = 'list';
   activeTab: 'tags' | 'categories' = 'tags';
 
   // Form fields
@@ -2722,9 +2684,8 @@ export class TasksComponent implements OnInit {
   newTagName: string = '';
   newCategoryName: string = '';
   newTaskIsRecurring: boolean = false;
-newTaskRecurrencePattern: string = 'daily';
-newTaskRecurrenceInterval: number = 1;
-
+  newTaskRecurrencePattern: string = 'daily';
+  newTaskRecurrenceInterval: number = 1;
 
   // Filter fields
   searchTerm: string = '';
@@ -3205,12 +3166,12 @@ newTaskRecurrenceInterval: number = 1;
   }
 
   onRecurrenceToggle(): void {
-  if (!this.newTaskIsRecurring) {
-    // Reset recurrence settings when turning off recurrence
-    this.newTaskRecurrencePattern = 'daily';
-    this.newTaskRecurrenceInterval = 1;
+    if (!this.newTaskIsRecurring) {
+      // Reset recurrence settings when turning off recurrence
+      this.newTaskRecurrencePattern = 'daily';
+      this.newTaskRecurrenceInterval = 1;
+    }
   }
-}
 
   // EXISTING methods from filtering
   onTagSearchChange(): void {}
@@ -3318,34 +3279,34 @@ newTaskRecurrenceInterval: number = 1;
   }
   
   onCreateTask(): void {
-  if (!this.newTaskTitle.trim()) {
-    this.errorMessage = 'Task title is required';
-    return;
-  }
-  
-  this.taskService.createTask({
-    title: this.newTaskTitle,
-    description: this.newTaskDescription,
-    dueDate: this.newTaskDueDate || null,
-    priority: this.newTaskPriority,
-    category: this.newTaskCategory || 'Other',
-    tags: this.newTaskTags,
-    isRecurring: this.newTaskIsRecurring,
-    recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
-    recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
-  }).subscribe({
-    next: (newTask: Task) => {
-      this.tasks.unshift(newTask);
-      this.resetForm();
-      this.showCreateForm = false;
-      this.errorMessage = '';
-    },
-    error: (error: any) => {
-      this.errorMessage = 'Failed to create task. Please try again.';
-      console.error('Error creating task:', error);
+    if (!this.newTaskTitle.trim()) {
+      this.errorMessage = 'Task title is required';
+      return;
     }
-  });
-}
+    
+    this.taskService.createTask({
+      title: this.newTaskTitle,
+      description: this.newTaskDescription,
+      dueDate: this.newTaskDueDate || null,
+      priority: this.newTaskPriority,
+      category: this.newTaskCategory || 'Other',
+      tags: this.newTaskTags,
+      isRecurring: this.newTaskIsRecurring,
+      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
+      recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
+    }).subscribe({
+      next: (newTask: Task) => {
+        this.tasks.unshift(newTask);
+        this.resetForm();
+        this.showCreateForm = false;
+        this.errorMessage = '';
+      },
+      error: (error: any) => {
+        this.errorMessage = 'Failed to create task. Please try again.';
+        console.error('Error creating task:', error);
+      }
+    });
+  }
   
   // UPDATED: Fixed task ID handling (numbers instead of strings)
   onToggleComplete(taskId: number): void {
@@ -3386,16 +3347,16 @@ newTaskRecurrenceInterval: number = 1;
     });
   }
 
-private resetForm(): void {
-  this.newTaskTitle = '';
-  this.newTaskDescription = '';
-  this.newTaskDueDate = '';
-  this.newTaskPriority = 1;
-  this.newTaskCategory = '';
-  this.newTaskTags = [];
-  this.newTaskTagInput = '';
-  this.newTaskIsRecurring = false;
-  this.newTaskRecurrencePattern = 'daily';
-  this.newTaskRecurrenceInterval = 1;
-}
+  private resetForm(): void {
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskDueDate = '';
+    this.newTaskPriority = 1;
+    this.newTaskCategory = '';
+    this.newTaskTags = [];
+    this.newTaskTagInput = '';
+    this.newTaskIsRecurring = false;
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+  }
 }
