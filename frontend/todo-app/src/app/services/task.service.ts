@@ -70,16 +70,15 @@ export class TaskService {
       })
     );
   }
-
-  updateTask(id: number, taskData: UpdateTaskRequest): Observable<Task> {
-    return this.http.patch<Task>(`${this.apiUrl}/tasks/${id}`, taskData, {
-      headers: {
-        'Authorization': `Bearer ${this.authService.getToken()}`
-      }
-    }).pipe(
-      catchError((error: HttpErrorResponse) => this.handleError('updateTask', error))
-    );
-  }
+updateTask(id: number, taskData: UpdateTaskRequest): Observable<Task> {
+  return this.http.put<Task>(`${this.apiUrl}/tasks/${id}`, taskData, { // ✅ PUT
+    headers: {
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    }
+  }).pipe(
+    catchError((error: HttpErrorResponse) => this.handleError('updateTask', error))
+  );
+}
 
   deleteTask(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/tasks/${id}`, {
