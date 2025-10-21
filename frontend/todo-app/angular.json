@@ -54,10 +54,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "todo-app:build:production"
+              "buildTarget": "betterme:build:production"  
             },
             "development": {
-              "buildTarget": "todo-app:build:development"
+              "buildTarget": "betterme:build:development"  
             }
           },
           "defaultConfiguration": "development"
