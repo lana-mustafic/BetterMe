@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task, CreateTaskRequest } from '../../models/task.model';
-
-// Import each drag-drop component individually
 import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 interface CalendarDay {
@@ -14,13 +12,19 @@ interface CalendarDay {
   tasks: Task[];
 }
 
+interface Category {
+  name: string;
+  color: string;
+  icon: string;
+  custom?: boolean;
+}
+
 @Component({
   selector: 'app-calendar-view',
   standalone: true,
   imports: [
     CommonModule, 
     FormsModule,
-    // Import drag and drop directives individually
     CdkDrag,
     CdkDropList, 
     CdkDropListGroup,
@@ -100,7 +104,6 @@ interface CalendarDay {
                     }
                   </div>
                 } @else {
-                  <!-- ADD: Plus icon for empty days -->
                   <div class="add-task-hint" *ngIf="day.isCurrentMonth">
                     <span class="plus-icon">+</span>
                   </div>
@@ -126,7 +129,6 @@ interface CalendarDay {
                   <span class="completed-count">{{ getCompletedTasksForDate(day) }}✓</span>
                   <span class="total-count">{{ getTasksForDate(day).length }}</span>
                 </div>
-                <!-- ADD: Plus icon for week day headers -->
                 <div class="add-task-hint-week" *ngIf="isCurrentMonthWeek(day)">
                   <span class="plus-icon">+</span>
                 </div>
@@ -207,7 +209,6 @@ interface CalendarDay {
                     <span class="completed-count">{{ getCompletedTasksForMonth(monthData.tasks) }}✓</span>
                     <span class="task-count">{{ monthData.tasks.length }} tasks</span>
                   </div>
-                  <!-- ADD: Plus icon for year month headers -->
                   <div class="add-task-hint-year">
                     <span class="plus-icon">+</span>
                   </div>
@@ -301,45 +302,174 @@ interface CalendarDay {
         </div>
       }
 
-      <!-- Create Task Modal -->
+      <!-- Enhanced Create Task Modal -->
       @if (showCreateTaskModal && selectedDateForNewTask) {
         <div class="modal-overlay" (click)="closeCreateTaskModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-content create-task-modal" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h3>Add New Task</h3>
+              <h3>Create New Task</h3>
+              <div class="selected-date">
+                <strong>Date:</strong> {{ formatDateForModal(selectedDateForNewTask) }}
+              </div>
               <button class="close-btn" (click)="closeCreateTaskModal()">×</button>
             </div>
             
             <div class="modal-body">
-              <div class="selected-date">
-                <strong>Date:</strong> {{ formatDateForModal(selectedDateForNewTask) }}
-              </div>
-              
-              <div class="form-group">
-                <label class="form-label">Task Title</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="What needs to be done?"
-                  [(ngModel)]="newTaskTitle"
-                  (keydown.enter)="createTaskFromModal()"
-                  #titleInput
-                  autofocus
-                />
-              </div>
-              
-              <div class="modal-actions">
-                <button 
-                  class="btn btn-primary" 
-                  (click)="createTaskFromModal()"
-                  [disabled]="!newTaskTitle.trim()"
-                >
-                  Add Task
-                </button>
-                <button class="btn btn-secondary" (click)="closeCreateTaskModal()">
-                  Cancel
-                </button>
-              </div>
+              <form (ngSubmit)="createTaskFromModal()">
+                <div class="form-group">
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    placeholder="Task title"
+                    [(ngModel)]="newTaskTitle"
+                    name="title"
+                    required
+                    #titleInput
+                    autofocus
+                  />
+                </div>
+                <div class="form-group">
+                  <textarea 
+                    class="form-control"
+                    placeholder="Task description"
+                    [(ngModel)]="newTaskDescription"
+                    name="description"
+                    rows="3"
+                  ></textarea>
+                </div>
+                
+                <!-- Enhanced Category Dropdown -->
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskCategory"
+                    name="category"
+                  >
+                    <option value="">Select Category</option>
+                    @for (category of categories; track category.name) {
+                      <option [value]="category.name">
+                        {{ category.icon }} {{ category.name }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Tag Input -->
+                <div class="form-group">
+                  <label class="form-label">Tags</label>
+                  <div class="tag-input-container">
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Add tags (comma separated)"
+                      [(ngModel)]="newTaskTagInput"
+                      name="tagInput"
+                      (keydown)="onTagInputKeydown($event)"
+                    />
+                    <div class="tag-hint">Press Enter or comma to add tags</div>
+                  </div>
+                  <div class="tag-preview">
+                    @for (tag of newTaskTags; track tag) {
+                      <span class="tag-badge">
+                        {{ tag }}
+                        <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Due Date</label>
+                  <input 
+                    type="date" 
+                    class="form-control"
+                    [value]="getFormattedDueDate()"
+                    (change)="onDueDateChange($event)"
+                    name="dueDate"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskPriority"
+                    name="priority"
+                  >
+                    <option value="1">Low</option>
+                    <option value="2">Medium</option>
+                    <option value="3">High</option>
+                  </select>
+                </div>
+                
+                <!-- Recurrence Section -->
+                <div class="form-group">
+                  <label class="form-label">Repeat Task</label>
+                  <div class="recurrence-options">
+                    <label class="checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        [(ngModel)]="newTaskIsRecurring" 
+                        name="isRecurring"
+                      >
+                      This is a repeating task
+                    </label>
+                    
+                    @if (newTaskIsRecurring) {
+                      <div class="recurrence-settings">
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label">Repeat every</label>
+                            <select 
+                              class="form-control"
+                              [(ngModel)]="newTaskRecurrenceInterval"
+                              name="recurrenceInterval"
+                            >
+                              <option value="1">1</option>
+                              <option value="2">2</option>
+                              <option value="3">3</option>
+                              <option value="4">4</option>
+                              <option value="5">5</option>
+                              <option value="6">6</option>
+                              <option value="7">7</option>
+                            </select>
+                          </div>
+                          
+                          <div class="form-group">
+                            <label class="form-label">Time period</label>
+                            <select 
+                              class="form-control"
+                              [(ngModel)]="newTaskRecurrencePattern"
+                              name="recurrencePattern"
+                            >
+                              <option value="daily">Day(s)</option>
+                              <option value="weekly">Week(s)</option>
+                              <option value="monthly">Month(s)</option>
+                              <option value="yearly">Year(s)</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="recurrence-hint">
+                          @if (newTaskRecurrenceInterval === 1) {
+                            <span>Repeats every {{ newTaskRecurrencePattern.slice(0, -2) }}</span>
+                          } @else {
+                            <span>Repeats every {{ newTaskRecurrenceInterval }} {{ newTaskRecurrencePattern.slice(0, -2) }}s</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" [disabled]="!newTaskTitle.trim()">
+                    Create Task
+                  </button>
+                  <button type="button" class="btn btn-secondary" (click)="closeCreateTaskModal()">
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1258,58 +1388,39 @@ interface CalendarDay {
       font-style: italic;
     }
 
-    /* Create Task Modal Styles */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
+    /* Enhanced Create Task Modal Styles */
+    .create-task-modal {
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
-    .modal-content {
-      background: var(--bg-primary);
-      border-radius: 12px;
-      padding: 0;
-      max-width: 500px;
-      width: 100%;
-      max-height: 80vh;
-      overflow: hidden;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-color);
-    }
-
-    .modal-header {
+    .create-task-modal .modal-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       padding: 1.5rem;
       border-bottom: 1px solid var(--border-color);
     }
 
-    .modal-header h3 {
+    .create-task-modal .modal-header h3 {
       margin: 0;
       color: var(--text-primary);
-    }
-
-    .modal-body {
-      padding: 1.5rem;
+      flex: 1;
     }
 
     .selected-date {
       background: var(--bg-secondary);
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      text-align: center;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      margin: 0 1rem;
+      font-size: 0.9rem;
       color: var(--text-primary);
       border: 1px solid var(--border-color);
+    }
+
+    .create-task-modal .modal-body {
+      padding: 1.5rem;
     }
 
     .form-group {
@@ -1340,10 +1451,108 @@ interface CalendarDay {
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .modal-actions {
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .tag-input-container {
+      position: relative;
+    }
+
+    .tag-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .tag-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag-badge {
+      background: var(--accent-primary);
+      color: var(--text-light);
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .tag-remove:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .recurrence-options {
+      margin-top: 0.5rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-primary);
+    }
+
+    .recurrence-settings {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .recurrence-hint {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .form-actions {
       display: flex;
       gap: 1rem;
       margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
     }
 
     .btn {
@@ -1467,6 +1676,30 @@ interface CalendarDay {
       .month-day-number {
         font-size: 0.8rem;
       }
+
+      .create-task-modal {
+        margin: 1rem;
+        max-height: 95vh;
+      }
+
+      .create-task-modal .modal-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .selected-date {
+        margin: 0;
+        text-align: center;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
     }
   `]
 })
@@ -1478,12 +1711,35 @@ export class CalendarViewComponent implements OnInit {
   viewMode: 'month' | 'week' | 'year' = 'month';
   selectedDay: CalendarDay | null = null;
   
-  // ADD: Properties for new task creation
+  // Enhanced task creation properties
   showCreateTaskModal = false;
   selectedDateForNewTask: Date | null = null;
-  newTaskTitle = '';
   
-  // ADD: Properties for year view month selection
+  // Task form fields (same as in TasksComponent)
+  newTaskTitle = '';
+  newTaskDescription = '';
+  newTaskDueDate: string = '';
+  newTaskPriority: number = 2;
+  newTaskCategory: string = '';
+  newTaskTagInput: string = '';
+  newTaskTags: string[] = [];
+  newTaskIsRecurring: boolean = false;
+  newTaskRecurrencePattern: string = 'daily';
+  newTaskRecurrenceInterval: number = 1;
+
+  // Categories (same as in TasksComponent)
+  categories: Category[] = [
+    { name: 'Personal', color: '#667eea', icon: '🏠' },
+    { name: 'Work', color: '#764ba2', icon: '💼' },
+    { name: 'Shopping', color: '#f093fb', icon: '🛒' },
+    { name: 'Health', color: '#4facfe', icon: '🏥' },
+    { name: 'Education', color: '#43e97b', icon: '🎓' },
+    { name: 'Finance', color: '#fa709a', icon: '💰' },
+    { name: 'Travel', color: '#30cfd0', icon: '✈️' },
+    { name: 'Other', color: '#a8edea', icon: '📦' }
+  ];
+  
+  // Month selection properties
   showMonthSelectionModal = false;
   selectedYearMonth: { month: string, year: number, monthIndex: number } | null = null;
   monthSelectionDays: CalendarDay[] = [];
@@ -1526,7 +1782,6 @@ export class CalendarViewComponent implements OnInit {
   setViewMode(mode: 'month' | 'week' | 'year'): void {
     this.viewMode = mode;
     if (mode === 'year') {
-      // Reset to current year when switching to year view
       this.currentDate = new Date(this.currentYear, 0, 1);
     }
   }
@@ -1557,16 +1812,12 @@ export class CalendarViewComponent implements OnInit {
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
     
-    // First day of the month
     const firstDay = new Date(year, month, 1);
-    // Last day of the month
     const lastDay = new Date(year, month + 1, 0);
     
-    // Start from the first Sunday of the week containing the first day
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay());
     
-    // End at the last Saturday of the week containing the last day
     const endDate = new Date(lastDay);
     endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
     
@@ -1596,7 +1847,6 @@ export class CalendarViewComponent implements OnInit {
     this.currentWeekDays = [];
     const currentDate = new Date(this.currentDate);
     
-    // Start from Sunday of the current week
     const startDate = new Date(currentDate);
     startDate.setDate(startDate.getDate() - startDate.getDay());
     
@@ -1621,8 +1871,6 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-  // NEW METHODS FOR COMPLETED TASKS
-
   hasCompletedTasks(tasks: Task[]): boolean {
     return tasks.some(task => task.completed);
   }
@@ -1645,9 +1893,7 @@ export class CalendarViewComponent implements OnInit {
     return `${task.title} - ${status} - ${priority} Priority`;
   }
 
-  // Enhanced getTopTasks to show completed status
   getTopTasks(tasks: Task[], limit: number): Task[] {
-    // Show a mix of completed and pending tasks
     const completed = tasks.filter(t => t.completed).slice(0, Math.ceil(limit / 2));
     const pending = tasks.filter(t => !t.completed).slice(0, limit - completed.length);
     return [...completed, ...pending].slice(0, limit);
@@ -1655,10 +1901,10 @@ export class CalendarViewComponent implements OnInit {
 
   getPriorityColor(priority: number): string {
     switch (priority) {
-      case 3: return '#e74c3c'; // High
-      case 2: return '#f39c12'; // Medium
-      case 1: return '#27ae60'; // Low
-      default: return '#667eea'; // Default
+      case 3: return '#e74c3c';
+      case 2: return '#f39c12';
+      case 1: return '#27ae60';
+      default: return '#667eea';
     }
   }
 
@@ -1698,38 +1944,37 @@ export class CalendarViewComponent implements OnInit {
     this.selectedDay = day;
   }
 
-  // ADD: Method to handle day clicks for creating tasks (Month View)
+  // Enhanced task creation methods
   onDayClick(day: CalendarDay, event: Event): void {
     event.stopPropagation();
     if (!day.isCurrentMonth) return;
     
     this.selectedDateForNewTask = new Date(day.date);
+    this.initializeTaskForm();
     this.showCreateTaskModal = true;
   }
 
-  // ADD: Method to handle week day header clicks (Week View)
   onWeekDayClick(day: Date, event: Event): void {
     event.stopPropagation();
     if (!this.isCurrentMonthWeek(day)) return;
     
     this.selectedDateForNewTask = new Date(day);
+    this.initializeTaskForm();
     this.showCreateTaskModal = true;
   }
 
-  // ADD: Method to handle week day column clicks (Week View)
   onWeekDayColumnClick(day: Date, event: Event): void {
-    // Only trigger if clicking directly on the column (not on tasks)
     if ((event.target as HTMLElement).classList.contains('week-day-column') || 
         (event.target as HTMLElement).classList.contains('drop-zone')) {
       event.stopPropagation();
       if (!this.isCurrentMonthWeek(day)) return;
       
       this.selectedDateForNewTask = new Date(day);
+      this.initializeTaskForm();
       this.showCreateTaskModal = true;
     }
   }
 
-  // ADD: Method to handle year month clicks (Year View)
   onYearMonthClick(monthData: { month: string, year: number, tasks: Task[] }, event: Event): void {
     event.stopPropagation();
     
@@ -1744,17 +1989,119 @@ export class CalendarViewComponent implements OnInit {
     this.generateMonthSelectionDays();
   }
 
-  // ADD: Method to handle month day selection in year view
   onMonthDaySelect(day: CalendarDay, event: Event): void {
     event.stopPropagation();
     if (!day.isCurrentMonth) return;
     
     this.selectedDateForNewTask = new Date(day.date);
+    this.initializeTaskForm();
     this.showCreateTaskModal = true;
     this.closeMonthSelectionModal();
   }
 
-  // ADD: Generate days for month selection modal
+  // Initialize the task form with default values
+  private initializeTaskForm(): void {
+    if (this.selectedDateForNewTask) {
+      this.newTaskDueDate = this.selectedDateForNewTask.toISOString().split('T')[0];
+    }
+    
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskPriority = 2;
+    this.newTaskCategory = 'Other';
+    this.newTaskTags = [];
+    this.newTaskTagInput = '';
+    this.newTaskIsRecurring = false;
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+  }
+
+  // Get formatted due date for the date input
+  getFormattedDueDate(): string {
+    return this.newTaskDueDate;
+  }
+
+  // Handle due date changes
+  onDueDateChange(event: any): void {
+    this.newTaskDueDate = event.target.value;
+  }
+
+  // Tag management methods
+  onTagInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      this.addTag();
+    }
+  }
+
+  addTag(): void {
+    const tag = this.newTaskTagInput.trim();
+    if (tag && !this.newTaskTags.includes(tag)) {
+      this.newTaskTags.push(tag);
+      this.newTaskTagInput = '';
+    }
+  }
+
+  removeTag(tagToRemove: string): void {
+    this.newTaskTags = this.newTaskTags.filter(tag => tag !== tagToRemove);
+  }
+
+  // Create task with all the form data
+  createTaskFromModal(): void {
+    if (!this.newTaskTitle.trim()) {
+      return;
+    }
+
+    const newTask: CreateTaskRequest = {
+      title: this.newTaskTitle.trim(),
+      description: this.newTaskDescription,
+      dueDate: this.newTaskDueDate,
+      priority: this.newTaskPriority,
+      category: this.newTaskCategory || 'Other',
+      tags: this.newTaskTags,
+      isRecurring: this.newTaskIsRecurring,
+      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
+      recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
+    };
+
+    this.taskService.createTask(newTask).subscribe({
+      next: (createdTask) => {
+        this.tasks.push(createdTask);
+        this.generateCalendar();
+        this.generateWeekView();
+        this.closeCreateTaskModal();
+      },
+      error: (error) => {
+        console.error('Error creating task:', error);
+      }
+    });
+  }
+
+  closeCreateTaskModal(): void {
+    this.showCreateTaskModal = false;
+    this.selectedDateForNewTask = null;
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskDueDate = '';
+    this.newTaskPriority = 2;
+    this.newTaskCategory = '';
+    this.newTaskTags = [];
+    this.newTaskTagInput = '';
+    this.newTaskIsRecurring = false;
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+  }
+
+  formatDateForModal(date: Date): string {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  // Month selection methods
   generateMonthSelectionDays(): void {
     if (!this.selectedYearMonth) return;
     
@@ -1763,16 +2110,12 @@ export class CalendarViewComponent implements OnInit {
     const year = this.selectedYearMonth.year;
     const month = this.selectedYearMonth.monthIndex;
     
-    // First day of the month
     const firstDay = new Date(year, month, 1);
-    // Last day of the month
     const lastDay = new Date(year, month + 1, 0);
     
-    // Start from the first Sunday of the week containing the first day
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay());
     
-    // End at the last Saturday of the week containing the last day
     const endDate = new Date(lastDay);
     endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
     
@@ -1798,67 +2141,18 @@ export class CalendarViewComponent implements OnInit {
     }
   }
 
-  // ADD: Get month days for selection modal
   getMonthDaysForSelection(): CalendarDay[] {
     return this.monthSelectionDays;
   }
 
-  // ADD: Close month selection modal
   closeMonthSelectionModal(): void {
     this.showMonthSelectionModal = false;
     this.selectedYearMonth = null;
     this.monthSelectionDays = [];
   }
 
-  // ADD: Check if week day is in current month
   isCurrentMonthWeek(day: Date): boolean {
     return day.getMonth() === this.currentDate.getMonth();
-  }
-
-  // ADD: Method to create task from modal
-  createTaskFromModal(): void {
-    if (this.newTaskTitle.trim() && this.selectedDateForNewTask) {
-      const newTask: CreateTaskRequest = {
-        title: this.newTaskTitle.trim(),
-        description: '',
-        dueDate: this.selectedDateForNewTask.toISOString().split('T')[0], // Format as YYYY-MM-DD
-        priority: 2, // Default medium priority
-        category: 'Other',
-        tags: [],
-        isRecurring: false,
-        recurrencePattern: 'none',
-        recurrenceInterval: 1
-      };
-
-      this.taskService.createTask(newTask).subscribe({
-        next: (createdTask) => {
-          this.tasks.push(createdTask);
-          this.generateCalendar();
-          this.generateWeekView();
-          this.closeCreateTaskModal();
-        },
-        error: (error) => {
-          console.error('Error creating task:', error);
-        }
-      });
-    }
-  }
-
-  // ADD: Method to close modal
-  closeCreateTaskModal(): void {
-    this.showCreateTaskModal = false;
-    this.selectedDateForNewTask = null;
-    this.newTaskTitle = '';
-  }
-
-  // ADD: Method to format date for display
-  formatDateForModal(date: Date): string {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   }
 
   // Drag & Drop Methods for Week View
@@ -1868,19 +2162,16 @@ export class CalendarViewComponent implements OnInit {
 
   onTaskDrop(event: CdkDragDrop<any>): void {
     if (event.previousContainer === event.container) {
-      // Reorder within same day
       moveItemInArray(
         event.container.data.tasks,
         event.previousIndex,
         event.currentIndex
       );
     } else {
-      // Move to different day
       const previousTasks = [...event.previousContainer.data.tasks];
       const currentTasks = [...event.container.data.tasks];
       const task = previousTasks[event.previousIndex];
       
-      // Update task due date
       const newDueDate = event.container.data.day;
       this.updateTaskDueDate(task.id, newDueDate);
       
@@ -1891,7 +2182,6 @@ export class CalendarViewComponent implements OnInit {
         event.currentIndex
       );
 
-      // Update the tasks arrays
       event.previousContainer.data.tasks = previousTasks;
       event.container.data.tasks = currentTasks;
     }
@@ -1902,7 +2192,6 @@ export class CalendarViewComponent implements OnInit {
     const currentYear = this.currentDate.getFullYear();
     
     return this.months.map((month, index) => {
-      // Get tasks for this month
       const monthTasks = this.tasks.filter(task => {
         if (!task.dueDate) return false;
         const taskDate = new Date(task.dueDate);
@@ -1922,7 +2211,6 @@ export class CalendarViewComponent implements OnInit {
   updateTaskDueDate(taskId: number, newDueDate: Date): void {
     const task = this.tasks.find(t => t.id === taskId);
     if (task) {
-      // Format date for backend (YYYY-MM-DD)
       const formattedDate = newDueDate.toISOString().split('T')[0];
       
       this.taskService.updateTask(taskId, {
@@ -1933,14 +2221,12 @@ export class CalendarViewComponent implements OnInit {
           const index = this.tasks.findIndex(t => t.id === taskId);
           if (index !== -1) {
             this.tasks[index] = updatedTask;
-            // Regenerate views to reflect changes
             this.generateCalendar();
             this.generateWeekView();
           }
         },
         error: (error) => {
           console.error('Error updating task date:', error);
-          // Revert visual change on error
           this.generateCalendar();
           this.generateWeekView();
         }
@@ -1965,7 +2251,6 @@ export class CalendarViewComponent implements OnInit {
   }
 
   editTask(taskId: number): void {
-    // Navigate to task edit page - you can implement this based on your routing
     console.log('Edit task:', taskId);
   }
 }
