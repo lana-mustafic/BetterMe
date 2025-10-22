@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
-import { Task, CreateTaskRequest } from '../../models/task.model';
+import { Task, CreateTaskRequest, UpdateTaskRequest } from '../../models/task.model';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, CdkDragPlaceholder, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 interface CalendarDay {
@@ -17,6 +17,13 @@ interface Category {
   color: string;
   icon: string;
   custom?: boolean;
+}
+
+// Add this interface near your other interfaces
+interface EditModalData {
+  taskId: number;
+  task: Task | null;
+  isOpen: boolean;
 }
 
 @Component({
@@ -589,6 +596,187 @@ interface Category {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Edit Task Modal -->
+      @if (editModalData.isOpen) {
+        <div class="modal-overlay" (click)="closeEditModal()">
+          <div class="modal-content edit-task-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Edit Task</h3>
+              <button class="close-btn" (click)="closeEditModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+              @if (isEditing && !editModalData.task) {
+                <div class="loading">Loading task...</div>
+              }
+
+              @if (editError) {
+                <div class="error-message">{{ editError }}</div>
+              }
+
+              @if (editModalData.task || !isEditing) {
+                <form (ngSubmit)="onUpdateTask()">
+                  <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Task title"
+                      [(ngModel)]="editFormData.title"
+                      name="title"
+                      required
+                      [disabled]="isEditing"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea 
+                      class="form-control"
+                      placeholder="Task description"
+                      [(ngModel)]="editFormData.description"
+                      name="description"
+                      rows="3"
+                      [disabled]="isEditing"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Due Date</label>
+                      <input 
+                        type="date" 
+                        class="form-control"
+                        [value]="editFormData.dueDate"
+                        (input)="editFormData.dueDate = $any($event.target).value"
+                        name="dueDate"
+                        [disabled]="isEditing"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Priority</label>
+                      <select 
+                        class="form-control"
+                        [(ngModel)]="editFormData.priority"
+                        name="priority"
+                        [disabled]="isEditing"
+                      >
+                        <option [ngValue]="1">Low</option>
+                        <option [ngValue]="2">Medium</option>
+                        <option [ngValue]="3">High</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Recurrence Section -->
+                  <div class="form-group">
+                    <label class="form-label">Repeat Task</label>
+                    <div class="recurrence-options">
+                      <label class="checkbox-label">
+                        <input 
+                          type="checkbox" 
+                          [(ngModel)]="editFormData.isRecurring"
+                          name="isRecurring"
+                          (change)="onRecurrenceToggle()"
+                          [disabled]="isEditing"
+                        >
+                        This is a repeating task
+                      </label>
+                      
+                      @if (editFormData.isRecurring) {
+                        <div class="recurrence-settings">
+                          <div class="form-row">
+                            <div class="form-group">
+                              <label class="form-label">Repeat every</label>
+                              <select 
+                                class="form-control"
+                                [(ngModel)]="editFormData.recurrenceInterval"
+                                name="recurrenceInterval"
+                                [disabled]="isEditing"
+                              >
+                                <option [ngValue]="1">1</option>
+                                <option [ngValue]="2">2</option>
+                                <option [ngValue]="3">3</option>
+                                <option [ngValue]="4">4</option>
+                                <option [ngValue]="5">5</option>
+                                <option [ngValue]="6">6</option>
+                                <option [ngValue]="7">7</option>
+                              </select>
+                            </div>
+                            
+                            <div class="form-group">
+                              <label class="form-label">Time period</label>
+                              <select 
+                                class="form-control"
+                                [(ngModel)]="editFormData.recurrencePattern"
+                                name="recurrencePattern"
+                                [disabled]="isEditing"
+                              >
+                                <option value="daily">Day(s)</option>
+                                <option value="weekly">Week(s)</option>
+                                <option value="monthly">Month(s)</option>
+                                <option value="yearly">Year(s)</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="recurrence-hint">
+                            @if (editFormData.recurrenceInterval === 1) {
+                              <span>Repeats every {{ editFormData.recurrencePattern.slice(0, -2) }}</span>
+                            } @else {
+                              <span>Repeats every {{ editFormData.recurrenceInterval }} {{ editFormData.recurrencePattern.slice(0, -2) }}s</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input 
+                        type="checkbox"
+                        [(ngModel)]="editFormData.completed"
+                        name="completed"
+                        [disabled]="isEditing"
+                      />
+                      <span class="checkmark"></span>
+                      Mark as completed
+                    </label>
+                  </div>
+
+                  <div class="form-actions">
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      [disabled]="isEditing"
+                    >
+                      {{ isEditing ? 'Updating...' : 'Update Task' }}
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-secondary"
+                      (click)="closeEditModal()"
+                      [disabled]="isEditing"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-danger"
+                      (click)="onDeleteTask()"
+                      [disabled]="isEditing"
+                    >
+                      Delete Task
+                    </button>
+                  </div>
+                </form>
+              }
             </div>
           </div>
         </div>
@@ -1899,6 +2087,48 @@ interface Category {
       border-color: var(--accent-primary);
     }
 
+    /* Edit Task Modal Styles */
+    .edit-task-modal {
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+
+    .error-message {
+      background: #fee;
+      color: #c33;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      text-align: center;
+      border: 1px solid #fcc;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: var(--text-light);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c0392b;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    .btn-danger:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     /* Responsive Design */
     @media (max-width: 1200px) {
       .year-grid {
@@ -2106,6 +2336,27 @@ export class CalendarViewComponent implements OnInit {
   ];
   calendarDays: CalendarDay[] = [];
   currentWeekDays: Date[] = [];
+
+  // Add these modal properties
+  editModalData: EditModalData = {
+    taskId: 0,
+    task: null,
+    isOpen: false
+  };
+
+  editFormData = {
+    title: '',
+    description: '',
+    dueDate: '',
+    priority: 2,
+    completed: false,
+    isRecurring: false,
+    recurrencePattern: 'daily' as 'daily' | 'weekly' | 'monthly' | 'yearly',
+    recurrenceInterval: 1
+  };
+
+  isEditing = false;
+  editError = '';
 
   ngOnInit(): void {
     this.loadTasks();
@@ -2638,7 +2889,154 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
+  // Add these new methods for the edit modal
   editTask(taskId: number): void {
-    console.log('Edit task:', taskId);
+    this.editModalData.taskId = taskId;
+    this.editModalData.isOpen = true;
+    this.loadTaskForEditing(taskId);
+  }
+
+  loadTaskForEditing(taskId: number): void {
+    this.isEditing = true;
+    this.editError = '';
+
+    this.taskService.getTaskById(taskId).subscribe({
+      next: (task: Task) => {
+        this.editModalData.task = task;
+        this.editFormData = {
+          title: task.title,
+          description: task.description || '',
+          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+          priority: task.priority,
+          completed: task.completed,
+          isRecurring: task.isRecurring || false,
+          recurrencePattern: (task.recurrencePattern as 'daily' | 'weekly' | 'monthly' | 'yearly') || 'daily',
+          recurrenceInterval: task.recurrenceInterval || 1
+        };
+        this.isEditing = false;
+      },
+      error: (error: any) => {
+        this.editError = 'Failed to load task for editing';
+        this.isEditing = false;
+        console.error('Error loading task for editing:', error);
+      }
+    });
+  }
+
+onUpdateTask(): void {
+  if (!this.editFormData.title.trim()) {
+    this.editError = 'Task title is required';
+    return;
+  }
+
+  this.isEditing = true;
+  this.editError = '';
+
+  const updateData: UpdateTaskRequest = {
+    title: this.editFormData.title.trim(),
+    description: this.editFormData.description,
+    dueDate: this.editFormData.dueDate || null,
+    priority: this.editFormData.priority,
+    completed: this.editFormData.completed,
+    isRecurring: this.editFormData.isRecurring,
+    recurrencePattern: this.editFormData.isRecurring ? this.editFormData.recurrencePattern : 'none',
+    recurrenceInterval: this.editFormData.isRecurring ? this.editFormData.recurrenceInterval : 1
+  };
+
+  this.taskService.updateTask(this.editModalData.taskId, updateData).subscribe({
+    next: (updatedTask: Task) => {
+      // Update the task in the local array
+      const index = this.tasks.findIndex(t => t.id === this.editModalData.taskId);
+      if (index !== -1) {
+        this.tasks[index] = updatedTask;
+      }
+      
+      this.isEditing = false;
+      this.closeEditModal();
+      
+      // Force refresh all views
+      this.generateCalendar();
+      this.generateWeekView();
+      
+      // Also update selectedDay if it's open with fresh data
+      if (this.selectedDay) {
+        this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+      }
+      
+      // Force change detection
+      this.tasks = [...this.tasks];
+    },
+    error: (error: any) => {
+      this.editError = 'Failed to update task. Please try again.';
+      this.isEditing = false;
+      console.error('Error updating task:', error);
+    }
+  });
+}
+
+onDeleteTask(): void {
+  if (confirm('Are you sure you want to delete this task?')) {
+    this.taskService.deleteTask(this.editModalData.taskId).subscribe({
+      next: () => {
+        // Remove the task from the local array
+        this.tasks = this.tasks.filter(t => t.id !== this.editModalData.taskId);
+        
+        // Close the edit modal first
+        this.closeEditModal();
+        
+        // Force refresh all calendar views
+        this.generateCalendar();
+        this.generateWeekView();
+        
+        // Also update selectedDay if it's open - completely refresh it
+        if (this.selectedDay) {
+          // Get fresh tasks for the selected day
+          const freshTasks = this.getTasksForDate(this.selectedDay.date);
+          
+          if (freshTasks.length === 0) {
+            // If no tasks left, close the day details
+            this.selectedDay = null;
+          } else {
+            // Otherwise update the selectedDay with fresh data
+            this.selectedDay.tasks = freshTasks;
+          }
+        }
+        
+        // Force Angular change detection by creating new arrays
+        this.tasks = [...this.tasks];
+      },
+      error: (error: any) => {
+        this.editError = 'Failed to delete task. Please try again.';
+        console.error('Error deleting task:', error);
+      }
+    });
+  }
+}
+
+closeEditModal(): void {
+  this.editModalData = {
+    taskId: 0,
+    task: null,
+    isOpen: false
+  };
+  this.editFormData = {
+    title: '',
+    description: '',
+    dueDate: '',
+    priority: 2,
+    completed: false,
+    isRecurring: false,
+    recurrencePattern: 'daily',
+    recurrenceInterval: 1
+  };
+  this.editError = '';
+  this.isEditing = false;
+}
+
+  onRecurrenceToggle(): void {
+    if (!this.editFormData.isRecurring) {
+      this.editFormData.recurrencePattern = 'daily';
+      this.editFormData.recurrenceInterval = 1;
+    }
   }
 }
