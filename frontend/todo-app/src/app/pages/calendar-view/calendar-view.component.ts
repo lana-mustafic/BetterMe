@@ -154,6 +154,7 @@ interface Category {
                       class="week-task-item"
                       cdkDrag
                       [class.completed]="task.completed"
+                      (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
                     >
                       <div class="week-task-content">
                         <div class="week-task-title">
