@@ -19,7 +19,6 @@ interface Category {
   custom?: boolean;
 }
 
-// Add this interface near your other interfaces
 interface EditModalData {
   taskId: number;
   task: Task | null;
@@ -95,22 +94,27 @@ interface EditModalData {
               >
                 <div class="day-number">{{ day.date.getDate() }}</div>
                 
-                @if (day.tasks.length > 0) {
-                  <div class="task-indicators">
-                    @for (task of getTopTasks(day.tasks, 3); track task.id) {
-                      <div 
-                        class="task-indicator"
-                        [class.completed]="task.completed"
-                        [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
-                        [title]="getTaskTooltip(task)"
-                        (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-                      ></div>
-                    }
-                    @if (day.tasks.length > 3) {
-                      <div class="more-tasks">+{{ day.tasks.length - 3 }}</div>
-                    }
-                  </div>
-                }
+    @if (day.tasks.length > 0) {
+  <div class="task-indicators">
+    @for (task of getTopTasks(day.tasks, 3); track task.id) {
+      <div 
+        class="task-indicator"
+        [class.completed]="task.completed"
+        [class.loading]="updatingTaskIds.has(task.id)"
+        [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
+        [title]="getTaskTooltip(task)"
+        (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
+      >
+        @if (updatingTaskIds.has(task.id)) {
+          <span class="loading-spinner">⟳</span>
+        }
+      </div>
+    }
+    @if (day.tasks.length > 3) {
+      <div class="more-tasks">+{{ day.tasks.length - 3 }}</div>
+    }
+  </div>
+}
                 
                 <!-- Action buttons that appear on hover -->
                 <div class="day-actions" *ngIf="day.isCurrentMonth">
@@ -129,194 +133,208 @@ interface EditModalData {
                     <span class="action-text">Add Task</span>
                   </button>
                 </div>
-                
-                 </div>
+              </div>
             }
           </div>
         </div>
       }
 
       <!-- Week View -->
-      @if (viewMode === 'week') {
-        <div class="week-view">
-          <div class="week-header">
-            @for (day of currentWeekDays; track day; let i = $index) {
+@if (viewMode === 'week') {
+  <div class="week-view">
+    <div class="week-header">
+      @for (day of currentWeekDays; track day; let i = $index) {
+        <div 
+          class="week-day-header"
+          [class.current-month]="isCurrentMonthWeek(day)"
+          (click)="onWeekDayClick(day, $event)"
+        >
+          <div class="week-day-name">{{ getWeekdayName(day) }}</div>
+          <div class="week-date">{{ day.getDate() }}</div>
+          <div class="day-stats">
+            <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
+            <span class="total-count">/{{ getTasksForDate(day).length }}</span>
+          </div>
+          <div class="add-task-hint-week">
+            <span class="plus-icon">+</span>
+          </div>
+        </div>
+      }
+    </div>
+    
+    <div class="week-grid" cdkDropListGroup>
+      @for (day of currentWeekDays; track day; let i = $index) {
+        <div 
+          class="week-day-column"
+          cdkDropList
+          [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
+          [id]="'day-' + i"
+          (cdkDropListDropped)="onTaskDrop($event)"
+          (click)="onWeekDayColumnClick(day, $event)"
+        >
+          <div class="week-day-tasks">
+            @for (task of getTasksForDate(day); track task.id) {
               <div 
-                class="week-day-header"
-                [class.current-month]="isCurrentMonthWeek(day)"
-                (click)="onWeekDayClick(day, $event)"
+                class="week-task-item"
+                cdkDrag
+                [class.completed]="task.completed"
+                [class.loading]="updatingTaskIds.has(task.id)"
               >
-                <div class="week-day-name">{{ getWeekdayName(day) }}</div>
-                <div class="week-date">{{ day.getDate() }}</div>
-                <div class="day-stats">
-                  <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
-                  <span class="total-count">/{{ getTasksForDate(day).length }}</span>
+                <!-- Drag handle -->
+                <div class="drag-handle" cdkDragHandle>
+                  <span class="drag-icon">⣿</span>
                 </div>
-                <div class="add-task-hint-week">
-                  <span class="plus-icon">+</span>
+                
+                <!-- Clickable content -->
+                <div 
+                  class="week-task-content"
+                  (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
+                >
+                  <div class="week-task-title">
+                    @if (task.completed) {
+                      <span class="completion-check">✓</span>
+                    }
+                    {{ task.title }}
+                    @if (updatingTaskIds.has(task.id)) {
+                      <span class="loading-spinner">⏳</span>
+                    }
+                  </div>
+                  <div class="week-task-meta">
+                    <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
+                    @if (task.completed) {
+                      <span class="completed-badge">Completed</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+            
+            @if (getTasksForDate(day).length === 0) {
+              <div class="drop-zone">
+                <div class="drop-zone-content">
+                  <div class="drop-zone-plus">+</div>
+                  <div class="drop-zone-text">Drop tasks here or click to add</div>
                 </div>
               </div>
             }
           </div>
           
-          <div class="week-grid" cdkDropListGroup>
-            @for (day of currentWeekDays; track day; let i = $index) {
-              <div 
-                class="week-day-column"
-                cdkDropList
-                [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
-                [id]="'day-' + i"
-                (cdkDropListDropped)="onTaskDrop($event)"
-                (click)="onWeekDayColumnClick(day, $event)"
-              >
-                <div class="week-day-tasks">
-                  @for (task of getTasksForDate(day); track task.id) {
-                    <div 
-                      class="week-task-item"
-                      cdkDrag
-                      [class.completed]="task.completed"
-                      (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-                    >
-                      <div class="week-task-content">
-                        <div class="week-task-title">
-                          @if (task.completed) {
-                            <span class="completion-check">✓</span>
-                          }
-                          {{ task.title }}
-                        </div>
-                        <div class="week-task-meta">
-                          <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
-                          @if (task.completed) {
-                            <span class="completed-badge">Completed</span>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-                  
-                  @if (getTasksForDate(day).length === 0) {
-                    <div class="drop-zone">
-                      <div class="drop-zone-content">
-                        <div class="drop-zone-plus">+</div>
-                        <div class="drop-zone-text">Drop tasks here or click to add</div>
-                      </div>
-                    </div>
-                  }
-                </div>
-                
-                <!-- Drag placeholder using the directive -->
-                <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
-              </div>
-            }
-          </div>
+          <!-- Drag placeholder using the directive -->
+          <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
         </div>
       }
+    </div>
+  </div>
+}
 
       <!-- Enhanced Year View -->
       @if (viewMode === 'year') {
-        <div class="year-view">
-          <div class="year-grid">
-            @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
+  <div class="year-view">
+    <div class="year-grid">
+      @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
+        <div 
+          class="year-month"
+          [class.has-completed-tasks]="getCompletedTasksForMonth(monthData.tasks) > 0"
+          [class.all-tasks-completed]="getCompletedTasksForMonth(monthData.tasks) === monthData.tasks.length && monthData.tasks.length > 0"
+          (click)="onYearMonthClick(monthData, $event)"
+        >
+          <div class="month-header">
+            <h4>{{ monthData.month }}</h4>
+            <div class="month-stats">
+              <!-- Enhanced completion stats -->
+              <div class="completion-progress">
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    [style.width.%]="getCompletionPercentage(monthData.tasks)"
+                    [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100"
+                  ></div>
+                </div>
+                <span class="completion-text">
+                  {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
+                </span>
+              </div>
+            </div>
+            <div class="add-task-hint-year">
+              <span class="plus-icon">+</span>
+            </div>
+          </div>
+          
+          <div class="month-tasks">
+            @for (task of monthData.tasks.slice(0, 5); track task.id) {
               <div 
-                class="year-month"
-                [class.has-completed-tasks]="getCompletedTasksForMonth(monthData.tasks) > 0"
-                [class.all-tasks-completed]="getCompletedTasksForMonth(monthData.tasks) === monthData.tasks.length && monthData.tasks.length > 0"
-                (click)="onYearMonthClick(monthData, $event)"
+                class="year-task-item"
+                [class.completed]="task.completed"
+                [class.pending]="!task.completed"
+                [class.loading]="updatingTaskIds.has(task.id)"
+                [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
+                [style.opacity]="task.completed ? '1' : '0.9'"
+                (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
               >
-                <div class="month-header">
-                  <h4>{{ monthData.month }}</h4>
-                  <div class="month-stats">
-                    <!-- Enhanced completion stats -->
-                    <div class="completion-progress">
-                      <div class="progress-bar">
-                        <div 
-                          class="progress-fill" 
-                          [style.width.%]="getCompletionPercentage(monthData.tasks)"
-                          [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100"
-                        ></div>
-                      </div>
-                      <span class="completion-text">
-                        {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
-                      </span>
-                    </div>
+                <div class="year-task-content">
+                  <div class="year-task-title">
+                    @if (task.completed) {
+                      <span class="completion-check">✅</span>
+                    } @else {
+                      <span class="pending-indicator">⏳</span>
+                    }
+                    {{ task.title }}
+                    @if (updatingTaskIds.has(task.id)) {
+                      <span class="loading-spinner">⟳</span>
+                    }
                   </div>
-                  <div class="add-task-hint-year">
-                    <span class="plus-icon">+</span>
+                  <div class="year-task-status">
+                    @if (task.completed) {
+                      <span class="status-completed">Completed</span>
+                    } @else {
+                      <span class="status-pending">Pending</span>
+                    }
                   </div>
                 </div>
-                
-                <div class="month-tasks">
-                  @for (task of monthData.tasks.slice(0, 5); track task.id) {
-                    <div 
-                      class="year-task-item"
-                      [class.completed]="task.completed"
-                      [class.pending]="!task.completed"
-                      [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
-                      [style.opacity]="task.completed ? '1' : '0.9'"
-                      (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-                    >
-                      <div class="year-task-content">
-                        <div class="year-task-title">
-                          @if (task.completed) {
-                            <span class="completion-check">✅</span>
-                          } @else {
-                            <span class="pending-indicator">⏳</span>
-                          }
-                          {{ task.title }}
-                        </div>
-                        <div class="year-task-status">
-                          @if (task.completed) {
-                            <span class="status-completed">Completed</span>
-                          } @else {
-                            <span class="status-pending">Pending</span>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-                  @if (monthData.tasks.length > 5) {
-                    <div class="more-tasks-year">
-                      +{{ monthData.tasks.length - 5 }} more
-                      <span class="more-tasks-stats">
-                        ({{ getCompletedTasksForMonth(monthData.tasks.slice(5)) }} completed)
-                      </span>
-                    </div>
-                  }
-                  @if (monthData.tasks.length === 0) {
-                    <div class="empty-month">
-                      <span class="empty-month-text">No tasks</span>
-                      <span class="empty-month-hint">Click to add task</span>
-                    </div>
-                  }
-                </div>
-
-                <!-- Month completion summary -->
-                @if (monthData.tasks.length > 0) {
-                  <div class="month-completion-summary">
-                    <div class="completion-badge" [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100">
-                      {{ getCompletionPercentage(monthData.tasks) }}%
-                    </div>
-                    <span class="summary-text">
-                      @if (getCompletionPercentage(monthData.tasks) === 100) {
-                        🎉 All tasks completed!
-                      } @else if (getCompletionPercentage(monthData.tasks) >= 75) {
-                        🔥 Almost there!
-                      } @else if (getCompletionPercentage(monthData.tasks) >= 50) {
-                        📈 Good progress!
-                      } @else if (getCompletionPercentage(monthData.tasks) > 0) {
-                        🚀 Getting started!
-                      } @else {
-                        💪 Ready to begin!
-                      }
-                    </span>
-                  </div>
-                }
+              </div>
+            }
+            @if (monthData.tasks.length > 5) {
+              <div class="more-tasks-year">
+                +{{ monthData.tasks.length - 5 }} more
+                <span class="more-tasks-stats">
+                  ({{ getCompletedTasksForMonth(monthData.tasks.slice(5)) }} completed)
+                </span>
+              </div>
+            }
+            @if (monthData.tasks.length === 0) {
+              <div class="empty-month">
+                <span class="empty-month-text">No tasks</span>
+                <span class="empty-month-hint">Click to add task</span>
               </div>
             }
           </div>
+
+          <!-- Month completion summary -->
+          @if (monthData.tasks.length > 0) {
+            <div class="month-completion-summary">
+              <div class="completion-badge" [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100">
+                {{ getCompletionPercentage(monthData.tasks) }}%
+              </div>
+              <span class="summary-text">
+                @if (getCompletionPercentage(monthData.tasks) === 100) {
+                  🎉 All tasks completed!
+                } @else if (getCompletionPercentage(monthData.tasks) >= 75) {
+                  🔥 Almost there!
+                } @else if (getCompletionPercentage(monthData.tasks) >= 50) {
+                  📈 Good progress!
+                } @else if (getCompletionPercentage(monthData.tasks) > 0) {
+                  🚀 Getting started!
+                } @else {
+                  💪 Ready to begin!
+                }
+              </span>
+            </div>
+          }
         </div>
       }
-
+    </div>
+  </div>
+}
       <!-- Selected Day Details -->
       @if (selectedDay) {
         <div class="day-details">
@@ -332,12 +350,15 @@ interface EditModalData {
           
           <div class="day-tasks-list">
             @for (task of selectedDay.tasks; track task.id) {
-              <div class="day-task-item" [class.completed]="task.completed">
+              <div class="day-task-item" 
+                   [class.completed]="task.completed"
+                   [class.loading]="updatingTaskIds.has(task.id)">
                 <div class="task-checkbox">
                   <input 
                     type="checkbox" 
                     [checked]="task.completed"
                     (change)="toggleTaskCompletion(task.id)"
+                    [disabled]="updatingTaskIds.has(task.id)"
                   >
                 </div>
                 
@@ -347,6 +368,9 @@ interface EditModalData {
                       <span class="completion-check">✓</span>
                     }
                     {{ task.title }}
+                    @if (updatingTaskIds.has(task.id)) {
+                      <span class="loading-spinner">⏳</span>
+                    }
                   </div>
                   <div class="task-meta">
                     @if (task.category) {
@@ -362,7 +386,11 @@ interface EditModalData {
                 </div>
                 
                 <div class="task-actions">
-                  <button class="btn-small" (click)="editTask(task.id)">Edit</button>
+                  <button class="btn-small" 
+                          (click)="editTask(task.id)"
+                          [disabled]="updatingTaskIds.has(task.id)">
+                    Edit
+                  </button>
                 </div>
               </div>
             }
@@ -899,7 +927,7 @@ interface EditModalData {
       transition: all var(--transition-normal);
       border: 1px solid transparent;
       position: relative;
-      padding-bottom: 3rem; /* Make space for buttons */
+      padding-bottom: 3rem;
     }
 
     .calendar-day:hover {
@@ -951,7 +979,7 @@ interface EditModalData {
       flex-wrap: wrap;
       gap: 2px;
       margin-top: 0.25rem;
-      margin-bottom: 0.5rem; /* Don't overlap with buttons */
+      margin-bottom: 0.5rem;
     }
 
     .task-indicator {
@@ -962,12 +990,21 @@ interface EditModalData {
       position: relative;
       cursor: pointer;
       transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .task-indicator.completed {
       border: 1px solid white;
       box-shadow: 0 0 2px rgba(40, 167, 69, 0.5);
       animation: completePulse 0.5s ease;
+    }
+
+    .task-indicator.loading {
+      opacity: 0.6;
+       animation: pulse 1.5s ease-in-out infinite;
+      pointer-events: none;
     }
 
     .task-indicator:hover::after {
@@ -985,14 +1022,24 @@ interface EditModalData {
       z-index: 1000;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-md);
-      transform: scale(1.3);
-      box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
     .more-tasks {
       font-size: 0.7rem;
       color: var(--text-muted);
       margin-left: 2px;
+    }
+
+    /* Loading spinner styles */
+    .loading-spinner {
+      font-size: 0.7rem;
+      margin-left: 0.25rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     /* Day action buttons */
@@ -1063,14 +1110,6 @@ interface EditModalData {
 
     .action-text {
       white-space: nowrap;
-    }
-
-    .empty-day-hint {
-      text-align: center;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-      font-style: italic;
     }
 
     /* Week View Styles with Drag & Drop */
@@ -1179,18 +1218,40 @@ interface EditModalData {
       height: 100%;
     }
 
+    /* Drag handle styles */
+    .drag-handle {
+      cursor: grab;
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-normal);
+    }
+
+    .drag-handle:hover {
+      background: var(--accent-primary);
+      color: var(--text-light);
+    }
+
+    .drag-icon {
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
     .week-task-item {
+      display: flex;
+      align-items: center;
       background: var(--bg-primary);
       padding: 0.75rem;
       margin-bottom: 0.5rem;
       border-radius: 6px;
       border-left: 4px solid var(--accent-primary);
       box-shadow: var(--shadow-sm);
-      cursor: grab;
       transition: all var(--transition-normal);
       border: 1px solid var(--border-color);
-      cursor: pointer;
-      transition: all 0.2s ease;
     }
 
     .week-task-item.completed {
@@ -1199,27 +1260,33 @@ interface EditModalData {
       animation: completeSlide 0.3s ease;
     }
 
+    .week-task-item.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .week-task-item.loading .week-task-content {
+  cursor: wait;
+}
+
     .week-task-item.completed .week-task-title {
       text-decoration: line-through;
       color: var(--text-muted);
     }
 
-    .week-task-item:hover {
+    .week-task-item:hover:not(.loading) {
       transform: translateX(2px);
       box-shadow: var(--shadow-md);
       background: var(--bg-secondary);
-      transform: translateX(5px);
-      box-shadow: var(--shadow-lg);
     }
 
     .week-task-item:active {
       cursor: grabbing;
-      transform: rotate(5deg);
-      box-shadow: var(--shadow-lg);
     }
 
     .week-task-content {
       flex: 1;
+      cursor: pointer;
     }
 
     .week-task-title {
@@ -1458,7 +1525,6 @@ interface EditModalData {
       border: 1px solid transparent;
       box-shadow: var(--shadow-sm);
       cursor: pointer;
-      transition: all 0.2s ease;
     }
 
     .year-task-item.completed {
@@ -1475,9 +1541,17 @@ interface EditModalData {
       opacity: 0.9;
     }
 
-    .year-task-item:hover {
-      transform: translateX(3px);
-      box-shadow: var(--shadow-md);
+    .year-task-item.loading {
+      opacity: 0.6;
+      cursor: wait;
+      pointer-events: none;
+    }
+
+    [class].loading {
+  transition: opacity 0.3s ease;
+}
+
+    .year-task-item:hover:not(.loading) {
       transform: translateX(3px) scale(1.02);
       box-shadow: var(--shadow-md);
     }
@@ -1804,12 +1878,17 @@ interface EditModalData {
       background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
     }
 
+    .day-task-item.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
     .day-task-item.completed .task-title {
       text-decoration: line-through;
       color: var(--text-muted);
     }
 
-    .day-task-item:hover {
+    .day-task-item:hover:not(.loading) {
       box-shadow: var(--shadow-md);
       background: var(--bg-secondary);
     }
@@ -1868,10 +1947,15 @@ interface EditModalData {
       color: var(--text-primary);
     }
 
-    .btn-small:hover {
+    .btn-small:hover:not(:disabled) {
       background: var(--bg-secondary);
       border-color: var(--accent-primary);
       color: var(--accent-primary);
+    }
+
+    .btn-small:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .no-tasks {
@@ -2099,7 +2183,18 @@ interface EditModalData {
       padding: 2rem;
       color: var(--accent-primary);
       font-weight: 600;
+        opacity: 0.6;
+  pointer-events: none;
+  position: relative;
     }
+
+    .loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
     .error-message {
       background: #fee;
@@ -2357,6 +2452,9 @@ export class CalendarViewComponent implements OnInit {
 
   isEditing = false;
   editError = '';
+
+  // NEW: Track updating tasks to prevent multiple clicks and show loading states
+  updatingTaskIds = new Set<number>();
 
   ngOnInit(): void {
     this.loadTasks();
@@ -2852,42 +2950,79 @@ export class CalendarViewComponent implements OnInit {
     }
   }
 
-  toggleTaskCompletion(taskId: number): void {
-    this.taskService.toggleTaskCompletion(taskId).subscribe({
-      next: (updatedTask: Task) => {
-        const index = this.tasks.findIndex(t => t.id === taskId);
-        if (index !== -1) {
-          this.tasks[index] = updatedTask;
-          this.generateCalendar();
-          this.generateWeekView();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error updating task:', error);
-      }
-    });
+ toggleTaskCompletion(taskId: number): void {
+  // Prevent multiple clicks
+  if (this.updatingTaskIds.has(taskId)) {
+    return;
   }
-
+  
+  this.updatingTaskIds.add(taskId);
+  
+  this.taskService.toggleTaskCompletion(taskId).subscribe({
+    next: (updatedTask: Task) => {
+      const index = this.tasks.findIndex(t => t.id === taskId);
+      if (index !== -1) {
+        this.tasks[index] = updatedTask;
+        
+        // Force refresh all views
+        this.generateCalendar();
+        this.generateWeekView();
+        
+        // Update selectedDay with fresh data
+        if (this.selectedDay) {
+          this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+        }
+        
+        // Force change detection
+        this.tasks = [...this.tasks];
+      }
+      this.updatingTaskIds.delete(taskId);
+    },
+    error: (error: any) => {
+      console.error('Error updating task:', error);
+      this.updatingTaskIds.delete(taskId);
+    }
+  });
+}
   toggleTaskCompletionFromCalendar(taskId: number, event: Event): void {
-    event.stopPropagation(); // Prevent triggering day/month click events
-    
-    this.taskService.toggleTaskCompletion(taskId).subscribe({
-      next: (updatedTask: Task) => {
-        // Update the task in the local array
-        const index = this.tasks.findIndex(t => t.id === taskId);
-        if (index !== -1) {
-          this.tasks[index] = updatedTask;
-          
-          // Regenerate calendar views to reflect the change
-          this.generateCalendar();
-          this.generateWeekView();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error updating task completion:', error);
-      }
-    });
+  event.preventDefault();
+  event.stopPropagation(); // Prevent triggering drag events
+  
+  // Prevent multiple clicks on the same task
+  if (this.updatingTaskIds.has(taskId)) {
+    return;
   }
+  
+  this.updatingTaskIds.add(taskId);
+  
+  // Call the service to update the backend - NO IMMEDIATE VISUAL TOGGLE
+  this.taskService.toggleTaskCompletion(taskId).subscribe({
+    next: (updatedTask: Task) => {
+      // Update the task in the local array with the actual server response
+      const index = this.tasks.findIndex(t => t.id === taskId);
+      if (index !== -1) {
+        this.tasks[index] = updatedTask;
+        
+        // Force refresh all views
+        this.generateCalendar();
+        this.generateWeekView();
+        
+        // Update selectedDay if it exists
+        if (this.selectedDay) {
+          this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+        }
+        
+        // Force change detection
+        this.tasks = [...this.tasks];
+      }
+      this.updatingTaskIds.delete(taskId);
+    },
+    error: (error: any) => {
+      console.error('Error updating task completion:', error);
+      this.updatingTaskIds.delete(taskId);
+    }
+  });
+}
 
   // Add these new methods for the edit modal
   editTask(taskId: number): void {
@@ -2923,115 +3058,115 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-onUpdateTask(): void {
-  if (!this.editFormData.title.trim()) {
-    this.editError = 'Task title is required';
-    return;
-  }
-
-  this.isEditing = true;
-  this.editError = '';
-
-  const updateData: UpdateTaskRequest = {
-    title: this.editFormData.title.trim(),
-    description: this.editFormData.description,
-    dueDate: this.editFormData.dueDate || null,
-    priority: this.editFormData.priority,
-    completed: this.editFormData.completed,
-    isRecurring: this.editFormData.isRecurring,
-    recurrencePattern: this.editFormData.isRecurring ? this.editFormData.recurrencePattern : 'none',
-    recurrenceInterval: this.editFormData.isRecurring ? this.editFormData.recurrenceInterval : 1
-  };
-
-  this.taskService.updateTask(this.editModalData.taskId, updateData).subscribe({
-    next: (updatedTask: Task) => {
-      // Update the task in the local array
-      const index = this.tasks.findIndex(t => t.id === this.editModalData.taskId);
-      if (index !== -1) {
-        this.tasks[index] = updatedTask;
-      }
-      
-      this.isEditing = false;
-      this.closeEditModal();
-      
-      // Force refresh all views
-      this.generateCalendar();
-      this.generateWeekView();
-      
-      // Also update selectedDay if it's open with fresh data
-      if (this.selectedDay) {
-        this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
-      }
-      
-      // Force change detection
-      this.tasks = [...this.tasks];
-    },
-    error: (error: any) => {
-      this.editError = 'Failed to update task. Please try again.';
-      this.isEditing = false;
-      console.error('Error updating task:', error);
+  onUpdateTask(): void {
+    if (!this.editFormData.title.trim()) {
+      this.editError = 'Task title is required';
+      return;
     }
-  });
-}
 
-onDeleteTask(): void {
-  if (confirm('Are you sure you want to delete this task?')) {
-    this.taskService.deleteTask(this.editModalData.taskId).subscribe({
-      next: () => {
-        // Remove the task from the local array
-        this.tasks = this.tasks.filter(t => t.id !== this.editModalData.taskId);
+    this.isEditing = true;
+    this.editError = '';
+
+    const updateData: UpdateTaskRequest = {
+      title: this.editFormData.title.trim(),
+      description: this.editFormData.description,
+      dueDate: this.editFormData.dueDate || null,
+      priority: this.editFormData.priority,
+      completed: this.editFormData.completed,
+      isRecurring: this.editFormData.isRecurring,
+      recurrencePattern: this.editFormData.isRecurring ? this.editFormData.recurrencePattern : 'none',
+      recurrenceInterval: this.editFormData.isRecurring ? this.editFormData.recurrenceInterval : 1
+    };
+
+    this.taskService.updateTask(this.editModalData.taskId, updateData).subscribe({
+      next: (updatedTask: Task) => {
+        // Update the task in the local array
+        const index = this.tasks.findIndex(t => t.id === this.editModalData.taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
         
-        // Close the edit modal first
+        this.isEditing = false;
         this.closeEditModal();
         
-        // Force refresh all calendar views
+        // Force refresh all views
         this.generateCalendar();
         this.generateWeekView();
         
-        // Also update selectedDay if it's open - completely refresh it
+        // Also update selectedDay if it's open with fresh data
         if (this.selectedDay) {
-          // Get fresh tasks for the selected day
-          const freshTasks = this.getTasksForDate(this.selectedDay.date);
-          
-          if (freshTasks.length === 0) {
-            // If no tasks left, close the day details
-            this.selectedDay = null;
-          } else {
-            // Otherwise update the selectedDay with fresh data
-            this.selectedDay.tasks = freshTasks;
-          }
+          this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
         }
         
-        // Force Angular change detection by creating new arrays
+        // Force change detection
         this.tasks = [...this.tasks];
       },
       error: (error: any) => {
-        this.editError = 'Failed to delete task. Please try again.';
-        console.error('Error deleting task:', error);
+        this.editError = 'Failed to update task. Please try again.';
+        this.isEditing = false;
+        console.error('Error updating task:', error);
       }
     });
   }
-}
 
-closeEditModal(): void {
-  this.editModalData = {
-    taskId: 0,
-    task: null,
-    isOpen: false
-  };
-  this.editFormData = {
-    title: '',
-    description: '',
-    dueDate: '',
-    priority: 2,
-    completed: false,
-    isRecurring: false,
-    recurrencePattern: 'daily',
-    recurrenceInterval: 1
-  };
-  this.editError = '';
-  this.isEditing = false;
-}
+  onDeleteTask(): void {
+    if (confirm('Are you sure you want to delete this task?')) {
+      this.taskService.deleteTask(this.editModalData.taskId).subscribe({
+        next: () => {
+          // Remove the task from the local array
+          this.tasks = this.tasks.filter(t => t.id !== this.editModalData.taskId);
+          
+          // Close the edit modal first
+          this.closeEditModal();
+          
+          // Force refresh all calendar views
+          this.generateCalendar();
+          this.generateWeekView();
+          
+          // Also update selectedDay if it's open - completely refresh it
+          if (this.selectedDay) {
+            // Get fresh tasks for the selected day
+            const freshTasks = this.getTasksForDate(this.selectedDay.date);
+            
+            if (freshTasks.length === 0) {
+              // If no tasks left, close the day details
+              this.selectedDay = null;
+            } else {
+              // Otherwise update the selectedDay with fresh data
+              this.selectedDay.tasks = freshTasks;
+            }
+          }
+          
+          // Force Angular change detection by creating new arrays
+          this.tasks = [...this.tasks];
+        },
+        error: (error: any) => {
+          this.editError = 'Failed to delete task. Please try again.';
+          console.error('Error deleting task:', error);
+        }
+      });
+    }
+  }
+
+  closeEditModal(): void {
+    this.editModalData = {
+      taskId: 0,
+      task: null,
+      isOpen: false
+    };
+    this.editFormData = {
+      title: '',
+      description: '',
+      dueDate: '',
+      priority: 2,
+      completed: false,
+      isRecurring: false,
+      recurrencePattern: 'daily',
+      recurrenceInterval: 1
+    };
+    this.editError = '';
+    this.isEditing = false;
+  }
 
   onRecurrenceToggle(): void {
     if (!this.editFormData.isRecurring) {
