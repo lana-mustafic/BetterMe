@@ -85,7 +85,6 @@ interface Category {
                 [class.today]="day.isToday"
                 [class.has-tasks]="day.tasks.length > 0"
                 [class.has-completed-tasks]="hasCompletedTasks(day.tasks)"
-                (click)="onDayClick(day, $event)"
               >
                 <div class="day-number">{{ day.date.getDate() }}</div>
                 
@@ -104,12 +103,27 @@ interface Category {
                       <div class="more-tasks">+{{ day.tasks.length - 3 }}</div>
                     }
                   </div>
-                } @else {
-                  <div class="add-task-hint" *ngIf="day.isCurrentMonth">
-                    <span class="plus-icon">+</span>
-                  </div>
                 }
-              </div>
+                
+                <!-- Action buttons that appear on hover -->
+                <div class="day-actions" *ngIf="day.isCurrentMonth">
+                  <button class="action-btn view-tasks-btn" 
+                          (click)="selectDay(day)"
+                          [disabled]="day.tasks.length === 0"
+                          title="View tasks for this day">
+                    <span class="action-icon">👁️</span>
+                    <span class="action-text">View Tasks</span>
+                  </button>
+                  
+                  <button class="action-btn add-task-btn" 
+                          (click)="onDayClick(day, $event)"
+                          title="Add new task">
+                    <span class="action-icon">+</span>
+                    <span class="action-text">Add Task</span>
+                  </button>
+                </div>
+                
+                 </div>
             }
           </div>
         </div>
@@ -697,6 +711,7 @@ interface Category {
       transition: all var(--transition-normal);
       border: 1px solid transparent;
       position: relative;
+      padding-bottom: 3rem; /* Make space for buttons */
     }
 
     .calendar-day:hover {
@@ -748,6 +763,7 @@ interface Category {
       flex-wrap: wrap;
       gap: 2px;
       margin-top: 0.25rem;
+      margin-bottom: 0.5rem; /* Don't overlap with buttons */
     }
 
     .task-indicator {
@@ -791,27 +807,82 @@ interface Category {
       margin-left: 2px;
     }
 
-    /* Add Task Hint for Empty Days */
-    .add-task-hint {
-      text-align: center;
-      margin-top: 0.5rem;
-    }
-
-    .plus-icon {
-      color: var(--text-muted);
-      font-size: 1.2rem;
-      font-weight: bold;
+    /* Day action buttons */
+    .day-actions {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: 0.25rem;
+      justify-content: center;
       opacity: 0;
+      transform: translateY(10px);
       transition: all var(--transition-normal);
+      padding: 0 0.5rem;
     }
 
-    .calendar-day:hover .plus-icon {
+    .calendar-day:hover .day-actions {
       opacity: 1;
-      color: var(--accent-primary);
+      transform: translateY(0);
     }
 
-    .calendar-day:not(.current-month) .add-task-hint {
-      display: none;
+    .action-btn {
+      flex: 1;
+      padding: 0.4rem 0.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      transition: all var(--transition-normal);
+      max-width: 80px;
+    }
+
+    .view-tasks-btn {
+      background: var(--accent-primary);
+      color: var(--text-light);
+    }
+
+    .view-tasks-btn:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .view-tasks-btn:not(:disabled):hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .add-task-btn {
+      background: #28a745;
+      color: white;
+    }
+
+    .add-task-btn:hover {
+      background: #218838;
+      transform: translateY(-1px);
+    }
+
+    .action-icon {
+      font-size: 0.8rem;
+    }
+
+    .action-text {
+      white-space: nowrap;
+    }
+
+    .empty-day-hint {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-style: italic;
     }
 
     /* Week View Styles with Drag & Drop */
@@ -1964,6 +2035,26 @@ interface Category {
       .summary-text {
         text-align: center;
       }
+
+      .day-actions {
+        flex-direction: column;
+        gap: 0.1rem;
+        padding: 0 0.25rem;
+      }
+
+      .action-btn {
+        max-width: none;
+        padding: 0.3rem 0.4rem;
+        font-size: 0.65rem;
+      }
+
+      .action-text {
+        display: none;
+      }
+
+      .calendar-day {
+        padding-bottom: 2.5rem;
+      }
     }
   `]
 })
@@ -2213,6 +2304,11 @@ export class CalendarViewComponent implements OnInit {
 
   selectDay(day: CalendarDay): void {
     this.selectedDay = day;
+  }
+
+  // Add this method to handle the disabled state
+  isDaySelectable(day: CalendarDay): boolean {
+    return day.tasks.length > 0;
   }
 
   // Enhanced task creation methods
