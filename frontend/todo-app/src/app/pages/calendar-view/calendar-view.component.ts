@@ -194,20 +194,33 @@ interface Category {
         </div>
       }
 
-      <!-- Year View -->
+      <!-- Enhanced Year View -->
       @if (viewMode === 'year') {
         <div class="year-view">
           <div class="year-grid">
             @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
               <div 
                 class="year-month"
+                [class.has-completed-tasks]="getCompletedTasksForMonth(monthData.tasks) > 0"
+                [class.all-tasks-completed]="getCompletedTasksForMonth(monthData.tasks) === monthData.tasks.length && monthData.tasks.length > 0"
                 (click)="onYearMonthClick(monthData, $event)"
               >
                 <div class="month-header">
                   <h4>{{ monthData.month }}</h4>
                   <div class="month-stats">
-                    <span class="completed-count">{{ getCompletedTasksForMonth(monthData.tasks) }}✓</span>
-                    <span class="task-count">{{ monthData.tasks.length }} tasks</span>
+                    <!-- Enhanced completion stats -->
+                    <div class="completion-progress">
+                      <div class="progress-bar">
+                        <div 
+                          class="progress-fill" 
+                          [style.width.%]="getCompletionPercentage(monthData.tasks)"
+                          [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100"
+                        ></div>
+                      </div>
+                      <span class="completion-text">
+                        {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
+                      </span>
+                    </div>
                   </div>
                   <div class="add-task-hint-year">
                     <span class="plus-icon">+</span>
@@ -219,18 +232,36 @@ interface Category {
                     <div 
                       class="year-task-item"
                       [class.completed]="task.completed"
+                      [class.pending]="!task.completed"
                       [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
+                      [style.opacity]="task.completed ? '1' : '0.9'"
                     >
-                      <div class="year-task-title">
-                        @if (task.completed) {
-                          <span class="completion-check">✓</span>
-                        }
-                        {{ task.title }}
+                      <div class="year-task-content">
+                        <div class="year-task-title">
+                          @if (task.completed) {
+                            <span class="completion-check">✅</span>
+                          } @else {
+                            <span class="pending-indicator">⏳</span>
+                          }
+                          {{ task.title }}
+                        </div>
+                        <div class="year-task-status">
+                          @if (task.completed) {
+                            <span class="status-completed">Completed</span>
+                          } @else {
+                            <span class="status-pending">Pending</span>
+                          }
+                        </div>
                       </div>
                     </div>
                   }
                   @if (monthData.tasks.length > 5) {
-                    <div class="more-tasks-year">+{{ monthData.tasks.length - 5 }} more</div>
+                    <div class="more-tasks-year">
+                      +{{ monthData.tasks.length - 5 }} more
+                      <span class="more-tasks-stats">
+                        ({{ getCompletedTasksForMonth(monthData.tasks.slice(5)) }} completed)
+                      </span>
+                    </div>
                   }
                   @if (monthData.tasks.length === 0) {
                     <div class="empty-month">
@@ -239,6 +270,28 @@ interface Category {
                     </div>
                   }
                 </div>
+
+                <!-- Month completion summary -->
+                @if (monthData.tasks.length > 0) {
+                  <div class="month-completion-summary">
+                    <div class="completion-badge" [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100">
+                      {{ getCompletionPercentage(monthData.tasks) }}%
+                    </div>
+                    <span class="summary-text">
+                      @if (getCompletionPercentage(monthData.tasks) === 100) {
+                        🎉 All tasks completed!
+                      } @else if (getCompletionPercentage(monthData.tasks) >= 75) {
+                        🔥 Almost there!
+                      } @else if (getCompletionPercentage(monthData.tasks) >= 50) {
+                        📈 Good progress!
+                      } @else if (getCompletionPercentage(monthData.tasks) > 0) {
+                        🚀 Getting started!
+                      } @else {
+                        💪 Ready to begin!
+                      }
+                    </span>
+                  </div>
+                }
               </div>
             }
           </div>
@@ -1008,7 +1061,7 @@ interface Category {
       transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
     }
 
-    /* Year View Styles */
+    /* Enhanced Year View Styles */
     .year-view {
       margin-bottom: 2rem;
     }
@@ -1016,47 +1069,97 @@ interface Category {
     .year-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
+      gap: 1.5rem;
     }
 
     .year-month {
       background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
       cursor: pointer;
       transition: all var(--transition-normal);
-      min-height: 150px;
+      min-height: 200px;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
     .year-month:hover {
       border-color: var(--accent-primary);
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       box-shadow: var(--shadow-lg);
       background: var(--bg-secondary);
+    }
+
+    .year-month.has-completed-tasks {
+      border-left: 4px solid #28a745;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #f8fff9 100%);
+    }
+
+    .year-month.all-tasks-completed {
+      border-color: #28a745;
+      background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 100%);
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
     }
 
     .month-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
       position: relative;
     }
 
     .month-header h4 {
       margin: 0;
       color: var(--text-primary);
-      font-size: 1rem;
+      font-size: 1.1rem;
+      font-weight: 700;
     }
 
     .month-stats {
       display: flex;
+      flex-direction: column;
+      align-items: flex-end;
       gap: 0.5rem;
-      font-size: 0.8rem;
+    }
+
+    .completion-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 120px;
+    }
+
+    .progress-bar {
+      width: 60px;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #28a745;
+      border-radius: 4px;
+      transition: width 0.5s ease-in-out;
+    }
+
+    .progress-fill.full-completion {
+      background: linear-gradient(90deg, #28a745, #20c997);
+      box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    }
+
+    .completion-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
     }
 
     /* Add Task Hint for Year Month Headers */
@@ -1074,28 +1177,43 @@ interface Category {
     .month-tasks {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.5rem;
+      flex: 1;
+      margin-bottom: 1rem;
     }
 
     .year-task-item {
-      padding: 0.5rem;
-      border-radius: 4px;
+      padding: 0.75rem;
+      border-radius: 8px;
       color: var(--text-light);
       font-size: 0.8rem;
       transition: all var(--transition-normal);
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-sm);
     }
 
     .year-task-item.completed {
-      opacity: 0.8;
+      background: #28a745 !important;
+      border-color: #28a745;
+      opacity: 1;
+      transform: scale(1.02);
     }
 
-    .year-task-item.completed .year-task-title {
-      text-decoration: line-through;
+    .year-task-item.pending {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      opacity: 0.9;
     }
 
     .year-task-item:hover {
-      transform: translateX(2px);
-      opacity: 0.9;
+      transform: translateX(3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .year-task-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
 
     .year-task-title {
@@ -1105,6 +1223,32 @@ interface Category {
       white-space: nowrap;
       display: flex;
       align-items: center;
+      gap: 0.5rem;
+    }
+
+    .completion-check {
+      font-size: 0.9rem;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    .pending-indicator {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    .year-task-status {
+      font-size: 0.7rem;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .status-completed {
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .status-pending {
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .more-tasks-year {
@@ -1112,17 +1256,32 @@ interface Category {
       color: var(--text-muted);
       font-size: 0.8rem;
       font-style: italic;
-      padding: 0.5rem;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      border: 1px dashed var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .more-tasks-stats {
+      font-size: 0.7rem;
+      color: #28a745;
+      font-weight: 600;
     }
 
     .empty-month {
       text-align: center;
       color: var(--text-muted);
       font-style: italic;
-      padding: 1rem;
+      padding: 2rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
     }
 
     .empty-month-text {
@@ -1133,6 +1292,49 @@ interface Category {
       font-size: 0.8rem;
       color: var(--accent-primary);
       font-weight: 600;
+    }
+
+    /* Month Completion Summary */
+    .month-completion-summary {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: space-between;
+    }
+
+    .completion-badge {
+      background: #28a745;
+      color: white;
+      padding: 0.4rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 50px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+
+    .completion-badge.full-completion {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      box-shadow: 0 2px 12px rgba(40, 167, 69, 0.4);
+      animation: pulse 2s infinite;
+    }
+
+    .summary-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      flex: 1;
+      text-align: right;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
 
     /* Month Selection Modal Styles */
@@ -1595,6 +1797,12 @@ interface Category {
     }
 
     /* Responsive Design */
+    @media (max-width: 1200px) {
+      .year-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     @media (max-width: 768px) {
       .calendar-header {
         flex-direction: column;
@@ -1699,6 +1907,30 @@ interface Category {
 
       .form-actions {
         flex-direction: column;
+      }
+
+      .month-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+      
+      .month-stats {
+        align-items: stretch;
+      }
+      
+      .completion-progress {
+        justify-content: space-between;
+      }
+      
+      .month-completion-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+      }
+      
+      .summary-text {
+        text-align: center;
       }
     }
   `]
@@ -1885,6 +2117,13 @@ export class CalendarViewComponent implements OnInit {
 
   getCompletedTasksForMonth(tasks: Task[]): number {
     return tasks.filter(task => task.completed).length;
+  }
+
+  // NEW: Get completion percentage for progress bars
+  getCompletionPercentage(tasks: Task[]): number {
+    if (tasks.length === 0) return 0;
+    const completed = tasks.filter(task => task.completed).length;
+    return Math.round((completed / tasks.length) * 100);
   }
 
   getTaskTooltip(task: Task): string {
