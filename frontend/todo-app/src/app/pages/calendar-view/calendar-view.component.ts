@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task, CreateTaskRequest } from '../../models/task.model';
-import { CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, CdkDropListGroup, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, CdkDragPlaceholder, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 
 interface CalendarDay {
   date: Date;
@@ -97,6 +97,7 @@ interface Category {
                         [class.completed]="task.completed"
                         [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
                         [title]="getTaskTooltip(task)"
+                        (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
                       ></div>
                     }
                     @if (day.tasks.length > 3) {
@@ -114,48 +115,45 @@ interface Category {
         </div>
       }
 
-      <!-- Week View with Drag & Drop -->
+      <!-- Week View -->
       @if (viewMode === 'week') {
-        <div class="week-view" cdkDropListGroup>
+        <div class="week-view">
           <div class="week-header">
-            @for (day of currentWeekDays; track day.getTime(); let dayIndex = $index) {
+            @for (day of currentWeekDays; track day; let i = $index) {
               <div 
                 class="week-day-header"
+                [class.current-month]="isCurrentMonthWeek(day)"
                 (click)="onWeekDayClick(day, $event)"
               >
                 <div class="week-day-name">{{ getWeekdayName(day) }}</div>
                 <div class="week-date">{{ day.getDate() }}</div>
                 <div class="day-stats">
-                  <span class="completed-count">{{ getCompletedTasksForDate(day) }}✓</span>
-                  <span class="total-count">{{ getTasksForDate(day).length }}</span>
+                  <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
+                  <span class="total-count">/{{ getTasksForDate(day).length }}</span>
                 </div>
-                <div class="add-task-hint-week" *ngIf="isCurrentMonthWeek(day)">
+                <div class="add-task-hint-week">
                   <span class="plus-icon">+</span>
                 </div>
               </div>
             }
           </div>
           
-          <div class="week-grid">
-            @for (day of currentWeekDays; track day.getTime(); let dayIndex = $index) {
+          <div class="week-grid" cdkDropListGroup>
+            @for (day of currentWeekDays; track day; let i = $index) {
               <div 
                 class="week-day-column"
                 cdkDropList
                 [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
+                [id]="'day-' + i"
                 (cdkDropListDropped)="onTaskDrop($event)"
-                [cdkDropListConnectedTo]="getAllDropLists()"
-                id="day-{{dayIndex}}"
                 (click)="onWeekDayColumnClick(day, $event)"
               >
                 <div class="week-day-tasks">
                   @for (task of getTasksForDate(day); track task.id) {
                     <div 
                       class="week-task-item"
-                      [class.completed]="task.completed"
                       cdkDrag
-                      [cdkDragData]="task"
-                      [style.border-left-color]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
-                      [style.opacity]="task.completed ? '0.7' : '1'"
+                      [class.completed]="task.completed"
                     >
                       <div class="week-task-content">
                         <div class="week-task-title">
@@ -165,29 +163,27 @@ interface Category {
                           {{ task.title }}
                         </div>
                         <div class="week-task-meta">
-                          <span class="week-task-time">
-                            {{ formatTime(task.dueDate) }}
-                          </span>
+                          <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
                           @if (task.completed) {
-                            <span class="completed-badge">Done</span>
+                            <span class="completed-badge">Completed</span>
                           }
                         </div>
                       </div>
-                      <div *cdkDragPlaceholder class="task-drag-placeholder"></div>
                     </div>
                   }
+                  
                   @if (getTasksForDate(day).length === 0) {
-                    <div 
-                      class="drop-zone"
-                      (click)="onWeekDayColumnClick(day, $event)"
-                    >
+                    <div class="drop-zone">
                       <div class="drop-zone-content">
-                        <span class="drop-zone-plus">+</span>
-                        <span class="drop-zone-text">Click to add task</span>
+                        <div class="drop-zone-plus">+</div>
+                        <div class="drop-zone-text">Drop tasks here or click to add</div>
                       </div>
                     </div>
                   }
                 </div>
+                
+                <!-- Drag placeholder using the directive -->
+                <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
               </div>
             }
           </div>
@@ -235,6 +231,7 @@ interface Category {
                       [class.pending]="!task.completed"
                       [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
                       [style.opacity]="task.completed ? '1' : '0.9'"
+                      (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
                     >
                       <div class="year-task-content">
                         <div class="year-task-title">
@@ -758,11 +755,14 @@ interface Category {
       border-radius: 50%;
       flex-shrink: 0;
       position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .task-indicator.completed {
       border: 1px solid white;
       box-shadow: 0 0 2px rgba(40, 167, 69, 0.5);
+      animation: completePulse 0.5s ease;
     }
 
     .task-indicator:hover::after {
@@ -780,6 +780,8 @@ interface Category {
       z-index: 1000;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-md);
+      transform: scale(1.3);
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     }
 
     .more-tasks {
@@ -927,11 +929,14 @@ interface Category {
       cursor: grab;
       transition: all var(--transition-normal);
       border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .week-task-item.completed {
       opacity: 0.8;
       background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
+      animation: completeSlide 0.3s ease;
     }
 
     .week-task-item.completed .week-task-title {
@@ -943,6 +948,8 @@ interface Category {
       transform: translateX(2px);
       box-shadow: var(--shadow-md);
       background: var(--bg-secondary);
+      transform: translateX(5px);
+      box-shadow: var(--shadow-lg);
     }
 
     .week-task-item:active {
@@ -1190,6 +1197,8 @@ interface Category {
       transition: all var(--transition-normal);
       border: 1px solid transparent;
       box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
     .year-task-item.completed {
@@ -1197,6 +1206,7 @@ interface Category {
       border-color: #28a745;
       opacity: 1;
       transform: scale(1.02);
+      animation: completeBounce 0.4s ease;
     }
 
     .year-task-item.pending {
@@ -1207,6 +1217,8 @@ interface Category {
 
     .year-task-item:hover {
       transform: translateX(3px);
+      box-shadow: var(--shadow-md);
+      transform: translateX(3px) scale(1.02);
       box-shadow: var(--shadow-md);
     }
 
@@ -1335,6 +1347,25 @@ interface Category {
       0% { transform: scale(1); }
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
+    }
+
+    @keyframes completePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes completeSlide {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(10px); }
+      100% { transform: translateX(0); }
+    }
+
+    @keyframes completeBounce {
+      0%, 20%, 53%, 80%, 100% { transform: translateX(0) scale(1); }
+      40%, 43% { transform: translateX(0) scale(1.1); }
+      70% { transform: translateX(0) scale(1.05); }
+      90% { transform: translateX(0) scale(1.02); }
     }
 
     /* Month Selection Modal Styles */
@@ -2485,6 +2516,27 @@ export class CalendarViewComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error updating task:', error);
+      }
+    });
+  }
+
+  toggleTaskCompletionFromCalendar(taskId: number, event: Event): void {
+    event.stopPropagation(); // Prevent triggering day/month click events
+    
+    this.taskService.toggleTaskCompletion(taskId).subscribe({
+      next: (updatedTask: Task) => {
+        // Update the task in the local array
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+          
+          // Regenerate calendar views to reflect the change
+          this.generateCalendar();
+          this.generateWeekView();
+        }
+      },
+      error: (error: any) => {
+        console.error('Error updating task completion:', error);
       }
     });
   }
