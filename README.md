@@ -1,5 +1,14 @@
 #  BetterMe: Full-Stack Task Management
 
+<p align="center">
+  <a href="[YOUR_LIVE_DEMO_URL_HERE]"><img src="https://img.shields.io/badge/Live_Demo-Access_Here-28A745?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo Badge"></a>
+  
+  <img src="https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=.net&logoColor=white" alt=".NET 8 Badge">
+  <img src="https://img.shields.io/badge/Angular_20-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular 20 Badge">
+  <img src="https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white" alt="SQL Server Badge">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Badge">
+</p>
+
 A robust, full-stack web application for managing tasks, built using modern technologies in the Microsoft and Google ecosystems.
 
 ---
