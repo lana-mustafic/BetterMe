@@ -1,10 +1,10 @@
-# 🚀 ToDoSolution: Full-Stack Task Management
+#  BetterMe: Full-Stack Task Management
 
 A robust, full-stack web application for managing tasks, built using modern technologies in the Microsoft and Google ecosystems.
 
 ---
 
-## 💡 Project Overview & Key Features
+## Project Overview & Key Features
 
 This project is a complete, authenticated To-Do application demonstrating proficiency in both backend API development and frontend single-page application (SPA) design.
 
@@ -25,6 +25,6 @@ This project is a complete, authenticated To-Do application demonstrating profic
 
 ---
 
-## 📐 Repository Structure
+## Repository Structure
 
 The project is logically divided into separate directories for the API and the client application:
