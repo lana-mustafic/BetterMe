@@ -39,16 +39,18 @@ ToDoSolution/
 └── README.md
 ```
 
-## ⚙️ Local Setup and Deployment
+## Local Setup and Deployment
 
 ### Prerequisites
 
 Ensure you have the following technologies installed and configured on your machine:
 
-* **Backend:** [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-* **Frontend:** [Node.js (LTS)](https://nodejs.org/en) and [Angular CLI](https://angular.io/cli)
-* **Database:** **SQL Server** (or **SQL Server LocalDB**) installed and accessible.
-* **Containerization:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Required for running the Dockerized setup)
+| Component | Required Tools |
+| :--- | :--- |
+| **Backend** | [![.NET 8 SDK](https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=.net)](https://dotnet.microsoft.com/download/dotnet/8.0) |
+| **Frontend** | [![Node.js (LTS)](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/en) [![Angular CLI](https://img.shields.io/badge/Angular_CLI-DD0031?style=for-the-badge&logo=angular)](https://angular.io/cli) |
+| **Database** | **SQL Server** (or **SQL Server LocalDB**) installed and accessible. |
+| **Containerization** | [![Docker Desktop](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/products/docker-desktop/) *(Required for running the Dockerized setup)* |
 
 ### 1. Backend API Setup (SQL Server)
 
