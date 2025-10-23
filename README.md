@@ -29,6 +29,10 @@ This project is a complete, authenticated To-Do application demonstrating profic
 
 The project is logically divided into separate directories for the API and the client application:
 
+```bash
+ToDoSolution/ ├── backend/ │ └── ToDoApi/ # .NET 8 Web API project (Backend) ├── frontend/ │ └── todo-app/ # Angular 20 project (Frontend) └── README.md
+```
+
 ## ⚙️ Local Setup and Deployment
 
 ### Prerequisites
