@@ -54,18 +54,22 @@ Ensure you have the following technologies installed and configured on your mach
 
 1.  **Database Configuration:** Before running, ensure your database connection string in `backend/ToDoApi/appsettings.json` is configured correctly to point to your local SQL Server instance.
 2.  Navigate to the API folder:
+    
     ```bash
     cd backend/ToDoApi
     ```
 3.  Restore dependencies:
+    
     ```bash
     dotnet restore
     ```
 4.  Apply database migrations (this creates the schema on your SQL Server instance):
+  
     ```bash
     dotnet ef database update
     ```
 5.  Run the API:
+    
     ```bash
     dotnet run
     ```
@@ -74,14 +78,17 @@ Ensure you have the following technologies installed and configured on your mach
 ### 2. Frontend Application Setup
 
 1.  Navigate to the Angular folder:
+   
     ```bash
     cd frontend/todo-app
     ```
 2.  Install NPM dependencies:
+   
     ```bash
     npm install
     ```
 3.  Run the client:
+   
     ```bash
     ng serve
     ```
@@ -91,3 +98,10 @@ Ensure you have the following technologies installed and configured on your mach
 
 ```bash
 docker-compose up --build
+```
+
+
+## 👤 Author
+
+* **Lana Mustafic** – [https://github.com/lana-mustafic](https://github.com/lana-mustafic)
+* **LinkedIn** – [https://www.linkedin.com/in/lana-mustafic](https://www.linkedin.com/in/lana-mustafic) (Highly Recommended)
