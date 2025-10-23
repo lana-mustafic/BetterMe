@@ -101,7 +101,13 @@ docker-compose up --build
 ```
 
 
+---
+
 ## 👤 Author
 
-* **Lana Mustafic** – [https://github.com/lana-mustafic](https://github.com/lana-mustafic)
-* **LinkedIn** – [https://www.linkedin.com/in/lana-mustafic](https://www.linkedin.com/in/lana-mustafic) (Highly Recommended)
+**Connect with me:**
+
+[![GitHub](https://img.shields.io/badge/GitHub-lana--mustafic-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/lana-mustafic)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-lana--mustafic-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/lana-mustafic)
+
+---
