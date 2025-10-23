@@ -12,7 +12,7 @@ This project is a complete, authenticated To-Do application demonstrating profic
 
 * **User Authentication:** Secure registration and login using industry-standard **JWT (JSON Web Token)** for stateless authentication.
 * **Task Management (CRUD):** Full Create, Read, Update, and Delete functionality for To-Do items.
-* **Persistent Data:** Tasks and user data are stored persistently using a relational database.
+* **Persistent Data:** Tasks and user data are stored and managed in a **SQL Server** database via Entity Framework Core.
 
 ### Technology Stack Highlights
 
@@ -20,6 +20,7 @@ This project is a complete, authenticated To-Do application demonstrating profic
 | :--- | :--- | :--- | :--- |
 | **Backend** | API Framework | **.NET 8 Web API** (C#) | High-performance, cross-platform backend. |
 | **Frontend** | UI Framework | **Angular 20** | Modern SPA development framework. |
+| **Database** | Persistence | **SQL Server** | Managed via Entity Framework Core. |
 | **Authentication** | Security Standard | **JWT Bearer Authentication** | Used for securing API endpoints. |
 | **Deployment** | Containerization | **Docker** | Configuration for containerizing the application components. |
 
@@ -42,26 +43,29 @@ ToDoSolution/
 
 ### Prerequisites
 
-* [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-* [Node.js (LTS)](https://nodejs.org/en)
-* [Angular CLI](https://angular.io/cli)
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Optional, for containerized setup)
+Ensure you have the following technologies installed and configured on your machine:
 
-### 1. Backend API Setup
+* **Backend:** [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+* **Frontend:** [Node.js (LTS)](https://nodejs.org/en) and [Angular CLI](https://angular.io/cli)
+* **Database:** **SQL Server** (or **SQL Server LocalDB**) installed and accessible.
+* **Containerization:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Required for running the Dockerized setup)
 
-1.  Navigate to the API folder:
+### 1. Backend API Setup (SQL Server)
+
+1.  **Database Configuration:** Before running, ensure your database connection string in `backend/ToDoApi/appsettings.json` is configured correctly to point to your local SQL Server instance.
+2.  Navigate to the API folder:
     ```bash
     cd backend/ToDoApi
     ```
-2.  Restore dependencies:
+3.  Restore dependencies:
     ```bash
     dotnet restore
     ```
-3.  (If using Entity Framework Core) Apply database migrations:
+4.  Apply database migrations (this creates the schema on your SQL Server instance):
     ```bash
     dotnet ef database update
     ```
-4.  Run the API:
+5.  Run the API:
     ```bash
     dotnet run
     ```
@@ -84,8 +88,6 @@ ToDoSolution/
     The frontend will be available at `http://localhost:4200/`.
 
 ### 3. Dockerized Deployment
-
-If a `docker-compose.yml` file is included in the root, the entire application can be built and run using Docker:
 
 ```bash
 docker-compose up --build
