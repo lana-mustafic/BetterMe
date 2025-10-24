@@ -15,16 +15,19 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "outputMode": "static",
             "assets": [
+              "src/favicon.ico",
+              "src/assets",
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [
               "src/styles.css"
-            ],
-            "outputMode": "static"
+            ]
           },
           "configurations": {
             "production": {
@@ -48,16 +51,16 @@
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "development"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "betterme:build:production"  
+              "buildTarget": "betterme:build:production"
             },
             "development": {
-              "buildTarget": "betterme:build:development"  
+              "buildTarget": "betterme:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -70,9 +73,12 @@
           "options": {
             "tsConfig": "tsconfig.spec.json",
             "assets": [
+              "src/favicon.ico",
+              "src/assets",
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/"
               }
             ],
             "styles": [

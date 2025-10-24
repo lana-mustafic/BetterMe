@@ -1,27 +1,30 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [RouterModule, CommonModule],
   template: `
     <nav class="navbar">
       <div class="nav-container">
-        <div class="nav-brand">
-          <h1>✅ BetterMe</h1>
+        <!-- Logo only -->
+        <div class="nav-brand" routerLink="/">
+          <img src="assets/brand/betterme-logo.png" alt="BetterMe Logo" class="brand-logo" />
+
         </div>
-        
+
+        <!-- Navigation Links -->
         <div class="nav-links">
-          <a routerLink="/" routerLinkActive="active">Home</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/tasks" routerLinkActive="active">Tasks</a>
-          
+
           @if (authService.isLoggedIn() && authService.getCurrentUser()) {
             <div class="user-section">
               <a routerLink="/profile" routerLinkActive="active" class="user-info">
-👋 {{ authService.getCurrentUser()?.displayName }}
+                👋 {{ authService.getCurrentUser()?.displayName }}
               </a>
               <button (click)="onLogout()" class="btn-logout">Logout</button>
             </div>
@@ -55,12 +58,28 @@ import { CommonModule } from '@angular/common';
       height: 70px;
     }
 
-    .nav-brand h1 {
-      color: #667eea;
-      font-size: 1.8rem;
-      font-weight: 700;
+    /* Logo only */
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
     }
 
+.brand-logo {
+  width: 120px;              /* make it more visible */
+  height: 120px;
+  object-fit: contain;
+  opacity: 0.9;              /* slight transparency keeps it elegant */
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  cursor: pointer;
+}
+
+  .brand-logo:hover {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+    /* Links */
     .nav-links {
       display: flex;
       gap: 2rem;
@@ -86,6 +105,7 @@ import { CommonModule } from '@angular/common';
       background: rgba(102, 126, 234, 0.1);
     }
 
+    /* User section */
     .user-section {
       display: flex;
       align-items: center;
@@ -112,25 +132,27 @@ import { CommonModule } from '@angular/common';
       background: #c0392b;
     }
 
+    /* Auth links */
     .auth-links {
       display: flex;
       gap: 1rem;
     }
 
+    /* Responsive */
     @media (max-width: 768px) {
       .nav-links {
         gap: 1rem;
       }
-      
-      .user-section {
+
+      .user-section, .auth-links {
         flex-direction: column;
         gap: 0.5rem;
       }
-      
-      .auth-links {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
+
+   .brand-logo {
+    width: 48px;             /* smaller on mobile */
+    height: 48px;
+  }
     }
   `]
 })
