@@ -1,16 +1,38 @@
+# Docker
+.dockerignore
+
 # .NET
-bin/
-obj/
-*.user
-*.suo
-*.vs/
+**/bin/
+**/obj/
+**/*.user
+**/*.db
+**/*.log
 
-# Angular / Node
-node_modules/
-dist/
-.env
-*.log
+# Node.js
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.npm
+**/.yarn
 
-# VS Code
+# Angular
+**/dist/
+**/.angular/
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (keep this for security)
+**/.env
+
+# Logs
+*.log
+logs/
