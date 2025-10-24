@@ -1,0 +1,9 @@
+[build]
+builder = "DOCKERFILE"
+
+[build.dockerfile]
+path = "backend/BetterMe.Api/Dockerfile.railway"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
