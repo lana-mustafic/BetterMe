@@ -1,0 +1,11 @@
+// Debug JWT_KEY
+var jwtKeyFromEnv = Environment.GetEnvironmentVariable("JWT_KEY");
+var jwtKeyFromConfig = builder.Configuration["Jwt:Key"];
+Console.WriteLine($"JWT_KEY from environment: '{jwtKeyFromEnv}'");
+Console.WriteLine($"Jwt:Key from configuration: '{jwtKeyFromConfig}'");
+
+var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(key))
+{
+    throw new InvalidOperationException("JWT_KEY is not set. Set env var JWT_KEY or Jwt:Key in configuration.");
+}
