@@ -1,22 +1,22 @@
-# ---------- Build stage ----------
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy and restore project file only
+# Copy project file and restore
 COPY BetterMe.Api.csproj .
 RUN dotnet restore BetterMe.Api.csproj
 
-# Copy the rest and build
+# Copy everything else and build
 COPY . .
-RUN dotnet publish BetterMe.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# ---------- Runtime stage ----------
-# Use non-Alpine image to avoid globalization issues
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
-COPY --from=build /app/publish ./
+COPY --from=build /app/publish .
 
-ENV ASPNETCORE_URLS=http://+:8080
+# Railway provides PORT environment variable
+ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "BetterMe.Api.dll"]

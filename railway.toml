@@ -2,7 +2,7 @@
 builder = "DOCKERFILE"
 
 [build.dockerfile]
-path = "backend/BetterMe.Api/Dockerfile.railway"
+path = "backend/BetterMe.Api/Dockerfile"
 
 [deploy]
 numReplicas = 1
