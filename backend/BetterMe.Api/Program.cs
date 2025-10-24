@@ -4,39 +4,26 @@ using System.Text;
 using BetterMe.Api.Data;
 using BetterMe.Api.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.OpenApi.Models; // Add this for Swagger
 
 var builder = WebApplication.CreateBuilder(args);
-
-// DEBUG: Log all environment variables
-Console.WriteLine("=== ENVIRONMENT VARIABLES ===");
-foreach (var envVar in Environment.GetEnvironmentVariables().Keys)
-{
-    Console.WriteLine($"{envVar} = {Environment.GetEnvironmentVariable(envVar.ToString())}");
-}
-Console.WriteLine("=== END ENVIRONMENT VARIABLES ===");
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BetterMe API", Version = "v1" });
+});
 
 // Database
 builder.Services.AddSqlServer<AppDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
 
-// JWT Configuration - with debugging
-var jwtKeyFromEnv = Environment.GetEnvironmentVariable("JWT_KEY");
-var jwtKeyFromConfig = builder.Configuration["Jwt:Key"];
-Console.WriteLine($"DEBUG: JWT_KEY from environment = '{jwtKeyFromEnv}'");
-Console.WriteLine($"DEBUG: Jwt:Key from configuration = '{jwtKeyFromConfig}'");
-
-var key = jwtKeyFromEnv ?? jwtKeyFromConfig;
+// JWT Configuration
+var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(key))
 {
     throw new InvalidOperationException("JWT_KEY is not set. Set env var JWT_KEY or Jwt:Key in configuration.");
-}
-else
-{
-    Console.WriteLine($"DEBUG: Using JWT key (length: {key.Length})");
 }
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
