@@ -8,7 +8,7 @@ RUN dotnet restore BetterMe.Api.csproj
 
 # Copy everything else and build
 COPY backend/BetterMe.Api/ .
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish BetterMe.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
