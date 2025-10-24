@@ -4,17 +4,13 @@ using System.Text;
 using BetterMe.Api.Data;
 using BetterMe.Api.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.OpenApi.Models; // Add this for Swagger
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BetterMe API", Version = "v1" });
-});
+builder.Services.AddSwaggerGen();
 
 // Database
 builder.Services.AddSqlServer<AppDbContext>(builder.Configuration.GetConnectionString("DefaultConnection"));
