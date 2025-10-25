@@ -1,128 +1,141 @@
-#  BetterMe: Full-Stack Task Management
+# BetterMe 🧠
+**Full-stack Task Management Web App**
 
-
-<p align="center">
-<p align="center">
-  <a href="[YOUR_LIVE_DEMO_URL_HERE]"><img src="https://img.shields.io/badge/Live_Demo-Access_Here-28A745?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo Badge"></a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=.net&logoColor=white" alt=".NET 8 Badge">
-  <img src="https://img.shields.io/badge/Angular_20-DD0031?style=for-the-badge&logo=angular&logoColor=white" alt="Angular 20 Badge">
-  <img src="https://img.shields.io/badge/SQL_Server-CC2927?style=for-the-badge&logo=microsoft-sql-server&logoColor=white" alt="SQL Server Badge">
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Badge">
-</p>
-
-A robust, full-stack web application for managing tasks, built using modern technologies in the Microsoft and Google ecosystems.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-0A84FF?style=for-the-badge&logoColor=white&logo=azuredevops)](YOUR_DEPLOYMENT_URL)
 
 ---
 
-## Project Overview & Key Features
 
-This project is a complete, authenticated To-Do application demonstrating proficiency in both backend API development and frontend single-page application (SPA) design.
 
-### Core Features
 
-* **User Authentication:** Secure registration and login using industry-standard **JWT (JSON Web Token)** for stateless authentication.
-* **Task Management (CRUD):** Full Create, Read, Update, and Delete functionality for To-Do items.
-* **Persistent Data:** Tasks and user data are stored and managed in a **SQL Server** database via Entity Framework Core.
+## Project Overview
 
-### Technology Stack Highlights
+BetterMe is a robust, full-stack web application designed to manage tasks (a To-Do app) built using modern technologies: a backend API with **.NET 8** and a frontend SPA with **Angular 20**.  
+It emphasizes best practices: JWT-based authentication, role-based access, task CRUD, filters, and containerized deployment with Docker.
 
-| Component | Technology | Version | Notes |
-| :--- | :--- | :--- | :--- |
-| **Backend** | API Framework | **.NET 8 Web API** (C#) | High-performance, cross-platform backend. |
-| **Frontend** | UI Framework | **Angular 20** | Modern SPA development framework. |
-| **Database** | Persistence | **SQL Server** | Managed via Entity Framework Core. |
-| **Authentication** | Security Standard | **JWT Bearer Authentication** | Used for securing API endpoints. |
-| **Deployment** | Containerization | **Docker** | Configuration for containerizing the application components. |
+This project is ideal for:
+- Demonstrating proficiency in backend + frontend full-stack development.  
+- Showcasing secure authentication and authorization workflows.  
+- Practicing deployment workflows (Docker, CI/CD).  
+- Serving as a foundation for larger productivity or business applications.  
+
+---
+
+## Key Features
+
+- **Authentication & Authorization** – Users can register and login; secure endpoints via JWT tokens and role-based authorization.  
+- **Task Management (CRUD)** – Create, Read, Update, Delete tasks; tasks can be assigned, filtered, sorted, and marked complete.  
+- **Persistent Data Layer** – Built on SQL Server (or compatible) via Entity Framework Core for schema, migrations, and data access.  
+- **Modern Frontend SPA** – Responsive UI built with Angular 20, communicates with backend API, handles user sessions, task views.  
+- **Deployment Ready** – Dockerfile(s) + docker-compose setup allow you to containerize both backend and frontend (and database) for easy deployment.  
+- **Clean Architecture / Folder Structure** – Logical separation of concerns: backend and frontend folders, config, and settings neatly organized.  
 
 ---
 
 ## Repository Structure
-
-The project is logically divided into separate directories for the API and the client application:
+Here is the top-level layout:
 
 ```bash
-ToDoSolution/
-├── backend/
-│   └── ToDoApi/      # .NET 8 Web API project (Backend)
-├── frontend/
-│   └── todo-app/     # Angular 20 project (Frontend)
+BetterMe/
+├── backend/ # .NET 8 Web API project (C#)
+│ └── BetterMe.Api/
+├── frontend/ # Angular 20 SPA project
+│ └── betterme/
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
 └── README.md
 ```
 
-## Local Setup and Deployment
+---
+
+## Getting Started
 
 ### Prerequisites
 
-Ensure you have the following technologies installed and configured on your machine:
+- .NET 8 SDK installed on your development machine.  
+- Node.js (LTS) + Angular CLI installed.  
+- SQL Server (or compatible) installed and accessible (LocalDB or other).  
+- Docker Desktop (optional but recommended for containerized setup).  
 
-| Component | Required Tools |
-| :--- | :--- |
-| **Backend** | [![.NET 8 SDK](https://img.shields.io/badge/.NET_8-512BD4?style=for-the-badge&logo=.net)](https://dotnet.microsoft.com/download/dotnet/8.0) |
-| **Frontend** | [![Node.js (LTS)](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/en) [![Angular CLI](https://img.shields.io/badge/Angular_CLI-DD0031?style=for-the-badge&logo=angular)](https://angular.io/cli) |
-| **Database** | **SQL Server** (or **SQL Server LocalDB**) installed and accessible. |
-| **Containerization** | [![Docker Desktop](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/products/docker-desktop/) *(Required for running the Dockerized setup)* |
+---
 
-### 1. Backend API Setup (SQL Server)
+### Local Setup
 
-1.  **Database Configuration:** Before running, ensure your database connection string in `backend/ToDoApi/appsettings.json` is configured correctly to point to your local SQL Server instance.
-2.  Navigate to the API folder:
-    
-    ```bash
-    cd backend/ToDoApi
-    ```
-3.  Restore dependencies:
-    
-    ```bash
-    dotnet restore
-    ```
-4.  Apply database migrations (this creates the schema on your SQL Server instance):
-  
-    ```bash
-    dotnet ef database update
-    ```
-5.  Run the API:
-    
-    ```bash
-    dotnet run
-    ```
-    The API will typically run on `http://localhost:5000/` or a similar port.
+#### 1. Backend API Setup
+```bash
+cd backend/BetterMe.Api
+# Configure connection string in appsettings.json to point at your SQL Server instance
+dotnet restore
+dotnet ef database update    # Applies any migrations, creates schema
+dotnet run                   # Runs the API (typically at http://localhost:5000 or similar)
+```
 
 ### 2. Frontend Application Setup
-
-1.  Navigate to the Angular folder:
-   
-    ```bash
-    cd frontend/todo-app
-    ```
-2.  Install NPM dependencies:
-   
-    ```bash
-    npm install
-    ```
-3.  Run the client:
-   
-    ```bash
-    ng serve
-    ```
-    The frontend will be available at `http://localhost:4200/`.
+```bash
+cd frontend/betterme
+npm install
+ng serve                     # Launches the Angular app (typically at http://localhost:4200)
+```
 
 ### 3. Dockerized Deployment
 
+From the root of the repo:
 ```bash
 docker-compose up --build
 ```
+## Usage
+
+- Navigate to the frontend URL (e.g., http://localhost:4200).  
+- Register a new user or login.  
+- Create, view, edit, and delete tasks.  
+- Filter or sort tasks by status, due date.  
+- Explore the API endpoints (e.g., via Swagger or Postman).
+
+---
+
+## Author
+
+**Lana Mustafić**
+
+Feel free to reach out or connect with me:
+
+<div align="left" style="margin-top: 8px;">
+
+  <a href="mailto:lana-mustafic@outlook.com" target="_blank">
+    <img src="https://skillicons.dev/icons?i=gmail" width="45" height="45" alt="Email"/>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://linkedin.com/in/lana-mustafic" target="_blank">
+    <img src="https://skillicons.dev/icons?i=linkedin" width="45" height="45" alt="LinkedIn"/>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/lana-mustafic" target="_blank">
+    <img src="https://skillicons.dev/icons?i=github" width="45" height="45" alt="GitHub"/>
+  </a>
+
+</div>
+
+I’m passionate about building structured, maintainable applications, improving my full-stack skills, and leveraging best practices in real-world systems.
 
 
 ---
 
-## 👤 Author
+## Contributing
 
-**Connect with me:**
+Contributions are very welcome! If you’d like to:
 
-[![GitHub](https://img.shields.io/badge/GitHub-lana--mustafic-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/lana-mustafic)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-lana--mustafic-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/lana-mustafic)
+1. Fork the repository.  
+2. Create a feature branch (`git checkout -b feature/YourFeature`).  
+3. Commit your changes (`git commit -m 'Add YourFeature'`).  
+4. Push to your branch (`git push origin feature/YourFeature`).  
+5. Open a Pull Request – I’ll review and provide feedback.  
+
+Please follow the existing code style and include documentation/tests where appropriate.  
 
 ---
+
+## Acknowledgements
+
+- Thanks to all developers and open-source libraries that make full-stack development accessible.  
+- Inspired by modern web architecture patterns and container-first deployment strategies.  
