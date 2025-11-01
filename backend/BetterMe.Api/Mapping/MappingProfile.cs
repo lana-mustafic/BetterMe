@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
-using BetterMe.Api.DTOs.Auth;
+using BetterMe.Api
+    .DTOs.Auth;
 using BetterMe.Api.DTOs.Task;
 using BetterMe.Api.Models;
 
