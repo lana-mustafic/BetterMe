@@ -1,22 +1,33 @@
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# =========================
+# BUILD STAGE
+# =========================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy project file and restore
-COPY BetterMe.Api.csproj .
+# Copy only the API project file first
+COPY BetterMe.Api.csproj ./
+
+# Restore dependencies for this project only
 RUN dotnet restore BetterMe.Api.csproj
 
-# Copy everything else and build
+# Copy the rest of the project files
 COPY . .
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+# Publish the application
+RUN dotnet publish BetterMe.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# =========================
+# RUNTIME STAGE
+# =========================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
 
-# Railway provides PORT environment variable
-ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+# Render expects the container to listen on port 8080
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
 
+# Copy compiled app from build stage
+COPY --from=build /app/publish .
+
+# Start the app
 ENTRYPOINT ["dotnet", "BetterMe.Api.dll"]
