@@ -13,14 +13,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//CORS (allow frontend)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("https://betterme-frontend.onrender.com")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 //Database (PostgreSQL)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Render will override this with ConnectionStrings__DefaultConnection env var
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
     if (string.IsNullOrWhiteSpace(connectionString))
-        throw new InvalidOperationException("Connection string not found. Set ConnectionStrings__DefaultConnection.");
+        throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing.");
 
     options.UseNpgsql(connectionString);
 });
@@ -52,13 +62,13 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-
-// Auth + Routing
+// Auth + CORS + Routing
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
-// Apply Migrations Automatically 
+//Apply Migrations + Seed 
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -66,7 +76,7 @@ using (var scope = app.Services.CreateScope())
     SeedData.Initialize(context);
 }
 
-//Render Port Binding
+//Render Port Binding 
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(port))
 {
