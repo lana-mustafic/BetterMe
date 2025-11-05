@@ -13,19 +13,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//CORS (allow frontend)
+// CORS (Allow Frontend)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://betterme-frontend.onrender.com")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins(
+            "https://betterme-frontend.onrender.com",
+            "http://localhost:4200"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
-//Database (PostgreSQL)
+// Database (PostgreSQL)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -35,7 +38,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 
-//JWT Authentication
+// JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
     throw new InvalidOperationException("JWT key missing. Set JWT_KEY env var or Jwt:Key in appsettings.json.");
@@ -62,13 +65,14 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Auth + CORS + Routing
+app.UseCors("AllowFrontend");
+
+// Auth + Routing
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
 app.MapControllers();
 
-//Apply Migrations + Seed 
+// Apply Migrations + Seed Database
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -76,11 +80,9 @@ using (var scope = app.Services.CreateScope())
     SeedData.Initialize(context);
 }
 
-//Render Port Binding 
-var port = Environment.GetEnvironmentVariable("PORT");
-if (!string.IsNullOrWhiteSpace(port))
-{
-    app.Urls.Add($"http://0.0.0.0:{port}");
-}
+// Render Dynamic Port Binding 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Clear(); 
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();
