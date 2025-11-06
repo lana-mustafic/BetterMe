@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using BetterMe.Api.Services;
 using BetterMe.Api.Services.Interfaces;
-using BetterMe.Api.Repositories;
 using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Repositories.Concrete;
 
@@ -74,6 +73,7 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 // Services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 
 var app = builder.Build();
