@@ -5,6 +5,12 @@ using BetterMe.Api.Data;
 using BetterMe.Api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using BetterMe.Api.Services;
+using BetterMe.Api.Services.Interfaces;
+using BetterMe.Api.Repositories;
+using BetterMe.Api.Repositories.Interfaces;
+using BetterMe.Api.Repositories.Concrete;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +64,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+
+// Repositories
+builder.Services.AddScoped<IUserRepository, UsersRepository>();
+builder.Services.AddScoped<ITodoTasksRepository, TodoTasksRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+
+// Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
+
 
 var app = builder.Build();
 
