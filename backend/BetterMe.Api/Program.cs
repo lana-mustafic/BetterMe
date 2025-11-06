@@ -9,6 +9,8 @@ using BetterMe.Api.Services;
 using BetterMe.Api.Services.Interfaces;
 using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Repositories.Concrete;
+using AutoMapper;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +64,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 
