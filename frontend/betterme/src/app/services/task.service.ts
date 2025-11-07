@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, switchMap, tap, catchError, throwError } from 'rxjs';
 import { Task, CreateTaskRequest, UpdateTaskRequest } from '../models/task.model';
 import { AuthService } from './auth';
-import { environment } from '../../environments/environment';
+import { environment } from '../../environments/environment.prod';
 interface ApiError {
   message: string;
   originalError: HttpErrorResponse;
