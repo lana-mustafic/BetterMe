@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TaskService } from '../../services/task.service';
 import { Task } from '../../models/task.model';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
-import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
+
 
 interface TagWithCount {
   name: string;
@@ -41,8 +41,7 @@ interface Category {
   imports: [
     RouterLink,
     FormsModule, 
-    CalendarViewComponent,
-    ThemeToggleComponent
+    CalendarViewComponent
   ],
   template: `
     <div class="container">
@@ -50,7 +49,6 @@ interface Category {
         <div class="tasks-header">
           <h1>My Tasks</h1>
           <div class="header-actions">
-            <app-theme-toggle></app-theme-toggle>
             <button class="btn btn-primary" (click)="showCreateForm = !showCreateForm">
               + Add New Task
             </button>
@@ -1290,97 +1288,6 @@ interface Category {
       font-size: 1.2rem;
     }
 
-    .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.tasks-container {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-}
-
-.tasks-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.tasks-header h1 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 2rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.task-card {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow);
-}
-
-.task-input {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 0.75rem;
-  width: 100%;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.task-input::placeholder {
-  color: var(--text-secondary);
-}
-
-.btn {
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-primary {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-  background-color: var(--bg-secondary);
-  transform: translateY(-1px);
-}
 
 .task-list {
   margin-top: 2rem;
