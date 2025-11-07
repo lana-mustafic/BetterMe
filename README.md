@@ -9,6 +9,7 @@ A modern full-stack productivity app to help users **organize daily tasks, build
 ---
 
 <div align="center">
+<br><br/>
 
 | Frontend | Backend (Swagger API) |
 |---------|------------------------|
