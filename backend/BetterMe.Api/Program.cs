@@ -11,27 +11,25 @@ using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Repositories.Concrete;
 using AutoMapper;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers & Swagger
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS (Allow Frontend)
+// CORS - Moved to the top to ensure it's configured early
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-            "https://betterme-frontend.onrender.com",
-            "http://localhost:4200"
-        )
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+                "https://betterme-frontend.onrender.com",  // Your production frontend
+                "http://localhost:4200"                    // Local development
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -67,7 +65,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-
 // Repositories
 builder.Services.AddScoped<IUserRepository, UsersRepository>();
 builder.Services.AddScoped<ITodoTasksRepository, TodoTasksRepository>();
@@ -78,18 +75,25 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-
 var app = builder.Build();
 
-// Swagger
-app.UseSwagger();
-app.UseSwaggerUI();
+// Configure the HTTP request pipeline.
 
+// CORS middleware - MUST come before UseAuthentication and UseAuthorization
 app.UseCors("AllowFrontend");
 
-// Auth + Routing
+// Swagger (enable in development)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Controllers
 app.MapControllers();
 
 // Apply Migrations + Seed Database
@@ -102,7 +106,7 @@ using (var scope = app.Services.CreateScope())
 
 // Render Dynamic Port Binding 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Clear(); 
+app.Urls.Clear();
 app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.MapGet("/", () => Results.Ok("BetterMe API is running!"));
