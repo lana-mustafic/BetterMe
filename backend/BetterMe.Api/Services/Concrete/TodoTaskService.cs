@@ -28,7 +28,7 @@ namespace BetterMe.Api.Services
             {
                 Title = request.Title,
                 Description = request.Description,
-                DueDate = request.DueDate,
+                DueDate = request.DueDate?.ToUniversalTime(), // ✅ Ensure UTC
                 Priority = request.Priority,
                 Category = request.Category,
                 UserId = userId,
@@ -40,8 +40,8 @@ namespace BetterMe.Api.Services
                 IsRecurring = request.IsRecurring,
                 RecurrencePattern = request.RecurrencePattern ?? "none",
                 RecurrenceInterval = request.RecurrenceInterval,
-                RecurrenceEndDate = request.RecurrenceEndDate,
-                NextDueDate = request.DueDate,
+                RecurrenceEndDate = request.RecurrenceEndDate?.ToUniversalTime(), // ✅ Ensure UTC
+                NextDueDate = request.DueDate?.ToUniversalTime(), // ✅ Ensure UTC
                 CompletedInstances = new List<string>(),
                 OriginalTaskId = null,
                 TaskTags = new List<TaskTag>()
@@ -86,9 +86,9 @@ namespace BetterMe.Api.Services
             if (request.Description != null)
                 task.Description = request.Description;
 
-            // FIX: Convert string to DateTime
-            if (request.DueDate != null)
-                task.DueDate = DateTime.Parse(request.DueDate);
+            // ✅ FIXED: DueDate is now DateTime?, no parsing needed
+            if (request.DueDate.HasValue)
+                task.DueDate = request.DueDate.Value.ToUniversalTime();
 
             if (request.Priority.HasValue)
                 task.Priority = request.Priority.Value;
@@ -131,7 +131,7 @@ namespace BetterMe.Api.Services
                 task.RecurrenceInterval = request.RecurrenceInterval.Value;
 
             if (request.RecurrenceEndDate.HasValue)
-                task.RecurrenceEndDate = request.RecurrenceEndDate.Value;
+                task.RecurrenceEndDate = request.RecurrenceEndDate.Value.ToUniversalTime(); // ✅ Ensure UTC
 
             if (request.CompletedInstances != null)
                 task.CompletedInstances = request.CompletedInstances;
@@ -210,7 +210,7 @@ namespace BetterMe.Api.Services
                     UserId = task.UserId,
                     Title = task.Title,
                     Description = task.Description,
-                    DueDate = task.NextDueDate,
+                    DueDate = task.NextDueDate?.ToUniversalTime(), // ✅ Ensure UTC
                     Priority = task.Priority,
                     Category = task.Category,
                     CreatedAt = DateTime.UtcNow,
@@ -220,9 +220,9 @@ namespace BetterMe.Api.Services
                     IsRecurring = true,
                     RecurrencePattern = task.RecurrencePattern,
                     RecurrenceInterval = task.RecurrenceInterval,
-                    RecurrenceEndDate = task.RecurrenceEndDate,
+                    RecurrenceEndDate = task.RecurrenceEndDate?.ToUniversalTime(), // ✅ Ensure UTC
                     OriginalTaskId = task.OriginalTaskId ?? task.Id,
-                    NextDueDate = CalculateNextDueDate(task.RecurrencePattern, task.RecurrenceInterval, task.NextDueDate ?? now),
+                    NextDueDate = CalculateNextDueDate(task.RecurrencePattern, task.RecurrenceInterval, task.NextDueDate ?? now)?.ToUniversalTime(), // ✅ Ensure UTC
                     CompletedInstances = new List<string>(),
                     TaskTags = new List<TaskTag>()
                 };
