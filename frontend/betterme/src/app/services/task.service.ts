@@ -2,8 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, switchMap, tap, catchError, throwError } from 'rxjs';
 import { Task, CreateTaskRequest, UpdateTaskRequest } from '../models/task.model';
-import { AuthService } from './auth'; // Fixed import - from './auth' not './auth.service'
-
+import { AuthService } from './auth';
+import { environment } from '../../environments/environment';
 interface ApiError {
   message: string;
   originalError: HttpErrorResponse;
@@ -16,7 +16,7 @@ export class TaskService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   
-  private apiUrl = 'http://localhost:5051/api';
+  private apiUrl = environment.apiUrl;
 
   getTasks(): Observable<Task[]> {
     return this.http.get<Task[]>(`${this.apiUrl}/tasks`, {
