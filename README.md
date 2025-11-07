@@ -1,6 +1,6 @@
 <div align="center">
 
-# BetterMe — Personal Productivity & Habit Tracking App
+# 🧠 BetterMe — Personal Productivity & Habit Tracking App
 
 A modern full-stack productivity app to help users **organize daily tasks, build habits, track progress, and stay accountable**.
 
@@ -8,11 +8,15 @@ A modern full-stack productivity app to help users **organize daily tasks, build
 
 ---
 
+<div align="center">
+
 | Frontend | Backend (Swagger API) |
 |---------|------------------------|
-| **https://betterme-frontend.onrender.com** | **https://betterme-pihl.onrender.com/swagger/index.html** |
+| <a href="https://betterme-frontend.onrender.com" target="_blank"><img src="https://img.shields.io/badge/Live%20Frontend-0d1117?style=for-the-badge&logo=angular&logoColor=white&color=red" /></a> | <a href="https://betterme-pihl.onrender.com/swagger/index.html" target="_blank"><img src="https://img.shields.io/badge/Swagger%20API-0d1117?style=for-the-badge&logo=swagger&logoColor=white&color=brightgreen" /></a> |
 
-> **Note:** If the backend takes a few seconds to respond — Render may be waking the server. Just retry once. 😊
+</div>
+
+> **Note:** The backend may take a few seconds to start — Render free tier sleeps when idle. Just retry after a moment 😊
 
 ---
 
