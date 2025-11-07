@@ -1,7 +1,18 @@
-# BetterMe 🧠
-**Full-stack Task Management Web App**
+<div align="center">
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-0A84FF?style=for-the-badge&logoColor=white&logo=azuredevops)](YOUR_DEPLOYMENT_URL)
+# BetterMe — Personal Productivity & Habit Tracking App
+
+A modern full-stack productivity app to help users **organize daily tasks, build habits, track progress, and stay accountable**.
+
+</div>
+
+---
+
+| Frontend | Backend (Swagger API) |
+|---------|------------------------|
+| **https://betterme-frontend.onrender.com** | **https://betterme-pihl.onrender.com/swagger/index.html** |
+
+> **Note:** If the backend takes a few seconds to respond — Render may be waking the server. Just retry once. 😊
 
 ---
 
@@ -10,27 +21,34 @@
 
 ## Project Overview
 
-BetterMe is a robust, full-stack web application designed to manage tasks (a To-Do app) built using modern technologies: a backend API with **.NET 8** and a frontend SPA with **Angular 20**.  
-It emphasizes best practices: JWT-based authentication, role-based access, task CRUD, filters, and containerized deployment with Docker.
+BetterMe is a full-stack productivity and habit-tracking application built using .NET 8 for the backend and Angular 20 for the frontend.
+It provides a smooth user experience for managing tasks, building habits, tracking progress, and maintaining personal discipline — all with a secure and modern architecture.
 
 This project is ideal for:
-- Demonstrating proficiency in backend + frontend full-stack development.  
-- Showcasing secure authentication and authorization workflows.  
-- Practicing deployment workflows (Docker, CI/CD).  
-- Serving as a foundation for larger productivity or business applications.  
+
+- Demonstrating strong full-stack engineering skills
+
+- Showcasing secure authentication and authorization flows
+
+- Practicing API + Frontend integration and state management
+
+- Serving as a base for more advanced personal productivity or business applications
 
 ---
 
-## Key Features
+## Features
 
-- **Authentication & Authorization** – Users can register and login; secure endpoints via JWT tokens and role-based authorization.  
-- **Task Management (CRUD)** – Create, Read, Update, Delete tasks; tasks can be assigned, filtered, sorted, and marked complete.  
-- **Persistent Data Layer** – Built on SQL Server (or compatible) via Entity Framework Core for schema, migrations, and data access.  
-- **Modern Frontend SPA** – Responsive UI built with Angular 20, communicates with backend API, handles user sessions, task views.  
-- **Deployment Ready** – Dockerfile(s) + docker-compose setup allow you to containerize both backend and frontend (and database) for easy deployment.  
-- **Clean Architecture / Folder Structure** – Logical separation of concerns: backend and frontend folders, config, and settings neatly organized.  
+- ✅ **User Authentication** (Register, Login, JWT-based sessions)
+- ✅ **Profile Management**
+- ✅ **Create & Manage Tasks**
+- ✅ **Support for Recurring / Habit Tasks**
+- ✅ **Tag System** for categorizing tasks
+- ✅ **Progress tracking**
+- ✅ **Responsive UI for mobile & desktop**
+- ✅ **Protected routes & secure API endpoints**
 
 ---
+
 
 ## Repository Structure
 Here is the top-level layout:
