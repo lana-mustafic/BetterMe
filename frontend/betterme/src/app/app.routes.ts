@@ -6,14 +6,15 @@ import { TasksComponent } from './pages/tasks/tasks.component';
 import { TaskDetailComponent } from './pages/task-detail/task-detail.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { EditTaskComponent } from './pages/edit-task/edit-task.component';
-import { EditProfileComponent } from './pages/edit-profile/edit-profile.component'; // Add this import
-import { ChangePasswordComponent } from './pages/password/change-password.component'; // Add this import
+import { EditProfileComponent } from './pages/edit-profile/edit-profile.component';
+import { ChangePasswordComponent } from './pages/password/change-password.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+
   { 
     path: 'tasks', 
     component: TasksComponent,
@@ -29,20 +30,29 @@ export const routes: Routes = [
     component: EditTaskComponent,
     canActivate: [authGuard]
   },
+
   { 
     path: 'profile', 
     component: ProfileComponent,
     canActivate: [authGuard]
   },
   { 
-    path: 'profile/edit', // Add this route
+    path: 'profile/edit',
     component: EditProfileComponent,
     canActivate: [authGuard]
   },
   { 
-    path: 'profile/change-password', // Add this route
+    path: 'profile/change-password',
     component: ChangePasswordComponent,
     canActivate: [authGuard]
   },
+
+  // Add verify email route BEFORE wildcard
+  { 
+    path: 'verify-email', 
+    loadComponent: () => import('./pages/verify-email/verify-email.component')
+      .then(m => m.VerifyEmailComponent)
+  },
+
   { path: '**', redirectTo: '' }
 ];

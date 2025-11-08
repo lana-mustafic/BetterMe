@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -6,7 +7,7 @@ import { AuthService } from '../../services/auth';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container">
       <div class="auth-container">
@@ -14,54 +15,44 @@ import { AuthService } from '../../services/auth';
           <h2 class="auth-title">Welcome Back</h2>
           <p class="auth-subtitle">Sign in to your account</p>
           
-          <form class="auth-form" (ngSubmit)="onLogin()">
+          <form (ngSubmit)="onLogin()">
             <div class="form-group">
               <label class="form-label">Email Address</label>
               <input 
-                type="email" 
+                type="email"
                 class="form-control"
                 placeholder="Enter your email"
-                [(ngModel)]="email" 
-                name="email" 
+                [(ngModel)]="email"
+                name="email"
                 required
               />
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">Password</label>
               <input 
-                type="password" 
+                type="password"
                 class="form-control"
                 placeholder="Enter your password"
-                [(ngModel)]="password" 
-                name="password" 
+                [(ngModel)]="password"
+                name="password"
                 required
               />
             </div>
 
-            @if (errorMessage) {
-              <div class="error-message">
-                {{ errorMessage }}
-              </div>
-            }
+            <div *ngIf="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
 
-            @if (isLoading) {
-              <div class="loading">
-                Signing in...
-              </div>
-            }
-            
-            <button 
-              type="submit" 
-              class="btn btn-primary btn-full"
-              [disabled]="isLoading"
-            >
+            <button class="btn btn-primary btn-full" type="submit" [disabled]="isLoading">
               {{ isLoading ? 'Signing In...' : 'Sign In' }}
             </button>
           </form>
-          
+
           <div class="auth-footer">
-            <p>Don't have an account? <a routerLink="/register" class="auth-link">Sign up</a></p>
+            <p>Don't have an account? 
+              <a routerLink="/register" class="auth-link">Sign up</a>
+            </p>
           </div>
         </div>
       </div>
@@ -73,75 +64,30 @@ import { AuthService } from '../../services/auth';
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 0;
     }
-
     .auth-card {
       background: white;
+      padding: 2.5rem;
       border-radius: 16px;
-      padding: 3rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
       width: 100%;
       max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     }
-
-    .auth-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.5rem;
-      text-align: center;
-    }
-
-    .auth-subtitle {
-      color: #666;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .auth-form {
-      margin-bottom: 2rem;
-    }
-
-    .btn-full {
-      width: 100%;
-    }
-
-    .auth-footer {
-      text-align: center;
-      color: #666;
-    }
-
-    .auth-link {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .auth-link:hover {
-      text-decoration: underline;
-    }
-
+    .auth-title { text-align:center; font-weight:600; margin-bottom:0.5rem; }
+    .auth-subtitle { text-align:center; margin-bottom:1.5rem; color:#666; }
+    .form-group { margin-bottom:1rem; }
+    .form-control { width:100%; padding:0.75rem; border-radius:8px; border:1px solid #ccc; }
+    .btn-full { width:100%; margin-top:1rem; }
+    .auth-footer { text-align:center; margin-top:1.5rem; color:#666; }
+    .auth-link { color:#667eea; font-weight:600; cursor:pointer; }
     .error-message {
       background: #fee;
       color: #c33;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 1rem;
+      padding: .75rem;
+      border-radius: 8px;
       text-align: center;
       border: 1px solid #fcc;
-    }
-
-    .loading {
-      text-align: center;
-      color: #667eea;
       margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
   `]
 })
@@ -149,43 +95,36 @@ export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  email: string = '';
-  password: string = '';
-  isLoading: boolean = false;
-  errorMessage: string = '';
+  email = '';
+  password = '';
+  isLoading = false;
+  errorMessage = '';
 
   onLogin(): void {
-    if (!this.email || !this.password) {
-      this.errorMessage = 'Please fill in all fields';
-      return;
-    }
-
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.authService.login({
-      email: this.email,
-      password: this.password
-    }).subscribe({
-      next: (response: any) => {
-        this.isLoading = false;
-        const returnUrl = this.getReturnUrl();
-        this.router.navigate([returnUrl || '/tasks']);
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this.errorMessage = error.error?.message || 'Login failed. Please try again.';
-        
-        // For demo purposes - remove this when backend is ready
-        if (error.status === 0) {
-          this.errorMessage = 'Backend is not running. This is a demo.';
-        }
-      }
-    });
-  }
+    this.authService.login({ email: this.email, password: this.password })
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.router.navigate(['/tasks']);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          
+          const msg = err.error?.message?.toLowerCase() || '';
 
-  private getReturnUrl(): string {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('returnUrl') || '';
+          // ✅ Detect "email not verified" message and redirect user
+          if (msg.includes('verify')) {
+            this.router.navigate(['/verify-email'], {
+              queryParams: { email: this.email }
+            });
+            return;
+          }
+
+          this.errorMessage = err.error?.message || "Login failed.";
+        }
+      });
   }
 }

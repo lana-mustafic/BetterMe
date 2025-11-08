@@ -13,13 +13,19 @@ namespace BetterMe.Api.Controllers
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
 
-        public AuthController(IUserService userService, ITokenService tokenService, IMapper mapper)
+        public AuthController(
+            IUserService userService,
+            ITokenService tokenService,
+            IMapper mapper,
+            IEmailService emailService)
         {
             _userService = userService;
             _tokenService = tokenService;
             _mapper = mapper;
+            _emailService = emailService;
         }
 
         // POST: api/auth/register
@@ -30,56 +36,59 @@ namespace BetterMe.Api.Controllers
 
             var user = await _userService.RegisterAsync(req);
 
-            var token = _tokenService.CreateToken(user);
-            var userDto = _mapper.Map<UserResponse>(user);
+            // Send email verification
+            await _emailService.SendVerificationEmailAsync(
+                user.Email,
+                user.EmailVerificationToken!,
+                user.Name
+            );
 
-       
-            var authResp = new AuthResponse
+            return Ok(new
             {
-                AccessToken = token,
-                User = userDto
-            };
-
-            // CRITICAL: This line must be present to see the JSON
-            var json = System.Text.Json.JsonSerializer.Serialize(authResp, new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                message = "✅ Registration successful! Please verify your email before logging in."
             });
-            Console.WriteLine($"[JSON RESPONSE] Full response: {json}");
-            Console.WriteLine("=== END DEBUGGING ===");
-
-            return Ok(authResp);
         }
 
         // POST: api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthDTOs.LoginRequest req)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
             var user = await _userService.LoginAsync(req);
-            if (user == null) return Unauthorized(new { message = "Invalid credentials" });
+            if (user == null)
+                return Unauthorized(new { message = "Invalid credentials" });
 
-            // DEBUGGING FOR LOGIN TOO
-            Console.WriteLine("=== LOGIN DEBUGGING DATECREATED ===");
-            Console.WriteLine($"[LOGIN] User DateCreated: {user.DateCreated}");
-            Console.WriteLine($"[LOGIN] User DateCreated ToString(): {user.DateCreated.ToString()}");
+            if (!user.IsEmailVerified)
+                return Unauthorized(new { message = "Please verify your email before logging in." });
 
             var token = _tokenService.CreateToken(user);
             var userDto = _mapper.Map<UserResponse>(user);
 
-            Console.WriteLine($"[LOGIN] UserResponse DateCreated: {userDto.DateCreated}");
-            Console.WriteLine("=== END LOGIN DEBUGGING ===");
-
-            var authResp = new AuthResponse
+            return Ok(new AuthResponse
             {
                 AccessToken = token,
                 User = userDto
-            };
-
-            return Ok(authResp);
+            });
         }
 
+        
+        // GET: api/auth/verify
+        [HttpGet("verify")]
+        public async Task<IActionResult> VerifyEmail([FromQuery] string email, [FromQuery] string token)
+        {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+                return BadRequest(new { message = "Invalid verification link." });
+
+            var result = await _userService.VerifyEmailAsync(email, token);
+
+            if (!result)
+                return BadRequest(new { message = "Verification link is invalid or expired." });
+
+            await _emailService.SendWelcomeEmailAsync(email, "");
+
+            return Ok(new { message = "🎉 Email verified successfully! You can now log in." });
+        }
     }
 }

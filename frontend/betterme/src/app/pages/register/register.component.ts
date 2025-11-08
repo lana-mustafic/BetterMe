@@ -1,28 +1,29 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container">
       <div class="auth-container">
         <div class="auth-card">
-          <h2 class="auth-title">Create Account</h2>
-          <p class="auth-subtitle">Join thousands of productive people</p>
-          
-          <form class="auth-form" (ngSubmit)="onRegister()">
+          <h2 class="auth-title">Create an Account</h2>
+          <p class="auth-subtitle">Start your productivity journey</p>
+
+          <form (ngSubmit)="onRegister()">
             <div class="form-group">
               <label class="form-label">Display Name</label>
               <input 
-                type="text" 
+                type="text"
                 class="form-control"
-                placeholder="Choose a display name"
-                [(ngModel)]="displayName" 
-                name="displayName" 
+                placeholder="Your name"
+                [(ngModel)]="displayName"
+                name="displayName"
                 required
               />
             </div>
@@ -30,50 +31,40 @@ import { AuthService } from '../../services/auth';
             <div class="form-group">
               <label class="form-label">Email Address</label>
               <input 
-                type="email" 
+                type="email"
                 class="form-control"
-                placeholder="Enter your email"
-                [(ngModel)]="email" 
-                name="email" 
+                placeholder="Your email"
+                [(ngModel)]="email"
+                name="email"
                 required
               />
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">Password</label>
               <input 
-                type="password" 
+                type="password"
                 class="form-control"
-                placeholder="Create a password"
-                [(ngModel)]="password" 
-                name="password" 
+                placeholder="Choose a password"
+                [(ngModel)]="password"
+                name="password"
                 required
               />
             </div>
 
-            @if (errorMessage) {
-              <div class="error-message">
-                {{ errorMessage }}
-              </div>
-            }
+            <div *ngIf="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
 
-            @if (isLoading) {
-              <div class="loading">
-                Creating your account...
-              </div>
-            }
-            
-            <button 
-              type="submit" 
-              class="btn btn-primary btn-full"
-              [disabled]="isLoading"
-            >
-              {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+            <button class="btn btn-primary btn-full" type="submit" [disabled]="isLoading">
+              {{ isLoading ? 'Creating account...' : 'Sign Up' }}
             </button>
           </form>
-          
+
           <div class="auth-footer">
-            <p>Already have an account? <a routerLink="/login" class="auth-link">Sign in</a></p>
+            <p>Already have an account? 
+              <a routerLink="/login" class="auth-link">Login</a>
+            </p>
           </div>
         </div>
       </div>
@@ -85,75 +76,30 @@ import { AuthService } from '../../services/auth';
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 0;
     }
-
     .auth-card {
       background: white;
+      padding: 2.5rem;
       border-radius: 16px;
-      padding: 3rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
       width: 100%;
       max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     }
-
-    .auth-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.5rem;
-      text-align: center;
-    }
-
-    .auth-subtitle {
-      color: #666;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .auth-form {
-      margin-bottom: 2rem;
-    }
-
-    .btn-full {
-      width: 100%;
-    }
-
-    .auth-footer {
-      text-align: center;
-      color: #666;
-    }
-
-    .auth-link {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .auth-link:hover {
-      text-decoration: underline;
-    }
-
+    .auth-title { text-align:center; font-weight:600; margin-bottom:0.5rem; }
+    .auth-subtitle { text-align:center; margin-bottom:1.5rem; color:#666; }
+    .form-group { margin-bottom:1rem; }
+    .form-control { width:100%; padding:0.75rem; border-radius:8px; border:1px solid #ccc; }
+    .btn-full { width:100%; margin-top:1rem; }
+    .auth-footer { text-align:center; margin-top:1.5rem; color:#666; }
+    .auth-link { color:#667eea; font-weight:600; cursor:pointer; }
     .error-message {
       background: #fee;
       color: #c33;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 1rem;
+      padding: .75rem;
+      border-radius: 8px;
       text-align: center;
       border: 1px solid #fcc;
-    }
-
-    .loading {
-      text-align: center;
-      color: #667eea;
       margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
   `]
 })
@@ -161,46 +107,28 @@ export class RegisterComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  displayName: string = ''; // Changed from username to displayName
-  email: string = '';
-  password: string = '';
-  isLoading: boolean = false;
-  errorMessage: string = '';
+  displayName = '';
+  email = '';
+  password = '';
+  isLoading = false;
+  errorMessage = '';
 
   onRegister(): void {
-    if (!this.displayName || !this.email || !this.password) {
-      this.errorMessage = 'Please fill in all fields';
-      return;
-    }
-
-    if (this.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters long';
-      return;
-    }
-
     this.isLoading = true;
     this.errorMessage = '';
 
     this.authService.register({
-      displayName: this.displayName, // Changed from username to displayName
+      displayName: this.displayName,
       email: this.email,
       password: this.password
     }).subscribe({
-      next: (response: any) => {
+      next: () => {
         this.isLoading = false;
-        this.router.navigate(['/tasks']);
+        this.router.navigate(['/login']);
       },
-      error: (error: any) => {
+      error: (err) => {
         this.isLoading = false;
-        this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
-        
-        // For demo purposes
-        if (error.status === 0) {
-          this.errorMessage = 'Backend is not running. Using demo mode - you are now logged in!';
-          setTimeout(() => {
-            this.router.navigate(['/tasks']);
-          }, 2000);
-        }
+        this.errorMessage = err.error?.message || 'Registration failed.';
       }
     });
   }

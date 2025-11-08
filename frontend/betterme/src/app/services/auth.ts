@@ -4,15 +4,20 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 
-// Updated interface to match your backend UserResponse DTO with DateCreated
 export interface User {
   id: number;
   displayName: string;
   email: string;
-  dateCreated: string;  // Changed from createdAt to dateCreated
+  dateCreated: string;
 }
 
 export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  displayName: string;
   email: string;
   password: string;
 }
@@ -27,20 +32,6 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export interface UserProfile {
-  id: number;
-  displayName: string;
-  email: string;
-  dateCreated: string;
-  lastLogin?: string;
-}
-
-export interface RegisterRequest {
-  displayName: string;
-  email: string;
-  password: string;
-}
-
 export interface AuthResponse {
   accessToken: string;
   user: User;
@@ -52,85 +43,54 @@ export interface AuthResponse {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  
+
   private apiUrl = environment.apiUrl;
+
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor() {
-    this.checkExistingAuth();
-  }
-
-  private checkExistingAuth(): void {
-    const token = this.getToken();
-    if (token) {
-      const user = localStorage.getItem('currentUser');
-      if (user) {
-        this.currentUserSubject.next(JSON.parse(user));
-      }
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
     }
   }
 
-  login(loginData: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, loginData)
-      .pipe(
-        tap(response => {
-          this.handleAuthSuccess(response);
-        })
-      );
+  login(data: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, data).pipe(
+      tap(res => this.handleAuth(res))
+    );
   }
 
-  register(registerData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, registerData)
-      .pipe(
-        tap(response => {
-          this.handleAuthSuccess(response);
-        })
-      );
+  register(data: RegisterRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/register`, data);
   }
 
-  getCurrentUserProfile(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/users/me`, {
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`
-      }
-    });
-  }
-
-  // Add these new methods:
-  updateProfile(updateData: UpdateProfileRequest): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/profile`, updateData, {
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`
-      }
-    }).pipe(
-      tap(updatedUser => {
-        this.currentUserSubject.next(updatedUser);
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+  updateProfile(data: UpdateProfileRequest): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/users/profile`, data).pipe(
+      tap(user => {
+        this.currentUserSubject.next(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
       })
     );
   }
 
-  changePassword(passwordData: ChangePasswordRequest): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, passwordData, {
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`
-      }
-    });
+  changePassword(data: ChangePasswordRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, data);
   }
 
-  getUserProfile(): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`${this.apiUrl}/users/profile`, {
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`
-      }
-    });
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 
-  private handleAuthSuccess(response: AuthResponse): void {
-    this.setToken(response.accessToken);
-    this.currentUserSubject.next(response.user);
-    localStorage.setItem('currentUser', JSON.stringify(response.user));
+  
+  getToken(): string | null {
+    return localStorage.getItem('auth_token');
+  }
+
+
+  isLoggedIn(): boolean {
+    return !!this.getToken();
   }
 
   logout(): void {
@@ -140,19 +100,9 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  isLoggedIn(): boolean {
-    return !!this.getToken();
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('auth_token');
-  }
-
-  private setToken(token: string): void {
-    localStorage.setItem('auth_token', token);
-  }
-
-  getCurrentUser(): User | null {
-    return this.currentUserSubject.value;
+  private handleAuth(response: AuthResponse): void {
+    localStorage.setItem('auth_token', response.accessToken);
+    localStorage.setItem('currentUser', JSON.stringify(response.user));
+    this.currentUserSubject.next(response.user);
   }
 }

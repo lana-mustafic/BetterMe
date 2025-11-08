@@ -23,6 +23,20 @@ namespace BetterMe.Api.Models
 
         public DateTime? LastLogin { get; set; }
 
+        //Email verification fields
+        public bool IsEmailVerified { get; set; } = false;
+
+        [MaxLength(500)]
+        public string? EmailVerificationToken { get; set; }
+
+        public DateTime? EmailVerificationTokenExpires { get; set; }
+
+        //Password reset fields
+        [MaxLength(500)]
+        public string? PasswordResetToken { get; set; }
+
+        public DateTime? PasswordResetTokenExpires { get; set; }
+
         public List<TodoTask> TodoTasks { get; set; } = new List<TodoTask>();
 
         // NEW: Navigation property for Tags
