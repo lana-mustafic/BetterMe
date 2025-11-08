@@ -44,22 +44,6 @@ import { CommonModule } from '@angular/common';
                 <p class="feature-description">{{ feature.description }}</p>
               </div>
             </div>
-
-            <!-- Stats Section -->
-            <div class="stats-section">
-              <div class="stat-item">
-                <div class="stat-number">10K+</div>
-                <div class="stat-label">Tasks Completed</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">95%</div>
-                <div class="stat-label">User Satisfaction</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Always Available</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -90,40 +74,40 @@ import { CommonModule } from '@angular/common';
     }
 
     .shape-1 {
-      width: 200px;
-      height: 200px;
-      top: 10%;
-      left: 5%;
+      width: 120px;
+      height: 120px;
+      top: 10%; /* Adjusted upward */
+      left: 8%;
       animation-delay: 0s;
     }
 
     .shape-2 {
-      width: 150px;
-      height: 150px;
-      top: 60%;
-      right: 10%;
+      width: 80px;
+      height: 80px;
+      top: 65%; /* Adjusted upward */
+      right: 12%;
       animation-delay: 2s;
     }
 
     .shape-3 {
-      width: 100px;
-      height: 100px;
-      bottom: 20%;
-      left: 15%;
+      width: 60px;
+      height: 60px;
+      bottom: 30%; /* Adjusted upward */
+      left: 18%;
       animation-delay: 4s;
     }
 
     .shape-4 {
-      width: 120px;
-      height: 120px;
-      top: 30%;
-      right: 20%;
+      width: 90px;
+      height: 90px;
+      top: 30%; /* Adjusted upward */
+      right: 25%;
       animation-delay: 1s;
     }
 
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(180deg); }
+      50% { transform: translateY(-15px) rotate(180deg); }
     }
 
     .container {
@@ -134,31 +118,33 @@ import { CommonModule } from '@angular/common';
     .hero-section {
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start; /* Changed from center to flex-start */
       justify-content: center;
-      padding: 2rem 1rem;
+      padding: 1rem;
+      padding-top: 4rem; /* Added top padding to push content upward */
     }
 
     .glass-card {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
-      border-radius: 32px;
+      border-radius: 24px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 4rem 3rem;
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
       width: 100%;
-      max-width: 1200px;
+      max-width: 1000px;
+      margin-top: 2rem; /* Added margin to lift the box */
     }
 
     .hero-main {
       text-align: center;
-      margin-bottom: 4rem;
+      margin-bottom: 2.5rem;
     }
 
     .gradient-text {
-      font-size: 4rem;
+      font-size: 2.8rem;
       font-weight: 800;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -167,44 +153,42 @@ import { CommonModule } from '@angular/common';
     }
 
     .hero-subtitle {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
       font-weight: 500;
     }
 
     .hero-actions {
       display: flex;
-      gap: 1.5rem;
+      gap: 1rem;
       justify-content: center;
       align-items: center;
       flex-wrap: wrap;
     }
 
     .btn {
-      padding: 1.25rem 2.5rem;
+      padding: 1rem 2rem;
       border: none;
-      border-radius: 16px;
+      border-radius: 12px;
       font-weight: 600;
       text-decoration: none;
       transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
-      gap: 0.75rem;
-      font-size: 1.1rem;
+      gap: 0.5rem;
+      font-size: 1rem;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
     }
 
     .btn-large {
-      min-width: 200px;
+      min-width: 160px;
     }
 
     .btn-gradient {
       background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
       color: white;
-      box-shadow: 0 8px 25px rgba(74, 222, 128, 0.4);
+      box-shadow: 0 6px 20px rgba(74, 222, 128, 0.4);
     }
 
     .btn-outline {
@@ -215,12 +199,12 @@ import { CommonModule } from '@angular/common';
     }
 
     .btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
     .btn-gradient:hover {
-      box-shadow: 0 12px 35px rgba(74, 222, 128, 0.6);
+      box-shadow: 0 8px 25px rgba(74, 222, 128, 0.6);
     }
 
     .btn-outline:hover {
@@ -229,161 +213,118 @@ import { CommonModule } from '@angular/common';
     }
 
     .btn-icon {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
     }
 
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      margin-bottom: 4rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
     }
 
     .feature-card {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      padding: 1.5rem;
       text-align: center;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
     }
 
     .feature-card:hover {
-      transform: translateY(-8px);
+      transform: translateY(-5px);
       background: rgba(255, 255, 255, 0.15);
       border-color: rgba(255, 255, 255, 0.3);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
     .feature-icon {
-      font-size: 3rem;
-      margin-bottom: 1.5rem;
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
       display: block;
     }
 
     .feature-title {
       color: white;
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
     }
 
     .feature-description {
       color: rgba(255, 255, 255, 0.8);
-      line-height: 1.6;
-      font-size: 1rem;
-    }
-
-    .stats-section {
-      display: flex;
-      justify-content: center;
-      gap: 4rem;
-      padding-top: 3rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-number {
-      color: white;
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .stat-label {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 1rem;
-      font-weight: 600;
+      line-height: 1.5;
+      font-size: 0.9rem;
     }
 
     /* Mobile Responsiveness */
     @media (max-width: 768px) {
       .hero-section {
-        padding: 1rem 0.5rem;
+        padding: 0.5rem;
+        padding-top: 3rem; /* Adjusted for mobile */
       }
 
-      .glass-card {
-        padding: 3rem 2rem;
-        border-radius: 24px;
-      }
-
-      .gradient-text {
-        font-size: 2.5rem;
-      }
-
-      .hero-subtitle {
-        font-size: 1.2rem;
-      }
-
-      .hero-actions {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .btn {
-        width: 100%;
-        max-width: 280px;
-        justify-content: center;
-      }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-      }
-
-      .stats-section {
-        flex-direction: column;
-        gap: 2rem;
-      }
-
-      .feature-card {
-        padding: 2rem 1.5rem;
-      }
-    }
-
-    @media (max-width: 480px) {
       .glass-card {
         padding: 2rem 1.5rem;
         border-radius: 20px;
+        margin-top: 1rem; /* Adjusted for mobile */
       }
 
       .gradient-text {
-        font-size: 2rem;
+        font-size: 2.2rem;
       }
 
       .hero-subtitle {
         font-size: 1.1rem;
       }
 
+      .hero-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .btn {
+        width: 100%;
+        max-width: 220px;
+        justify-content: center;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
       .feature-card {
-        padding: 1.5rem 1rem;
-      }
-
-      .feature-icon {
-        font-size: 2.5rem;
-      }
-
-      .stat-number {
-        font-size: 2rem;
+        padding: 1.25rem 1rem;
       }
     }
 
-    /* Extra large screens */
-    @media (min-width: 1400px) {
+    @media (max-width: 480px) {
+      .hero-section {
+        padding-top: 2rem; /* Further adjusted for small mobile */
+      }
+
+      .glass-card {
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+        margin-top: 0.5rem; /* Further adjusted for small mobile */
+      }
+
       .gradient-text {
-        font-size: 5rem;
+        font-size: 1.8rem;
       }
 
       .hero-subtitle {
-        font-size: 1.75rem;
+        font-size: 1rem;
+      }
+
+      .feature-card {
+        padding: 1rem;
+      }
+
+      .feature-icon {
+        font-size: 1.8rem;
       }
     }
   `]
@@ -393,17 +334,17 @@ export class HomeComponent {
     {
       icon: '✅',
       title: 'Smart Task Management',
-      description: 'Create, organize, and track your tasks with our beautiful and intuitive interface'
+      description: 'Create, organize, and track your tasks with our beautiful interface'
     },
     {
       icon: '🚀',
       title: 'Boost Productivity',
-      description: 'Achieve more with powerful features designed to help you focus and succeed'
+      description: 'Achieve more with features designed to help you focus'
     },
     {
       icon: '🔒',
       title: 'Secure & Private',
-      description: 'Your data is protected with enterprise-grade security and privacy controls'
+      description: 'Your data is protected with enterprise-grade security'
     }
   ];
 }
