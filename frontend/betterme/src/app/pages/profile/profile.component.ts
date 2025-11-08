@@ -19,175 +19,277 @@ interface UserStats {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="container">
-      <div class="profile-container">
-        <div class="profile-header">
-          <h1>Your Profile</h1>
-          <p>Manage your account information</p>
-        </div>
+    <div class="profile-page">
+      <!-- Background Decoration -->
+      <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
 
-        <div class="profile-card">
-          @if (user; as user) {
-            <!-- User Info Section -->
-            <div class="user-info">
-              <div class="avatar">
-                {{ getInitials(user.displayName) }}
-              </div>
-              <div class="user-details">
-                <h2>{{ user.displayName }}</h2>
-                <p class="user-email">{{ user.email }}</p>
-                <p class="member-since">
-                  Member since: {{ formatMemberSince(user.dateCreated) }}
-                </p>
-              </div>
+      <div class="container">
+        <div class="profile-container">
+          <!-- Header Section -->
+          <div class="profile-header">
+            <div class="header-content">
+              <h1 class="gradient-text">Your Profile</h1>
+              <p class="subtitle">Track your progress and manage your account</p>
             </div>
+          </div>
 
-            <!-- Loading State -->
-            @if (isLoading) {
-              <div class="loading-section">
-                <div class="spinner"></div>
-                <p>Loading your activity...</p>
-              </div>
-            }
-
-            <!-- Stats Section -->
-            @if (!isLoading && !errorMessage) {
-              <div class="stats-section">
-                <h3>Your Activity</h3>
-                <div class="stats-grid">
-                  <div class="stat-card" [class.highlight]="stats.totalTasks > 0">
-                    <div class="stat-number">{{ stats.totalTasks }}</div>
-                    <div class="stat-label">Total Tasks</div>
+          <!-- Main Profile Card -->
+          <div class="profile-card glass-card">
+            @if (user; as user) {
+              <!-- User Info Section -->
+              <div class="user-section">
+                <div class="user-avatar">
+                  <div class="avatar-circle">
+                    {{ getInitials(user.displayName) }}
                   </div>
-                  <div class="stat-card" [class.highlight]="stats.completedTasks > 0">
-                    <div class="stat-number">{{ stats.completedTasks }}</div>
-                    <div class="stat-label">Completed</div>
-                  </div>
-                  <div class="stat-card" [class.highlight]="stats.pendingTasks > 0">
-                    <div class="stat-number">{{ stats.pendingTasks }}</div>
-                    <div class="stat-label">Pending</div>
-                  </div>
-                  <div class="stat-card" [class.highlight]="stats.overdueTasks > 0">
-                    <div class="stat-number">{{ stats.overdueTasks }}</div>
-                    <div class="stat-label">Overdue</div>
+                  <div class="online-indicator"></div>
+                </div>
+                <div class="user-info">
+                  <h2 class="user-name">{{ user.displayName }}</h2>
+                  <p class="user-email">{{ user.email }}</p>
+                  <div class="member-badge">
+                    <span class="badge-icon">⭐</span>
+                    Member since {{ formatMemberSince(user.dateCreated) }}
                   </div>
                 </div>
-                
-                <!-- Progress Section -->
-                @if (stats.totalTasks > 0) {
-                  <div class="progress-section">
-                    <div class="progress-header">
-                      <span>Completion Rate</span>
-                      <span class="progress-percentage">{{ stats.completionRate }}%</span>
+              </div>
+
+              <!-- Loading State -->
+              @if (isLoading) {
+                <div class="loading-section">
+                  <div class="loading-spinner">
+                    <div class="spinner-ring"></div>
+                  </div>
+                  <p>Analyzing your productivity...</p>
+                </div>
+              }
+
+              <!-- Stats Section -->
+              @if (!isLoading && !errorMessage) {
+                <div class="stats-section">
+                  <h3 class="section-title">Activity Overview</h3>
+                  <div class="stats-grid">
+                    <div class="stat-item" [class.active]="stats.totalTasks > 0">
+                      <div class="stat-icon">📊</div>
+                      <div class="stat-content">
+                        <div class="stat-value">{{ stats.totalTasks }}</div>
+                        <div class="stat-label">Total Tasks</div>
+                      </div>
                     </div>
-                    <div class="progress-bar">
-                      <div 
-                        class="progress-fill" 
-                        [style.width.%]="stats.completionRate"
-                      ></div>
+                    <div class="stat-item" [class.active]="stats.completedTasks > 0">
+                      <div class="stat-icon">✅</div>
+                      <div class="stat-content">
+                        <div class="stat-value">{{ stats.completedTasks }}</div>
+                        <div class="stat-label">Completed</div>
+                      </div>
+                    </div>
+                    <div class="stat-item" [class.active]="stats.pendingTasks > 0">
+                      <div class="stat-icon">⏳</div>
+                      <div class="stat-content">
+                        <div class="stat-value">{{ stats.pendingTasks }}</div>
+                        <div class="stat-label">Pending</div>
+                      </div>
+                    </div>
+                    <div class="stat-item" [class.active]="stats.overdueTasks > 0">
+                      <div class="stat-icon">⚠️</div>
+                      <div class="stat-content">
+                        <div class="stat-value">{{ stats.overdueTasks }}</div>
+                        <div class="stat-label">Overdue</div>
+                      </div>
                     </div>
                   </div>
-                } @else {
-                  <div class="no-tasks-message">
-                    <p>📝 You haven't created any tasks yet!</p>
-                    <button class="btn btn-primary" (click)="goToTasks()">
-                      Create Your First Task
-                    </button>
+                  
+                  <!-- Progress Section -->
+                  @if (stats.totalTasks > 0) {
+                    <div class="progress-card">
+                      <div class="progress-header">
+                        <span class="progress-title">Completion Progress</span>
+                        <span class="progress-percentage">{{ stats.completionRate }}%</span>
+                      </div>
+                      <div class="progress-track">
+                        <div 
+                          class="progress-fill" 
+                          [style.width.%]="stats.completionRate"
+                        ></div>
+                      </div>
+                      <div class="progress-stats">
+                        <span>{{ stats.completedTasks }} of {{ stats.totalTasks }} tasks completed</span>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="empty-state">
+                      <div class="empty-icon">📝</div>
+                      <h3>No tasks yet</h3>
+                      <p>Start your productivity journey by creating your first task</p>
+                      <button class="btn btn-gradient" (click)="goToTasks()">
+                        <span class="btn-icon">+</span>
+                        Create First Task
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Error State -->
+              @if (errorMessage) {
+                <div class="error-card">
+                  <div class="error-icon">⚠️</div>
+                  <div class="error-content">
+                    <h3>Something went wrong</h3>
+                    <p>{{ errorMessage }}</p>
                   </div>
-                }
+                  <button class="btn btn-outline" (click)="loadUserStats()">
+                    Try Again
+                  </button>
+                </div>
+              }
+
+              <!-- Actions Section -->
+              <div class="actions-section">
+                <h3 class="section-title">Account Settings</h3>
+                <div class="actions-grid">
+                  <button class="action-btn" (click)="onEditProfile()">
+                    <span class="action-icon">👤</span>
+                    <span class="action-text">Edit Profile</span>
+                    <span class="action-arrow">→</span>
+                  </button>
+                  <button class="action-btn" (click)="onChangePassword()">
+                    <span class="action-icon">🔒</span>
+                    <span class="action-text">Change Password</span>
+                    <span class="action-arrow">→</span>
+                  </button>
+                  <button 
+                    class="action-btn logout-btn" 
+                    (click)="onLogout()"
+                    [disabled]="isLoading"
+                  >
+                    <span class="action-icon">🚪</span>
+                    <span class="action-text">Logout</span>
+                    <span class="action-arrow">→</span>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- Not Logged In State -->
+              <div class="auth-prompt">
+                <div class="auth-icon">🔐</div>
+                <h2>Access Your Profile</h2>
+                <p>Sign in to view your personal statistics and manage your account</p>
+                <button class="btn btn-gradient" (click)="goToLogin()">
+                  Sign In to Continue
+                </button>
               </div>
             }
-
-            <!-- Error State -->
-            @if (errorMessage) {
-              <div class="error-section">
-                <p>{{ errorMessage }}</p>
-                <button class="btn btn-retry" (click)="loadUserStats()">
-                  Try Again
-                </button>
-              </div>
-            }
-
-            <!-- Actions Section -->
-            <div class="actions-section">
-              <h3>Account Actions</h3>
-              <div class="actions-grid">
-                <button class="btn btn-secondary" (click)="onEditProfile()">
-                  <span class="icon">✏️</span>
-                  Edit Profile
-                </button>
-                <button class="btn btn-secondary" (click)="onChangePassword()">
-                  <span class="icon">🔒</span>
-                  Change Password
-                </button>
-                <button 
-                  class="btn btn-danger" 
-                  (click)="onLogout()"
-                  [disabled]="isLoading"
-                >
-                  <span class="icon">🚪</span>
-                  Logout
-                </button>
-              </div>
-            </div>
-          } @else {
-            <!-- Not Logged In State -->
-            <div class="not-logged-in">
-              <div class="not-logged-in-icon">👤</div>
-              <h2>Not Logged In</h2>
-              <p>Please log in to view your profile and activity.</p>
-              <button class="btn btn-primary" (click)="goToLogin()">
-                Go to Login
-              </button>
-            </div>
-          }
+          </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
+    .profile-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .background-shapes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      top: -150px;
+      right: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      bottom: 100px;
+      left: -50px;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      top: 50%;
+      right: 20%;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+
     .profile-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 2rem 1rem;
     }
 
     .profile-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 3rem;
     }
 
-    .profile-header h1 {
-      color: #333;
-      font-size: 2.5rem;
-      font-weight: 700;
+    .header-content h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
       margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    .profile-header p {
-      color: #666;
-      font-size: 1.1rem;
+    .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.2rem;
+      font-weight: 500;
     }
 
-    .profile-card {
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    .glass-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 3rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
     }
 
-    .user-info {
+    .user-section {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
+      gap: 2rem;
+      margin-bottom: 3rem;
       padding-bottom: 2rem;
-      border-bottom: 2px solid #f0f0f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .avatar {
-      width: 80px;
-      height: 80px;
+    .user-avatar {
+      position: relative;
+    }
+
+    .avatar-circle {
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
@@ -196,207 +298,313 @@ interface UserStats {
       color: white;
       font-size: 2rem;
       font-weight: 700;
-      flex-shrink: 0;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
 
-    .user-details h2 {
-      color: #333;
-      font-size: 1.8rem;
+    .online-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: #4ade80;
+      border: 3px solid white;
+      border-radius: 50%;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      color: white;
+      font-size: 2rem;
+      font-weight: 700;
       margin-bottom: 0.5rem;
     }
 
     .user-email {
-      color: #666;
+      color: rgba(255, 255, 255, 0.8);
       font-size: 1.1rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1rem;
     }
 
-    .member-since {
-      color: #888;
+    .member-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.9);
       font-size: 0.9rem;
     }
 
-    .stats-section {
-      margin-bottom: 2rem;
-    }
-
-    .stats-section h3 {
-      color: #333;
+    .section-title {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
       margin-bottom: 1.5rem;
-      font-size: 1.3rem;
     }
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
     }
 
-    .stat-card {
-      background: #f8f9fa;
+    .stat-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
       padding: 1.5rem;
-      border-radius: 12px;
-      text-align: center;
-      border: 2px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
       transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .stat-card.highlight {
-      border-color: #667eea;
-      background: #f0f4ff;
-      transform: translateY(-2px);
+    .stat-item.active {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-5px);
     }
 
-    .stat-number {
+    .stat-icon {
       font-size: 2rem;
-      font-weight: 700;
-      color: #667eea;
-      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      color: white;
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
     }
 
     .stat-label {
-      color: #666;
-      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
       font-size: 0.9rem;
+      font-weight: 600;
     }
 
-    .progress-section {
-      background: #f8f9fa;
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 2px solid #e9ecef;
+    .progress-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .progress-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .progress-title {
+      color: white;
       font-weight: 600;
-      color: #333;
     }
 
     .progress-percentage {
-      color: #667eea;
-      font-weight: 700;
+      color: #4ade80;
+      font-weight: 800;
+      font-size: 1.2rem;
     }
 
-    .progress-bar {
+    .progress-track {
       width: 100%;
-      height: 8px;
-      background: #e9ecef;
-      border-radius: 4px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
       overflow: hidden;
+      margin-bottom: 0.5rem;
     }
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      border-radius: 4px;
-      transition: width 0.5s ease;
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
+      border-radius: 10px;
+      transition: width 1s ease-in-out;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
     }
 
-    .no-tasks-message {
+    .progress-stats {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+
+    .empty-state {
       text-align: center;
-      padding: 2rem;
-      background: #f8f9fa;
-      border-radius: 12px;
-      border: 2px dashed #dee2e6;
+      padding: 3rem 2rem;
     }
 
-    .no-tasks-message p {
-      color: #666;
-      font-size: 1.1rem;
+    .empty-icon {
+      font-size: 4rem;
       margin-bottom: 1rem;
     }
 
-    .actions-section {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 2px solid #f0f0f0;
+    .empty-state h3 {
+      color: white;
+      margin-bottom: 0.5rem;
     }
 
-    .actions-section h3 {
-      color: #333;
-      margin-bottom: 1rem;
-      font-size: 1.3rem;
-    }
-
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
+    .empty-state p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 2rem;
     }
 
     .btn {
-      padding: 12px 20px;
+      padding: 1rem 2rem;
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      border-radius: 12px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
-      position: relative;
+      font-size: 1rem;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .btn-gradient {
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
       color: white;
+      box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
     }
 
-    .btn-secondary {
-      background: #6c757d;
+    .btn-outline {
+      background: transparent;
       color: white;
-    }
-
-    .btn-danger {
-      background: #e74c3c;
-      color: white;
-    }
-
-    .btn-retry {
-      background: #667eea;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      margin-top: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
     .btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+    .btn-icon {
+      font-weight: 700;
     }
 
-    .icon {
-      font-size: 1.1rem;
+    .actions-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .actions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(8px);
+    }
+
+    .logout-btn {
+      color: #f87171;
+    }
+
+    .action-icon {
+      font-size: 1.2rem;
+    }
+
+    .action-text {
+      flex: 1;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .action-arrow {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .action-btn:hover .action-arrow {
+      opacity: 1;
+    }
+
+    .auth-prompt {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .auth-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-prompt h2 {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .auth-prompt p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 2rem;
     }
 
     .loading-section {
       text-align: center;
-      padding: 2rem;
-      color: #667eea;
+      padding: 4rem 2rem;
+      color: white;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+    .loading-spinner {
+      margin-bottom: 1.5rem;
+    }
+
+    .spinner-ring {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
+      margin: 0 auto;
+    }
+
+    .error-card {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .error-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .error-content h3 {
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+
+    .error-content p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 1.5rem;
     }
 
     @keyframes spin {
@@ -404,62 +612,67 @@ interface UserStats {
       100% { transform: rotate(360deg); }
     }
 
-    .error-section {
-      background: #fee;
-      color: #c33;
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-      margin-bottom: 1rem;
-      border: 1px solid #fcc;
-    }
-
-    .not-logged-in {
-      text-align: center;
-      padding: 3rem;
-    }
-
-    .not-logged-in-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .not-logged-in h2 {
-      color: #333;
-      margin-bottom: 1rem;
-    }
-
-    .not-logged-in p {
-      color: #666;
-      margin-bottom: 2rem;
-    }
-
+    /* Mobile Responsiveness */
     @media (max-width: 768px) {
       .profile-container {
         padding: 1rem 0.5rem;
       }
 
-      .profile-card {
-        padding: 1.5rem;
+      .glass-card {
+        padding: 2rem 1.5rem;
       }
 
-      .user-info {
+      .header-content h1 {
+        font-size: 2.5rem;
+      }
+
+      .user-section {
         flex-direction: column;
         text-align: center;
-        gap: 1rem;
+        gap: 1.5rem;
       }
 
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+        gap: 1rem;
       }
 
-      .actions-grid {
-        grid-template-columns: 1fr;
+      .stat-item {
+        padding: 1.25rem;
+      }
+
+      .progress-card {
+        padding: 1.5rem;
       }
 
       .btn {
-        font-size: 14px;
-        padding: 10px 16px;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .glass-card {
+        padding: 1.5rem 1rem;
+        border-radius: 20px;
+      }
+
+      .header-content h1 {
+        font-size: 2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .avatar-circle {
+        width: 80px;
+        height: 80px;
+        font-size: 1.5rem;
+      }
+
+      .user-name {
+        font-size: 1.5rem;
       }
     }
   `]
@@ -482,7 +695,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    // Subscribe to user changes
     this.authService.currentUser$
       .pipe(takeUntil(this.destroy$))
       .subscribe(user => {
@@ -570,7 +782,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // New methods for button actions
   onEditProfile(): void {
     this.router.navigate(['/profile/edit']);
   }
@@ -591,5 +802,4 @@ export class ProfileComponent implements OnInit, OnDestroy {
   goToTasks(): void {
     this.router.navigate(['/tasks']);
   }
-  
 }
