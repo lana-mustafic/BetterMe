@@ -54,12 +54,15 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 70px;
+      height: 100px; /* Much taller navbar for huge logo */
     }
 
     .nav-brand {
       cursor: pointer;
       transition: transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      height: 100%;
     }
 
     .nav-brand:hover {
@@ -67,7 +70,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .brand-logo {
-      height: 40px;
+      height: 80px; /* HUGE increase - from 50px to 80px! */
       width: auto;
       filter: brightness(0) invert(1);
     }
@@ -82,10 +85,11 @@ import { CommonModule } from '@angular/common';
       color: white;
       text-decoration: none;
       font-weight: 500;
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1.25rem; /* Slightly larger padding to match bigger logo */
       border-radius: 8px;
       transition: all 0.3s ease;
       position: relative;
+      font-size: 1.1rem; /* Slightly larger font */
     }
 
     .nav-link:hover {
@@ -110,10 +114,11 @@ import { CommonModule } from '@angular/common';
       gap: 0.5rem;
       color: white;
       text-decoration: none;
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1.25rem; /* Larger padding */
       border-radius: 8px;
       transition: all 0.3s ease;
       background: rgba(255, 255, 255, 0.1);
+      font-size: 1.1rem; /* Larger font */
     }
 
     .user-info:hover {
@@ -122,7 +127,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .welcome-emoji {
-      font-size: 1.1rem;
+      font-size: 1.3rem; /* Larger emoji */
     }
 
     .user-name {
@@ -133,12 +138,13 @@ import { CommonModule } from '@angular/common';
       background: rgba(255, 255, 255, 0.15);
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 0.5rem 1.5rem;
+      padding: 0.75rem 1.75rem; /* Larger button */
       border-radius: 8px;
       cursor: pointer;
       font-weight: 500;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
+      font-size: 1.1rem; /* Larger font */
     }
 
     .btn-logout:hover {
@@ -157,10 +163,11 @@ import { CommonModule } from '@angular/common';
       color: white;
       text-decoration: none;
       font-weight: 500;
-      padding: 0.5rem 1.5rem;
+      padding: 0.75rem 1.75rem; /* Larger padding */
       border-radius: 8px;
       transition: all 0.3s ease;
       border: 1px solid rgba(255, 255, 255, 0.3);
+      font-size: 1.1rem; /* Larger font */
     }
 
     .auth-link:hover {
@@ -182,7 +189,7 @@ import { CommonModule } from '@angular/common';
     @media (max-width: 768px) {
       .nav-container {
         padding: 0 1rem;
-        height: 60px;
+        height: 90px; /* Taller mobile navbar */
       }
 
       .nav-links {
@@ -190,21 +197,22 @@ import { CommonModule } from '@angular/common';
       }
 
       .nav-link, .auth-link {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
       }
 
       .user-info {
-        padding: 0.4rem 0.8rem;
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
       }
 
       .btn-logout {
-        padding: 0.4rem 1rem;
-        font-size: 0.9rem;
+        padding: 0.6rem 1.25rem;
+        font-size: 1rem;
       }
 
       .brand-logo {
-        height: 32px;
+        height: 65px; /* Much larger on mobile too */
       }
     }
 
@@ -212,13 +220,13 @@ import { CommonModule } from '@angular/common';
       .nav-container {
         flex-direction: column;
         height: auto;
-        padding: 1rem;
+        padding: 1.5rem 1rem; /* More padding */
       }
 
       .nav-links {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
         margin-top: 1rem;
       }
 
@@ -231,6 +239,22 @@ import { CommonModule } from '@angular/common';
       .user-info, .btn-logout, .auth-link {
         text-align: center;
         margin: 0.25rem 0;
+      }
+
+      .brand-logo {
+        height: 70px; /* Even larger for very small screens */
+        margin-bottom: 0.5rem;
+      }
+    }
+
+    /* Extra large screens */
+    @media (min-width: 1400px) {
+      .brand-logo {
+        height: 90px; /* Massive on big screens */
+      }
+      
+      .nav-container {
+        height: 110px; /* Even taller navbar */
       }
     }
   `]
