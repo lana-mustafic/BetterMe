@@ -10,36 +10,229 @@ import { CommonModule } from '@angular/common';
   template: `
     <nav class="navbar">
       <div class="nav-container">
-
         <div class="nav-brand" routerLink="/">
           <img src="assets/brand/betterme-logo.png" alt="BetterMe Logo" class="brand-logo" />
         </div>
 
         <div class="nav-links">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-          <a routerLink="/tasks" routerLinkActive="active">Tasks</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a>
+          <a routerLink="/tasks" routerLinkActive="active" class="nav-link">Tasks</a>
 
           <!-- ✅ Use async pipe to read current user -->
           <ng-container *ngIf="authService.currentUser$ | async as user; else guestLinks">
             <div class="user-section">
-              <a routerLink="/profile" class="user-info">👋 {{ user.displayName }}</a>
+              <a routerLink="/profile" class="user-info">
+                <span class="welcome-emoji">👋</span>
+                <span class="user-name">{{ user.displayName }}</span>
+              </a>
               <button (click)="onLogout()" class="btn-logout">Logout</button>
             </div>
           </ng-container>
 
           <ng-template #guestLinks>
             <div class="auth-links">
-              <a routerLink="/login" routerLinkActive="active">Login</a>
-              <a routerLink="/register" routerLinkActive="active">Register</a>
+              <a routerLink="/login" routerLinkActive="active" class="auth-link">Login</a>
+              <a routerLink="/register" routerLinkActive="active" class="auth-link auth-link--primary">Register</a>
             </div>
           </ng-template>
-
         </div>
       </div>
     </nav>
   `,
   styles: [`
-    /* (keep all your existing CSS unchanged — copy-paste from before) */
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+
+    .nav-brand {
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-brand:hover {
+      transform: scale(1.05);
+    }
+
+    .brand-logo {
+      height: 40px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .nav-link.active {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .user-info:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .welcome-emoji {
+      font-size: 1.1rem;
+    }
+
+    .user-name {
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .auth-links {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .auth-link {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .auth-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .auth-link--primary {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .auth-link--primary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .nav-container {
+        padding: 0 1rem;
+        height: 60px;
+      }
+
+      .nav-links {
+        gap: 1rem;
+      }
+
+      .nav-link, .auth-link {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+      }
+
+      .user-info {
+        padding: 0.4rem 0.8rem;
+      }
+
+      .btn-logout {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .brand-logo {
+        height: 32px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav-container {
+        flex-direction: column;
+        height: auto;
+        padding: 1rem;
+      }
+
+      .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .user-section, .auth-links {
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
+      }
+
+      .user-info, .btn-logout, .auth-link {
+        text-align: center;
+        margin: 0.25rem 0;
+      }
+    }
   `]
 })
 export class NavbarComponent {
