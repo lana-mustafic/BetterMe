@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using BetterMe.Api.Data;
@@ -18,18 +18,18 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS - Moved to the top to ensure it's configured early
+// ✅ CORS (Must match frontend EXACTLY)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-                "https://betterme-frontend.onrender.com",  // Your production frontend
-                "http://localhost:4200"                    // Local development
+                "https://betterme-frontend.onrender.com", // Production
+                "http://localhost:4200"                   // Local Dev
             )
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowAnyMethod();
+        // ❗ NO AllowCredentials — we use Bearer tokens, not cookies
     });
 });
 
@@ -46,7 +46,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
-    throw new InvalidOperationException("JWT key missing. Set JWT_KEY env var or Jwt:Key in appsettings.json.");
+    throw new InvalidOperationException("JWT key missing.");
 
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -78,23 +78,19 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-
-// CORS middleware - MUST come before UseAuthentication and UseAuthorization
+// ✅ CORS middleware goes BEFORE Authentication & Routes
 app.UseCors("AllowFrontend");
 
-// Swagger (enable in development)
+// Swagger UI only in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Controllers
 app.MapControllers();
 
 // Apply Migrations + Seed Database
@@ -105,7 +101,7 @@ using (var scope = app.Services.CreateScope())
     SeedData.Initialize(context);
 }
 
-// Render Dynamic Port Binding 
+// Render Dynamic Port Binding
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 app.Urls.Clear();
 app.Urls.Add($"http://0.0.0.0:{port}");
