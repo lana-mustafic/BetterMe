@@ -53,7 +53,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                 </label>
                 <div class="input-container">
                   <input
-                    type="password"
+                    [type]="showCurrentPassword ? 'text' : 'password'"
                     formControlName="currentPassword"
                     class="form-input"
                     placeholder="Enter your current password"
@@ -61,6 +61,16 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                     [class.input-success]="currentPassword?.valid && currentPassword?.touched"
                   />
                   <div class="input-icon">🔑</div>
+                  <button 
+                    type="button" 
+                    class="password-toggle"
+                    (click)="toggleCurrentPasswordVisibility()"
+                    [attr.aria-label]="showCurrentPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <span class="password-toggle-icon">
+                      {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+                    </span>
+                  </button>
                 </div>
                 <div class="validation-messages">
                   <div class="error-message" *ngIf="currentPassword?.invalid && currentPassword?.touched">
@@ -78,7 +88,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                 </label>
                 <div class="input-container">
                   <input
-                    type="password"
+                    [type]="showNewPassword ? 'text' : 'password'"
                     formControlName="newPassword"
                     class="form-input"
                     placeholder="Enter your new password"
@@ -86,6 +96,16 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                     [class.input-success]="newPassword?.valid && newPassword?.touched"
                   />
                   <div class="input-icon">🆕</div>
+                  <button 
+                    type="button" 
+                    class="password-toggle"
+                    (click)="toggleNewPasswordVisibility()"
+                    [attr.aria-label]="showNewPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <span class="password-toggle-icon">
+                      {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
+                    </span>
+                  </button>
                 </div>
                 <div class="validation-messages">
                   <div class="error-message" *ngIf="newPassword?.invalid && newPassword?.touched">
@@ -108,7 +128,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                 </label>
                 <div class="input-container">
                   <input
-                    type="password"
+                    [type]="showConfirmPassword ? 'text' : 'password'"
                     formControlName="confirmPassword"
                     class="form-input"
                     placeholder="Confirm your new password"
@@ -116,6 +136,16 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
                     [class.input-success]="confirmPassword?.valid && confirmPassword?.touched && !changePasswordForm.errors?.['passwordMismatch']"
                   />
                   <div class="input-icon">✅</div>
+                  <button 
+                    type="button" 
+                    class="password-toggle"
+                    (click)="toggleConfirmPasswordVisibility()"
+                    [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <span class="password-toggle-icon">
+                      {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+                    </span>
+                  </button>
                 </div>
                 <div class="validation-messages">
                   <div class="error-message" *ngIf="confirmPassword?.touched && changePasswordForm.errors?.['passwordMismatch']">
@@ -346,6 +376,8 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 
     .input-container {
       position: relative;
+      display: flex;
+      align-items: center;
     }
 
     .form-input {
@@ -358,6 +390,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       font-size: 1rem;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
+      padding-right: 3.5rem;
     }
 
     .form-input::placeholder {
@@ -388,6 +421,39 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       transform: translateY(-50%);
       font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.7);
+      z-index: 2;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .password-toggle:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .password-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .password-toggle-icon {
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
     }
 
     .validation-messages {
@@ -591,6 +657,11 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
         width: 100%;
         justify-content: center;
       }
+
+      .password-toggle {
+        right: 8px;
+        padding: 6px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -605,6 +676,7 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 
       .form-input {
         padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+        padding-right: 3rem;
       }
 
       .input-icon {
@@ -631,10 +703,25 @@ export class ChangePasswordComponent {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   get currentPassword() { return this.changePasswordForm.get('currentPassword'); }
   get newPassword()     { return this.changePasswordForm.get('newPassword'); }
   get confirmPassword() { return this.changePasswordForm.get('confirmPassword'); }
+
+  toggleCurrentPasswordVisibility(): void {
+    this.showCurrentPassword = !this.showCurrentPassword;
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   onSubmit(): void {
     if (this.changePasswordForm.invalid) return;
