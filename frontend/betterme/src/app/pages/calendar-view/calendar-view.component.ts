@@ -37,375 +37,384 @@ interface EditModalData {
     CdkDragPlaceholder
   ],
   template: `
-    <div class="calendar-container">
-      <div class="calendar-header">
-        <div class="calendar-nav">
-          <button class="nav-btn" (click)="previousPeriod()">‹</button>
-          <h2 class="calendar-title">
-            @if (viewMode === 'year') {
-              {{ currentYear }}
-            } @else {
-              {{ currentMonth }} {{ currentYear }}
-            }
-          </h2>
-          <button class="nav-btn" (click)="nextPeriod()">›</button>
-        </div>
-        
-        <div class="view-options">
-          <button 
-            class="view-option" 
-            [class.active]="viewMode === 'month'"
-            (click)="setViewMode('month')"
-          >
-            Month
-          </button>
-          <button 
-            class="view-option" 
-            [class.active]="viewMode === 'week'"
-            (click)="setViewMode('week')"
-          >
-            Week
-          </button>
-          <button 
-            class="view-option" 
-            [class.active]="viewMode === 'year'"
-            (click)="setViewMode('year')"
-          >
-            Year
-          </button>
-        </div>
+    <div class="calendar-page">
+      <!-- Background Decoration -->
+      <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
       </div>
 
-      <!-- Month View -->
-      @if (viewMode === 'month') {
-        <div class="month-view">
-          <div class="calendar-grid">
-            <div class="weekday-header" *ngFor="let day of weekdays">
-              {{ day }}
-            </div>
-            
-            @for (day of calendarDays; track day.date.getTime()) {
-              <div 
-                class="calendar-day" 
-                [class.current-month]="day.isCurrentMonth"
-                [class.today]="day.isToday"
-                [class.has-tasks]="day.tasks.length > 0"
-                [class.has-completed-tasks]="hasCompletedTasks(day.tasks)"
-              >
-                <div class="day-number">{{ day.date.getDate() }}</div>
-                
-    @if (day.tasks.length > 0) {
-  <div class="task-indicators">
-    @for (task of getTopTasks(day.tasks, 3); track task.id) {
-      <div 
-        class="task-indicator"
-        [class.completed]="task.completed"
-        [class.loading]="updatingTaskIds.has(task.id)"
-        [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
-        [title]="getTaskTooltip(task)"
-        (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-      >
-        @if (updatingTaskIds.has(task.id)) {
-          <span class="loading-spinner">⟳</span>
-        }
-      </div>
-    }
-    @if (day.tasks.length > 3) {
-      <div class="more-tasks">+{{ day.tasks.length - 3 }}</div>
-    }
-  </div>
-}
-                
-                <!-- Action buttons that appear on hover -->
-                <div class="day-actions" *ngIf="day.isCurrentMonth">
-                  <button class="action-btn view-tasks-btn" 
-                          (click)="selectDay(day)"
-                          [disabled]="day.tasks.length === 0"
-                          title="View tasks for this day">
-                    <span class="action-icon">👁️</span>
-                    <span class="action-text">View Tasks</span>
+      <div class="container">
+        <div class="calendar-container">
+          <!-- Header Section -->
+          <div class="calendar-header glass-card">
+            <div class="header-content">
+              <div class="calendar-nav-section">
+                <div class="calendar-nav">
+                  <button class="nav-btn" (click)="previousPeriod()">
+                    <span class="nav-icon">‹</span>
                   </button>
-                  
-                  <button class="action-btn add-task-btn" 
-                          (click)="onDayClick(day, $event)"
-                          title="Add new task">
-                    <span class="action-icon">+</span>
-                    <span class="action-text">Add Task</span>
+                  <h1 class="calendar-title gradient-text">
+                    @if (viewMode === 'year') {
+                      {{ currentYear }}
+                    } @else {
+                      {{ currentMonth }} {{ currentYear }}
+                    }
+                  </h1>
+                  <button class="nav-btn" (click)="nextPeriod()">
+                    <span class="nav-icon">›</span>
                   </button>
                 </div>
-              </div>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Week View -->
-@if (viewMode === 'week') {
-  <div class="week-view">
-    <div class="week-header">
-      @for (day of currentWeekDays; track day; let i = $index) {
-        <div 
-          class="week-day-header"
-          [class.current-month]="isCurrentMonthWeek(day)"
-          (click)="onWeekDayClick(day, $event)"
-        >
-          <div class="week-day-name">{{ getWeekdayName(day) }}</div>
-          <div class="week-date">{{ day.getDate() }}</div>
-          <div class="day-stats">
-            <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
-            <span class="total-count">/{{ getTasksForDate(day).length }}</span>
-          </div>
-          <div class="add-task-hint-week">
-            <span class="plus-icon">+</span>
-          </div>
-        </div>
-      }
-    </div>
-    
-    <div class="week-grid" cdkDropListGroup>
-      @for (day of currentWeekDays; track day; let i = $index) {
-        <div 
-          class="week-day-column"
-          cdkDropList
-          [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
-          [id]="'day-' + i"
-          (cdkDropListDropped)="onTaskDrop($event)"
-          (click)="onWeekDayColumnClick(day, $event)"
-        >
-          <div class="week-day-tasks">
-            @for (task of getTasksForDate(day); track task.id) {
-              <div 
-                class="week-task-item"
-                cdkDrag
-                [class.completed]="task.completed"
-                [class.loading]="updatingTaskIds.has(task.id)"
-              >
-                <!-- Drag handle -->
-                <div class="drag-handle" cdkDragHandle>
-                  <span class="drag-icon">⣿</span>
-                </div>
                 
-                <!-- Clickable content -->
-                <div 
-                  class="week-task-content"
-                  (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-                >
-                  <div class="week-task-title">
-                    @if (task.completed) {
-                      <span class="completion-check">✓</span>
-                    }
-                    {{ task.title }}
-                    @if (updatingTaskIds.has(task.id)) {
-                      <span class="loading-spinner">⏳</span>
-                    }
-                  </div>
-                  <div class="week-task-meta">
-                    <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
-                    @if (task.completed) {
-                      <span class="completed-badge">Completed</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            }
-            
-            @if (getTasksForDate(day).length === 0) {
-              <div class="drop-zone">
-                <div class="drop-zone-content">
-                  <div class="drop-zone-plus">+</div>
-                  <div class="drop-zone-text">Drop tasks here or click to add</div>
-                </div>
-              </div>
-            }
-          </div>
-          
-          <!-- Drag placeholder using the directive -->
-          <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
-        </div>
-      }
-    </div>
-  </div>
-}
-
-      <!-- Enhanced Year View -->
-      @if (viewMode === 'year') {
-  <div class="year-view">
-    <div class="year-grid">
-      @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
-        <div 
-          class="year-month"
-          [class.has-completed-tasks]="getCompletedTasksForMonth(monthData.tasks) > 0"
-          [class.all-tasks-completed]="getCompletedTasksForMonth(monthData.tasks) === monthData.tasks.length && monthData.tasks.length > 0"
-          (click)="onYearMonthClick(monthData, $event)"
-        >
-          <div class="month-header">
-            <h4>{{ monthData.month }}</h4>
-            <div class="month-stats">
-              <!-- Enhanced completion stats -->
-              <div class="completion-progress">
-                <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    [style.width.%]="getCompletionPercentage(monthData.tasks)"
-                    [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100"
-                  ></div>
-                </div>
-                <span class="completion-text">
-                  {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
-                </span>
-              </div>
-            </div>
-            <div class="add-task-hint-year">
-              <span class="plus-icon">+</span>
-            </div>
-          </div>
-          
-          <div class="month-tasks">
-            @for (task of monthData.tasks.slice(0, 5); track task.id) {
-              <div 
-                class="year-task-item"
-                [class.completed]="task.completed"
-                [class.pending]="!task.completed"
-                [class.loading]="updatingTaskIds.has(task.id)"
-                [style.background]="task.completed ? '#28a745' : getPriorityColor(task.priority)"
-                [style.opacity]="task.completed ? '1' : '0.9'"
-                (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-              >
-                <div class="year-task-content">
-                  <div class="year-task-title">
-                    @if (task.completed) {
-                      <span class="completion-check">✅</span>
-                    } @else {
-                      <span class="pending-indicator">⏳</span>
-                    }
-                    {{ task.title }}
-                    @if (updatingTaskIds.has(task.id)) {
-                      <span class="loading-spinner">⟳</span>
-                    }
-                  </div>
-                  <div class="year-task-status">
-                    @if (task.completed) {
-                      <span class="status-completed">Completed</span>
-                    } @else {
-                      <span class="status-pending">Pending</span>
-                    }
-                  </div>
-                </div>
-              </div>
-            }
-            @if (monthData.tasks.length > 5) {
-              <div class="more-tasks-year">
-                +{{ monthData.tasks.length - 5 }} more
-                <span class="more-tasks-stats">
-                  ({{ getCompletedTasksForMonth(monthData.tasks.slice(5)) }} completed)
-                </span>
-              </div>
-            }
-            @if (monthData.tasks.length === 0) {
-              <div class="empty-month">
-                <span class="empty-month-text">No tasks</span>
-                <span class="empty-month-hint">Click to add task</span>
-              </div>
-            }
-          </div>
-
-          <!-- Month completion summary -->
-          @if (monthData.tasks.length > 0) {
-            <div class="month-completion-summary">
-              <div class="completion-badge" [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100">
-                {{ getCompletionPercentage(monthData.tasks) }}%
-              </div>
-              <span class="summary-text">
-                @if (getCompletionPercentage(monthData.tasks) === 100) {
-                  🎉 All tasks completed!
-                } @else if (getCompletionPercentage(monthData.tasks) >= 75) {
-                  🔥 Almost there!
-                } @else if (getCompletionPercentage(monthData.tasks) >= 50) {
-                  📈 Good progress!
-                } @else if (getCompletionPercentage(monthData.tasks) > 0) {
-                  🚀 Getting started!
-                } @else {
-                  💪 Ready to begin!
-                }
-              </span>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </div>
-}
-      <!-- Selected Day Details -->
-      @if (selectedDay) {
-        <div class="day-details">
-          <div class="day-details-header">
-            <h3>Tasks for {{ formatDate(selectedDay.date) }}</h3>
-            <div class="day-summary">
-              <span class="completed-summary">
-                {{ getCompletedTasks(selectedDay.tasks) }} of {{ selectedDay.tasks.length }} completed
-              </span>
-            </div>
-            <button class="close-btn" (click)="selectedDay = null">×</button>
-          </div>
-          
-          <div class="day-tasks-list">
-            @for (task of selectedDay.tasks; track task.id) {
-              <div class="day-task-item" 
-                   [class.completed]="task.completed"
-                   [class.loading]="updatingTaskIds.has(task.id)">
-                <div class="task-checkbox">
-                  <input 
-                    type="checkbox" 
-                    [checked]="task.completed"
-                    (change)="toggleTaskCompletion(task.id)"
-                    [disabled]="updatingTaskIds.has(task.id)"
+                <div class="view-options">
+                  <button 
+                    class="view-option" 
+                    [class.active]="viewMode === 'month'"
+                    (click)="setViewMode('month')"
                   >
-                </div>
-                
-                <div class="task-content">
-                  <div class="task-title">
-                    @if (task.completed) {
-                      <span class="completion-check">✓</span>
-                    }
-                    {{ task.title }}
-                    @if (updatingTaskIds.has(task.id)) {
-                      <span class="loading-spinner">⏳</span>
-                    }
-                  </div>
-                  <div class="task-meta">
-                    @if (task.category) {
-                      <span class="task-category">{{ task.category }}</span>
-                    }
-                    <span class="task-priority" [style.color]="getPriorityColor(task.priority)">
-                      {{ getPriorityText(task.priority) }}
-                    </span>
-                    @if (task.completed) {
-                      <span class="completed-badge">Completed</span>
-                    }
-                  </div>
-                </div>
-                
-                <div class="task-actions">
-                  <button class="btn-small" 
-                          (click)="editTask(task.id)"
-                          [disabled]="updatingTaskIds.has(task.id)">
-                    Edit
+                    <span class="view-icon">📅</span>
+                    Month
+                  </button>
+                  <button 
+                    class="view-option" 
+                    [class.active]="viewMode === 'week'"
+                    (click)="setViewMode('week')"
+                  >
+                    <span class="view-icon">📆</span>
+                    Week
+                  </button>
+                  <button 
+                    class="view-option" 
+                    [class.active]="viewMode === 'year'"
+                    (click)="setViewMode('year')"
+                  >
+                    <span class="view-icon">🗓️</span>
+                    Year
                   </button>
                 </div>
               </div>
+
+              <div class="calendar-stats">
+                <div class="stat-badge">
+                  <span class="stat-icon">📊</span>
+                  <span class="stat-text">{{ getTotalTasks() }} Total Tasks</span>
+                </div>
+                <div class="stat-badge">
+                  <span class="stat-icon">✅</span>
+                  <span class="stat-text">{{ getCompletedTasksCount() }} Completed</span>
+                </div>
+                <div class="stat-badge">
+                  <span class="stat-icon">⏳</span>
+                  <span class="stat-text">{{ getPendingTasksCount() }} Pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Calendar Content -->
+          <div class="calendar-content">
+            <!-- Month View -->
+            @if (viewMode === 'month') {
+              <div class="month-view glass-card">
+                <div class="calendar-grid">
+                  <div class="weekday-header" *ngFor="let day of weekdays">
+                    {{ day }}
+                  </div>
+                  
+                  @for (day of calendarDays; track day.date.getTime()) {
+                    <div 
+                      class="calendar-day" 
+                      [class.current-month]="day.isCurrentMonth"
+                      [class.today]="day.isToday"
+                      [class.has-tasks]="day.tasks.length > 0"
+                      [class.has-completed-tasks]="hasCompletedTasks(day.tasks)"
+                    >
+                      <div class="day-header">
+                        <span class="day-number">{{ day.date.getDate() }}</span>
+                        @if (day.isToday) {
+                          <span class="today-badge">Today</span>
+                        }
+                      </div>
+                      
+                      @if (day.tasks.length > 0) {
+                        <div class="task-indicators">
+                          @for (task of getTopTasks(day.tasks, 3); track task.id) {
+                            <div 
+                              class="task-indicator"
+                              [class.completed]="task.completed"
+                              [class.loading]="updatingTaskIds.has(task.id)"
+                              [style.background]="task.completed ? '#4ade80' : getPriorityColor(task.priority)"
+                              [title]="getTaskTooltip(task)"
+                              (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
+                            >
+                              @if (updatingTaskIds.has(task.id)) {
+                                <span class="loading-spinner"></span>
+                              }
+                            </div>
+                          }
+                          @if (day.tasks.length > 3) {
+                            <div class="more-tasks">+{{ day.tasks.length - 3 }}</div>
+                          }
+                        </div>
+                      }
+                      
+                      <!-- Action buttons -->
+                      <div class="day-actions" *ngIf="day.isCurrentMonth">
+                        <button class="action-btn view-tasks-btn" 
+                                (click)="selectDay(day)"
+                                [disabled]="day.tasks.length === 0"
+                                title="View tasks">
+                          <span class="action-icon">👁️</span>
+                        </button>
+                        
+                        <button class="action-btn add-task-btn" 
+                                (click)="onDayClick(day, $event)"
+                                title="Add task">
+                          <span class="action-icon">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
             }
+
+            <!-- Week View -->
+            @if (viewMode === 'week') {
+              <div class="week-view glass-card">
+                <div class="week-header">
+                  @for (day of currentWeekDays; track day; let i = $index) {
+                    <div 
+                      class="week-day-header"
+                      [class.current-month]="isCurrentMonthWeek(day)"
+                      (click)="onWeekDayClick(day, $event)"
+                    >
+                      <div class="week-day-name">{{ getWeekdayName(day) }}</div>
+                      <div class="week-date">{{ day.getDate() }}</div>
+                      <div class="day-stats">
+                        <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
+                        <span class="total-count">/{{ getTasksForDate(day).length }}</span>
+                      </div>
+                      <div class="add-task-hint-week">
+                        <span class="plus-icon">+</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+                
+                <div class="week-grid" cdkDropListGroup>
+                  @for (day of currentWeekDays; track day; let i = $index) {
+                    <div 
+                      class="week-day-column"
+                      cdkDropList
+                      [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
+                      [id]="'day-' + i"
+                      (cdkDropListDropped)="onTaskDrop($event)"
+                      (click)="onWeekDayColumnClick(day, $event)"
+                    >
+                      <div class="week-day-tasks">
+                        @for (task of getTasksForDate(day); track task.id) {
+                          <div 
+                            class="week-task-item"
+                            cdkDrag
+                            [class.completed]="task.completed"
+                            [class.loading]="updatingTaskIds.has(task.id)"
+                          >
+                            <div class="drag-handle" cdkDragHandle>
+                              <span class="drag-icon">⣿</span>
+                            </div>
+                            
+                            <div 
+                              class="week-task-content"
+                              (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
+                            >
+                              <div class="week-task-title">
+                                @if (task.completed) {
+                                  <span class="completion-check">✓</span>
+                                }
+                                {{ task.title }}
+                                @if (updatingTaskIds.has(task.id)) {
+                                  <span class="loading-spinner-small"></span>
+                                }
+                              </div>
+                              <div class="week-task-meta">
+                                <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
+                                @if (task.completed) {
+                                  <span class="completed-badge">Completed</span>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        }
+                        
+                        @if (getTasksForDate(day).length === 0) {
+                          <div class="drop-zone">
+                            <div class="drop-zone-content">
+                              <div class="drop-zone-plus">+</div>
+                              <div class="drop-zone-text">Drop tasks here or click to add</div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                      
+                      <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Year View -->
+            @if (viewMode === 'year') {
+              <div class="year-view">
+                <div class="year-grid">
+                  @for (monthData of getYearViewMonths(); track monthData.month; let i = $index) {
+                    <div 
+                      class="year-month glass-card"
+                      [class.has-completed-tasks]="getCompletedTasksForMonth(monthData.tasks) > 0"
+                      [class.all-tasks-completed]="getCompletedTasksForMonth(monthData.tasks) === monthData.tasks.length && monthData.tasks.length > 0"
+                      (click)="onYearMonthClick(monthData, $event)"
+                    >
+                      <div class="month-header">
+                        <h4>{{ monthData.month }}</h4>
+                        <div class="month-stats">
+                          <div class="completion-progress">
+                            <div class="progress-bar">
+                              <div 
+                                class="progress-fill" 
+                                [style.width.%]="getCompletionPercentage(monthData.tasks)"
+                                [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100"
+                              ></div>
+                            </div>
+                            <span class="completion-text">
+                              {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="add-task-hint-year">
+                          <span class="plus-icon">+</span>
+                        </div>
+                      </div>
+                      
+                      <div class="month-tasks">
+                        @for (task of monthData.tasks.slice(0, 5); track task.id) {
+                          <div 
+                            class="year-task-item"
+                            [class.completed]="task.completed"
+                            [class.pending]="!task.completed"
+                            [class.loading]="updatingTaskIds.has(task.id)"
+                            [style.background]="task.completed ? '#4ade80' : getPriorityColor(task.priority)"
+                            (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
+                          >
+                            <div class="year-task-content">
+                              <div class="year-task-title">
+                                @if (task.completed) {
+                                  <span class="completion-check">✓</span>
+                                } @else {
+                                  <span class="pending-indicator">⏳</span>
+                                }
+                                {{ task.title }}
+                              </div>
+                            </div>
+                          </div>
+                        }
+                        @if (monthData.tasks.length > 5) {
+                          <div class="more-tasks-year">
+                            +{{ monthData.tasks.length - 5 }} more tasks
+                          </div>
+                        }
+                        @if (monthData.tasks.length === 0) {
+                          <div class="empty-month">
+                            <span class="empty-month-text">No tasks</span>
+                            <span class="empty-month-hint">Click to add</span>
+                          </div>
+                        }
+                      </div>
+
+                      @if (monthData.tasks.length > 0) {
+                        <div class="month-completion-summary">
+                          <div class="completion-badge" [class.full-completion]="getCompletionPercentage(monthData.tasks) === 100">
+                            {{ getCompletionPercentage(monthData.tasks) }}%
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Day Details Modal -->
+      @if (selectedDay) {
+        <div class="modal-overlay" (click)="selectedDay = null">
+          <div class="modal-content day-details-modal glass-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Tasks for {{ formatDate(selectedDay.date) }}</h3>
+              <div class="day-summary">
+                <span class="completed-summary">
+                  {{ getCompletedTasks(selectedDay.tasks) }} of {{ selectedDay.tasks.length }} completed
+                </span>
+              </div>
+              <button class="close-btn" (click)="selectedDay = null">×</button>
+            </div>
             
-            @if (selectedDay.tasks.length === 0) {
-              <div class="no-tasks">No tasks for this day</div>
-            }
+            <div class="day-tasks-list">
+              @for (task of selectedDay.tasks; track task.id) {
+                <div class="day-task-item" 
+                     [class.completed]="task.completed"
+                     [class.loading]="updatingTaskIds.has(task.id)">
+                  <div class="task-checkbox">
+                    <input 
+                      type="checkbox" 
+                      [checked]="task.completed"
+                      (change)="toggleTaskCompletion(task.id)"
+                      [disabled]="updatingTaskIds.has(task.id)"
+                    >
+                  </div>
+                  
+                  <div class="task-content">
+                    <div class="task-title">
+                      {{ task.title }}
+                      @if (updatingTaskIds.has(task.id)) {
+                        <span class="loading-spinner-small"></span>
+                      }
+                    </div>
+                    <div class="task-meta">
+                      @if (task.category) {
+                        <span class="task-category">{{ task.category }}</span>
+                      }
+                      <span class="task-priority" [style.color]="getPriorityColor(task.priority)">
+                        {{ getPriorityText(task.priority) }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="task-actions">
+                    <button class="btn-small" 
+                            (click)="editTask(task.id)"
+                            [disabled]="updatingTaskIds.has(task.id)">
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              }
+              
+              @if (selectedDay.tasks.length === 0) {
+                <div class="no-tasks">No tasks for this day</div>
+              }
+            </div>
           </div>
         </div>
       }
 
-      <!-- Enhanced Create Task Modal -->
+      <!-- Create Task Modal -->
       @if (showCreateTaskModal && selectedDateForNewTask) {
         <div class="modal-overlay" (click)="closeCreateTaskModal()">
-          <div class="modal-content create-task-modal" (click)="$event.stopPropagation()">
+          <div class="modal-content create-task-modal glass-card" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <h3>Create New Task</h3>
               <div class="selected-date">
@@ -438,7 +447,6 @@ interface EditModalData {
                   ></textarea>
                 </div>
                 
-                <!-- Enhanced Category Dropdown -->
                 <div class="form-group">
                   <label class="form-label">Category</label>
                   <select 
@@ -453,30 +461,6 @@ interface EditModalData {
                       </option>
                     }
                   </select>
-                </div>
-
-                <!-- Tag Input -->
-                <div class="form-group">
-                  <label class="form-label">Tags</label>
-                  <div class="tag-input-container">
-                    <input 
-                      type="text" 
-                      class="form-control"
-                      placeholder="Add tags (comma separated)"
-                      [(ngModel)]="newTaskTagInput"
-                      name="tagInput"
-                      (keydown)="onTagInputKeydown($event)"
-                    />
-                    <div class="tag-hint">Press Enter or comma to add tags</div>
-                  </div>
-                  <div class="tag-preview">
-                    @for (tag of newTaskTags; track tag) {
-                      <span class="tag-badge">
-                        {{ tag }}
-                        <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
-                      </span>
-                    }
-                  </div>
                 </div>
 
                 <div class="form-group">
@@ -502,65 +486,6 @@ interface EditModalData {
                   </select>
                 </div>
                 
-                <!-- Recurrence Section -->
-                <div class="form-group">
-                  <label class="form-label">Repeat Task</label>
-                  <div class="recurrence-options">
-                    <label class="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        [(ngModel)]="newTaskIsRecurring" 
-                        name="isRecurring"
-                      >
-                      This is a repeating task
-                    </label>
-                    
-                    @if (newTaskIsRecurring) {
-                      <div class="recurrence-settings">
-                        <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label">Repeat every</label>
-                            <select 
-                              class="form-control"
-                              [(ngModel)]="newTaskRecurrenceInterval"
-                              name="recurrenceInterval"
-                            >
-                              <option value="1">1</option>
-                              <option value="2">2</option>
-                              <option value="3">3</option>
-                              <option value="4">4</option>
-                              <option value="5">5</option>
-                              <option value="6">6</option>
-                              <option value="7">7</option>
-                            </select>
-                          </div>
-                          
-                          <div class="form-group">
-                            <label class="form-label">Time period</label>
-                            <select 
-                              class="form-control"
-                              [(ngModel)]="newTaskRecurrencePattern"
-                              name="recurrencePattern"
-                            >
-                              <option value="daily">Day(s)</option>
-                              <option value="weekly">Week(s)</option>
-                              <option value="monthly">Month(s)</option>
-                              <option value="yearly">Year(s)</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div class="recurrence-hint">
-                          @if (newTaskRecurrenceInterval === 1) {
-                            <span>Repeats every {{ newTaskRecurrencePattern.slice(0, -2) }}</span>
-                          } @else {
-                            <span>Repeats every {{ newTaskRecurrenceInterval }} {{ newTaskRecurrencePattern.slice(0, -2) }}s</span>
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-                
                 <div class="form-actions">
                   <button type="submit" class="btn btn-primary" [disabled]="!newTaskTitle.trim()">
                     Create Task
@@ -575,64 +500,10 @@ interface EditModalData {
         </div>
       }
 
-      <!-- Month Selection Modal for Year View -->
-      @if (showMonthSelectionModal && selectedYearMonth) {
-        <div class="modal-overlay" (click)="closeMonthSelectionModal()">
-          <div class="modal-content month-selection-modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>Select Day in {{ selectedYearMonth.month }} {{ selectedYearMonth.year }}</h3>
-              <button class="close-btn" (click)="closeMonthSelectionModal()">×</button>
-            </div>
-            
-            <div class="modal-body">
-              <div class="month-days-grid">
-                <div class="month-days-weekdays">
-                  @for (weekday of weekdays; track weekday) {
-                    <div class="month-days-weekday">{{ weekday }}</div>
-                  }
-                </div>
-                
-                <div class="month-days-calendar">
-                  @for (day of getMonthDaysForSelection(); track day.date.getTime()) {
-                    <div 
-                      class="month-day"
-                      [class.current-month]="day.isCurrentMonth"
-                      [class.today]="day.isToday"
-                      [class.has-tasks]="day.tasks.length > 0"
-                      (click)="onMonthDaySelect(day, $event)"
-                    >
-                      <div class="month-day-number">{{ day.date.getDate() }}</div>
-                      @if (day.tasks.length > 0) {
-                        <div class="month-day-tasks">
-                          <div class="month-day-task-dot"></div>
-                          @if (day.tasks.length > 1) {
-                            <div class="month-day-task-count">+{{ day.tasks.length - 1 }}</div>
-                          }
-                        </div>
-                      } @else {
-                        <div class="add-task-hint-month">
-                          <span class="plus-icon">+</span>
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              </div>
-              
-              <div class="modal-actions">
-                <button class="btn btn-secondary" (click)="closeMonthSelectionModal()">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-
       <!-- Edit Task Modal -->
       @if (editModalData.isOpen) {
         <div class="modal-overlay" (click)="closeEditModal()">
-          <div class="modal-content edit-task-modal" (click)="$event.stopPropagation()">
+          <div class="modal-content edit-task-modal glass-card" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <h3>Edit Task</h3>
               <button class="close-btn" (click)="closeEditModal()">×</button>
@@ -640,7 +511,10 @@ interface EditModalData {
             
             <div class="modal-body">
               @if (isEditing && !editModalData.task) {
-                <div class="loading">Loading task...</div>
+                <div class="loading">
+                  <div class="loading-spinner"></div>
+                  Loading task...
+                </div>
               }
 
               @if (editError) {
@@ -702,69 +576,6 @@ interface EditModalData {
                     </div>
                   </div>
 
-                  <!-- Recurrence Section -->
-                  <div class="form-group">
-                    <label class="form-label">Repeat Task</label>
-                    <div class="recurrence-options">
-                      <label class="checkbox-label">
-                        <input 
-                          type="checkbox" 
-                          [(ngModel)]="editFormData.isRecurring"
-                          name="isRecurring"
-                          (change)="onRecurrenceToggle()"
-                          [disabled]="isEditing"
-                        >
-                        This is a repeating task
-                      </label>
-                      
-                      @if (editFormData.isRecurring) {
-                        <div class="recurrence-settings">
-                          <div class="form-row">
-                            <div class="form-group">
-                              <label class="form-label">Repeat every</label>
-                              <select 
-                                class="form-control"
-                                [(ngModel)]="editFormData.recurrenceInterval"
-                                name="recurrenceInterval"
-                                [disabled]="isEditing"
-                              >
-                                <option [ngValue]="1">1</option>
-                                <option [ngValue]="2">2</option>
-                                <option [ngValue]="3">3</option>
-                                <option [ngValue]="4">4</option>
-                                <option [ngValue]="5">5</option>
-                                <option [ngValue]="6">6</option>
-                                <option [ngValue]="7">7</option>
-                              </select>
-                            </div>
-                            
-                            <div class="form-group">
-                              <label class="form-label">Time period</label>
-                              <select 
-                                class="form-control"
-                                [(ngModel)]="editFormData.recurrencePattern"
-                                name="recurrencePattern"
-                                [disabled]="isEditing"
-                              >
-                                <option value="daily">Day(s)</option>
-                                <option value="weekly">Week(s)</option>
-                                <option value="monthly">Month(s)</option>
-                                <option value="yearly">Year(s)</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div class="recurrence-hint">
-                            @if (editFormData.recurrenceInterval === 1) {
-                              <span>Repeats every {{ editFormData.recurrencePattern.slice(0, -2) }}</span>
-                            } @else {
-                              <span>Repeats every {{ editFormData.recurrenceInterval }} {{ editFormData.recurrencePattern.slice(0, -2) }}s</span>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  </div>
-
                   <div class="form-group">
                     <label class="checkbox-label">
                       <input 
@@ -812,20 +623,85 @@ interface EditModalData {
     </div>
   `,
   styles: [`
+    .calendar-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .background-shapes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .shape-1 {
+      width: 300px;
+      height: 300px;
+      top: -150px;
+      right: -100px;
+    }
+
+    .shape-2 {
+      width: 200px;
+      height: 200px;
+      bottom: 100px;
+      left: -50px;
+    }
+
+    .shape-3 {
+      width: 150px;
+      height: 150px;
+      top: 50%;
+      right: 20%;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      padding: 2rem 1rem;
+    }
+
     .calendar-container {
-      background: var(--bg-primary);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-color);
-      transition: all var(--transition-normal);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
     }
 
     .calendar-header {
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .calendar-nav-section {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
     }
 
     .calendar-nav {
@@ -835,226 +711,239 @@ interface EditModalData {
     }
 
     .nav-btn {
-      background: var(--accent-primary);
-      color: var(--text-light);
-      border: none;
-      width: 40px;
-      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 1.2rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all var(--transition-normal);
+      transition: all 0.3s ease;
     }
 
     .nav-btn:hover {
-      background: var(--accent-hover);
+      background: rgba(255, 255, 255, 0.3);
       transform: scale(1.1);
-      box-shadow: var(--shadow-accent);
+    }
+
+    .nav-icon {
+      font-size: 1.5rem;
+      font-weight: bold;
     }
 
     .calendar-title {
+      font-size: 2.5rem;
+      font-weight: 800;
       margin: 0;
-      color: var(--text-primary);
-      font-size: 1.5rem;
-      font-weight: 700;
-      min-width: 200px;
+      min-width: 300px;
       text-align: center;
+      background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .view-options {
       display: flex;
       gap: 0.5rem;
-      background: var(--bg-secondary);
-      padding: 0.25rem;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .view-option {
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1.5rem;
       border: none;
       background: transparent;
-      border-radius: 6px;
+      border-radius: 12px;
       cursor: pointer;
       font-weight: 600;
-      color: var(--text-muted);
-      transition: all var(--transition-normal);
+      color: rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .view-option.active {
-      background: var(--bg-primary);
-      color: var(--accent-primary);
-      box-shadow: var(--shadow-sm);
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
     }
 
     .view-option:hover:not(.active) {
-      color: var(--text-primary);
-      background: var(--bg-tertiary);
+      color: white;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .view-icon {
+      font-size: 1.1rem;
+    }
+
+    .calendar-stats {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.75rem 1.25rem;
+      border-radius: 20px;
+      color: white;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-icon {
+      font-size: 1.1rem;
+    }
+
+    .calendar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     /* Month View Styles */
     .month-view {
-      margin-bottom: 2rem;
+      padding: 2rem;
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 1px;
-      background: var(--border-color);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .weekday-header {
-      background: var(--bg-secondary);
-      padding: 1rem;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 1.5rem 1rem;
       text-align: center;
-      font-weight: 600;
-      color: var(--text-secondary);
-      border-bottom: 2px solid var(--border-color);
+      font-weight: 700;
+      color: white;
+      font-size: 1.1rem;
     }
 
     .calendar-day {
-      background: var(--bg-primary);
-      padding: 0.75rem;
-      min-height: 120px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      min-height: 140px;
       cursor: pointer;
-      transition: all var(--transition-normal);
+      transition: all 0.3s ease;
       border: 1px solid transparent;
       position: relative;
-      padding-bottom: 3rem;
+      display: flex;
+      flex-direction: column;
     }
 
     .calendar-day:hover {
-      background: var(--bg-secondary);
-      border-color: var(--accent-primary);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
     .calendar-day.current-month {
-      background: var(--bg-primary);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .calendar-day:not(.current-month) {
-      background: var(--bg-tertiary);
-      color: var(--text-muted);
-      cursor: not-allowed;
-    }
-
-    .calendar-day:not(.current-month):hover {
-      background: var(--bg-tertiary) !important;
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.4);
     }
 
     .calendar-day.today {
-      background: var(--accent-primary);
-      color: var(--text-light);
-      border-color: var(--accent-primary);
-    }
-
-    .calendar-day.today .day-number {
-      color: var(--text-light);
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 211, 238, 0.2));
+      border-color: rgba(74, 222, 128, 0.5);
     }
 
     .calendar-day.has-tasks {
-      border-bottom: 3px solid var(--accent-primary);
+      border-bottom: 3px solid #667eea;
     }
 
     .calendar-day.has-completed-tasks {
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(74, 222, 128, 0.1) 100%);
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .day-number {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: white;
+    }
+
+    .today-badge {
+      background: #4ade80;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      font-size: 1.1rem;
-      color: var(--text-primary);
     }
 
     .task-indicators {
       display: flex;
       flex-wrap: wrap;
-      gap: 2px;
-      margin-top: 0.25rem;
-      margin-bottom: 0.5rem;
+      gap: 4px;
+      margin-top: auto;
     }
 
     .task-indicator {
-      width: 8px;
-      height: 8px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       flex-shrink: 0;
       position: relative;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
     .task-indicator.completed {
-      border: 1px solid white;
-      box-shadow: 0 0 2px rgba(40, 167, 69, 0.5);
+      border-color: white;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
       animation: completePulse 0.5s ease;
     }
 
     .task-indicator.loading {
       opacity: 0.6;
-       animation: pulse 1.5s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .task-indicator:hover::after {
-      content: attr(title);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      padding: 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      z-index: 1000;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-md);
+      animation: pulse 1.5s ease-in-out infinite;
     }
 
     .more-tasks {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-left: 2px;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-left: 4px;
     }
 
-    /* Loading spinner styles */
-    .loading-spinner {
-      font-size: 0.7rem;
-      margin-left: 0.25rem;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Day action buttons */
     .day-actions {
       position: absolute;
       bottom: 0.5rem;
-      left: 0;
-      right: 0;
+      right: 0.5rem;
       display: flex;
       gap: 0.25rem;
-      justify-content: center;
       opacity: 0;
       transform: translateY(10px);
-      transition: all var(--transition-normal);
-      padding: 0 0.5rem;
+      transition: all 0.3s ease;
     }
 
     .calendar-day:hover .day-actions {
@@ -1063,79 +952,97 @@ interface EditModalData {
     }
 
     .action-btn {
-      flex: 1;
-      padding: 0.4rem 0.5rem;
+      background: rgba(255, 255, 255, 0.2);
       border: none;
       border-radius: 6px;
-      font-size: 0.7rem;
-      font-weight: 600;
+      width: 32px;
+      height: 32px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.25rem;
-      transition: all var(--transition-normal);
-      max-width: 80px;
-    }
-
-    .view-tasks-btn {
-      background: var(--accent-primary);
-      color: var(--text-light);
-    }
-
-    .view-tasks-btn:disabled {
-      background: var(--text-muted);
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    .view-tasks-btn:not(:disabled):hover {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-    }
-
-    .add-task-btn {
-      background: #28a745;
+      transition: all 0.3s ease;
       color: white;
     }
 
-    .add-task-btn:hover {
-      background: #218838;
-      transform: translateY(-1px);
+    .action-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
     }
 
-    .action-icon {
-      font-size: 0.8rem;
+    .action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
-    .action-text {
-      white-space: nowrap;
+    .view-tasks-btn {
+      background: #667eea;
     }
 
-    /* Week View Styles with Drag & Drop */
+    .add-task-btn {
+      background: #4ade80;
+    }
+
+    /* Loading Spinners */
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner-small {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 0.5rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes completePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* Week View Styles */
     .week-view {
-      margin-bottom: 2rem;
+      padding: 2rem;
     }
 
     .week-header {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      background: var(--bg-secondary);
-      border-radius: 8px 8px 0 0;
-      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px 16px 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .week-day-header {
-      padding: 1rem;
+      padding: 1.5rem 1rem;
       text-align: center;
-      border-right: 1px solid var(--border-color);
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
       cursor: pointer;
-      transition: all var(--transition-normal);
+      transition: all 0.3s ease;
       position: relative;
     }
 
     .week-day-header:hover {
-      background: var(--bg-tertiary);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .week-day-header:last-child {
@@ -1143,121 +1050,82 @@ interface EditModalData {
     }
 
     .week-day-name {
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 0.25rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
     }
 
     .week-date {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text-primary);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 0.5rem;
     }
 
     .day-stats {
       display: flex;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-      margin-top: 0.25rem;
+      gap: 0.25rem;
+      font-size: 0.9rem;
       justify-content: center;
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .completed-count {
-      color: #28a745;
-      font-weight: 600;
+      color: #4ade80;
+      font-weight: 700;
     }
 
     .total-count {
-      color: var(--text-muted);
-    }
-
-    /* Add Task Hint for Week Day Headers */
-    .add-task-hint-week {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-    }
-
-    .week-day-header:hover .plus-icon {
-      opacity: 1;
-      color: var(--accent-primary);
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-top: none;
-      border-radius: 0 0 8px 8px;
-      min-height: 400px;
+      border-radius: 0 0 16px 16px;
+      min-height: 500px;
     }
 
     .week-day-column {
-      border-right: 1px solid var(--border-color);
-      min-height: 400px;
-      transition: all var(--transition-normal);
-      background: var(--bg-primary);
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      min-height: 500px;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.05);
       cursor: pointer;
       position: relative;
     }
 
     .week-day-column:hover {
-      background: var(--bg-secondary);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .week-day-column:last-child {
       border-right: none;
     }
 
-    .week-day-column.cdk-drop-list-dragging {
-      background: var(--bg-tertiary);
-    }
-
     .week-day-tasks {
-      padding: 0.5rem;
+      padding: 1rem;
       height: 100%;
-    }
-
-    /* Drag handle styles */
-    .drag-handle {
-      cursor: grab;
-      padding: 0.5rem;
-      margin-right: 0.5rem;
-      border-radius: 4px;
-      background: var(--bg-tertiary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--transition-normal);
-    }
-
-    .drag-handle:hover {
-      background: var(--accent-primary);
-      color: var(--text-light);
-    }
-
-    .drag-icon {
-      font-size: 0.8rem;
-      opacity: 0.7;
     }
 
     .week-task-item {
       display: flex;
       align-items: center;
-      background: var(--bg-primary);
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-      border-radius: 6px;
-      border-left: 4px solid var(--accent-primary);
-      box-shadow: var(--shadow-sm);
-      transition: all var(--transition-normal);
-      border: 1px solid var(--border-color);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .week-task-item.completed {
       opacity: 0.8;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
-      animation: completeSlide 0.3s ease;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(74, 222, 128, 0.2) 100%);
     }
 
     .week-task-item.loading {
@@ -1265,23 +1133,36 @@ interface EditModalData {
       pointer-events: none;
     }
 
-    .week-task-item.loading .week-task-content {
-  cursor: wait;
-}
-
     .week-task-item.completed .week-task-title {
       text-decoration: line-through;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .week-task-item:hover:not(.loading) {
-      transform: translateX(2px);
-      box-shadow: var(--shadow-md);
-      background: var(--bg-secondary);
+      transform: translateX(4px);
+      background: rgba(255, 255, 255, 0.15);
     }
 
-    .week-task-item:active {
-      cursor: grabbing;
+    .drag-handle {
+      cursor: grab;
+      padding: 0.5rem;
+      margin-right: 0.75rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .drag-handle:hover {
+      background: #667eea;
+    }
+
+    .drag-icon {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      color: white;
     }
 
     .week-task-content {
@@ -1291,55 +1172,47 @@ interface EditModalData {
 
     .week-task-title {
       font-weight: 600;
-      color: var(--text-primary);
+      color: white;
       margin-bottom: 0.25rem;
       display: flex;
       align-items: center;
+      gap: 0.5rem;
     }
 
     .completion-check {
-      color: #28a745;
+      color: #4ade80;
       font-weight: bold;
-      margin-right: 0.5rem;
     }
 
     .week-task-meta {
       display: flex;
-      gap: 0.5rem;
-      font-size: 0.8rem;
+      gap: 0.75rem;
+      font-size: 0.85rem;
       align-items: center;
     }
 
     .week-task-time {
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .completed-badge {
-      background: #28a745;
+      background: #4ade80;
       color: white;
       padding: 0.2rem 0.5rem;
-      border-radius: 10px;
+      border-radius: 8px;
       font-size: 0.7rem;
       font-weight: 600;
     }
 
-    .task-drag-placeholder {
-      opacity: 0.3;
-      background: var(--accent-primary);
-      border-radius: 6px;
-      min-height: 50px;
-      margin-bottom: 0.5rem;
-    }
-
     .drop-zone {
-      border: 2px dashed var(--border-color);
-      border-radius: 6px;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
       padding: 2rem;
       text-align: center;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.6);
       margin: 0.5rem;
-      transition: all var(--transition-normal);
-      background: var(--bg-secondary);
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.05);
       cursor: pointer;
       height: calc(100% - 1rem);
       display: flex;
@@ -1348,22 +1221,21 @@ interface EditModalData {
     }
 
     .drop-zone:hover {
-      border-color: var(--accent-primary);
-      background: var(--bg-tertiary);
-      color: var(--accent-primary);
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
     }
 
     .drop-zone-content {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .drop-zone-plus {
       font-size: 2rem;
       font-weight: bold;
-      color: var(--accent-primary);
     }
 
     .drop-zone-text {
@@ -1371,33 +1243,17 @@ interface EditModalData {
       font-weight: 600;
     }
 
-    .week-day-column.cdk-drop-list-dragging .drop-zone {
-      border-color: var(--accent-primary);
-      background: var(--bg-tertiary);
-      color: var(--accent-primary);
+    .task-drag-placeholder {
+      opacity: 0.3;
+      background: #667eea;
+      border-radius: 12px;
+      min-height: 60px;
+      margin-bottom: 0.75rem;
     }
 
-    /* Drag & Drop Global Styles */
-    .cdk-drag-preview {
-      box-sizing: border-box;
-      border-radius: 6px;
-      box-shadow: var(--shadow-lg);
-      background: var(--bg-primary);
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
-    }
-
-    .cdk-drag-animating {
-      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    .week-day-column.cdk-drop-list-dragging .week-task-item:not(.cdk-drag-placeholder) {
-      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    /* Enhanced Year View Styles */
+    /* Year View Styles */
     .year-view {
-      margin-bottom: 2rem;
+      padding: 0;
     }
 
     .year-grid {
@@ -1407,34 +1263,31 @@ interface EditModalData {
     }
 
     .year-month {
-      background: var(--bg-primary);
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.25rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 1.5rem;
       cursor: pointer;
-      transition: all var(--transition-normal);
-      min-height: 200px;
+      transition: all 0.3s ease;
+      min-height: 280px;
       position: relative;
       display: flex;
       flex-direction: column;
     }
 
     .year-month:hover {
-      border-color: var(--accent-primary);
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-lg);
-      background: var(--bg-secondary);
+      border-color: #667eea;
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .year-month.has-completed-tasks {
-      border-left: 4px solid #28a745;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #f8fff9 100%);
+      border-left: 4px solid #4ade80;
     }
 
     .year-month.all-tasks-completed {
-      border-color: #28a745;
-      background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 100%);
-      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+      border-color: #4ade80;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(74, 222, 128, 0.15) 100%);
     }
 
     .month-header {
@@ -1442,70 +1295,46 @@ interface EditModalData {
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid var(--border-color);
-      position: relative;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .month-header h4 {
       margin: 0;
-      color: var(--text-primary);
-      font-size: 1.1rem;
+      color: white;
+      font-size: 1.3rem;
       font-weight: 700;
-    }
-
-    .month-stats {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.5rem;
     }
 
     .completion-progress {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      min-width: 120px;
     }
 
     .progress-bar {
-      width: 60px;
+      width: 80px;
       height: 8px;
-      background: var(--bg-tertiary);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 4px;
       overflow: hidden;
-      flex-shrink: 0;
     }
 
     .progress-fill {
       height: 100%;
-      background: #28a745;
+      background: #4ade80;
       border-radius: 4px;
       transition: width 0.5s ease-in-out;
     }
 
     .progress-fill.full-completion {
-      background: linear-gradient(90deg, #28a745, #20c997);
-      box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
     }
 
     .completion-text {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-    }
-
-    /* Add Task Hint for Year Month Headers */
-    .add-task-hint-year {
-      position: absolute;
-      top: 0;
-      right: 0;
-    }
-
-    .year-month:hover .plus-icon {
-      opacity: 1;
-      color: var(--accent-primary);
+      color: white;
     }
 
     .month-tasks {
@@ -1519,47 +1348,37 @@ interface EditModalData {
     .year-task-item {
       padding: 0.75rem;
       border-radius: 8px;
-      color: var(--text-light);
-      font-size: 0.8rem;
-      transition: all var(--transition-normal);
+      color: white;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
       border: 1px solid transparent;
-      box-shadow: var(--shadow-sm);
       cursor: pointer;
     }
 
     .year-task-item.completed {
-      background: #28a745 !important;
-      border-color: #28a745;
-      opacity: 1;
-      transform: scale(1.02);
-      animation: completeBounce 0.4s ease;
+      background: #4ade80 !important;
+      border-color: #4ade80;
     }
 
     .year-task-item.pending {
-      background: var(--accent-primary);
-      border-color: var(--accent-primary);
-      opacity: 0.9;
+      background: #667eea;
+      border-color: #667eea;
     }
 
     .year-task-item.loading {
       opacity: 0.6;
       cursor: wait;
-      pointer-events: none;
     }
 
-    [class].loading {
-  transition: opacity 0.3s ease;
-}
-
     .year-task-item:hover:not(.loading) {
-      transform: translateX(3px) scale(1.02);
-      box-shadow: var(--shadow-md);
+      transform: translateX(4px);
+      opacity: 0.9;
     }
 
     .year-task-content {
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .year-task-title {
@@ -1567,67 +1386,28 @@ interface EditModalData {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .completion-check {
-      font-size: 0.9rem;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-    }
-
-    .pending-indicator {
-      font-size: 0.8rem;
-      opacity: 0.9;
-    }
-
-    .year-task-status {
-      font-size: 0.7rem;
-      font-weight: 600;
-      opacity: 0.9;
-    }
-
-    .status-completed {
-      color: rgba(255, 255, 255, 0.9);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-
-    .status-pending {
-      color: rgba(255, 255, 255, 0.8);
+      flex: 1;
     }
 
     .more-tasks-year {
       text-align: center;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 0.8rem;
-      font-style: italic;
       padding: 0.75rem;
-      background: var(--bg-tertiary);
-      border-radius: 6px;
-      border: 1px dashed var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .more-tasks-stats {
-      font-size: 0.7rem;
-      color: #28a745;
-      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
     }
 
     .empty-month {
       text-align: center;
-      color: var(--text-muted);
-      font-style: italic;
+      color: rgba(255, 255, 255, 0.5);
       padding: 2rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
       flex: 1;
       justify-content: center;
-      align-items: center;
     }
 
     .empty-month-text {
@@ -1636,246 +1416,238 @@ interface EditModalData {
 
     .empty-month-hint {
       font-size: 0.8rem;
-      color: var(--accent-primary);
-      font-weight: 600;
+      color: #667eea;
     }
 
-    /* Month Completion Summary */
     .month-completion-summary {
       margin-top: auto;
       padding-top: 1rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .completion-badge {
-      background: #28a745;
+      background: #4ade80;
       color: white;
-      padding: 0.4rem 0.75rem;
+      padding: 0.5rem 1rem;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      min-width: 50px;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+      box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
     }
 
     .completion-badge.full-completion {
-      background: linear-gradient(135deg, #28a745, #20c997);
-      box-shadow: 0 2px 12px rgba(40, 167, 69, 0.4);
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
       animation: pulse 2s infinite;
     }
 
-    .summary-text {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      flex: 1;
-      text-align: right;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes completePulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.5); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes completeSlide {
-      0% { transform: translateX(0); }
-      50% { transform: translateX(10px); }
-      100% { transform: translateX(0); }
-    }
-
-    @keyframes completeBounce {
-      0%, 20%, 53%, 80%, 100% { transform: translateX(0) scale(1); }
-      40%, 43% { transform: translateX(0) scale(1.1); }
-      70% { transform: translateX(0) scale(1.05); }
-      90% { transform: translateX(0) scale(1.02); }
-    }
-
-    /* Month Selection Modal Styles */
-    .month-selection-modal {
-      max-width: 600px;
-    }
-
-    .month-days-grid {
-      background: var(--bg-primary);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
-    }
-
-    .month-days-weekdays {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .month-days-weekday {
-      padding: 0.75rem;
-      text-align: center;
-      font-weight: 600;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    .month-days-calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-      background: var(--border-color);
-    }
-
-    .month-day {
-      background: var(--bg-primary);
-      padding: 0.5rem;
-      min-height: 60px;
-      cursor: pointer;
-      transition: all var(--transition-normal);
-      border: 1px solid transparent;
-      position: relative;
-    }
-
-    .month-day:hover {
-      background: var(--bg-secondary);
-      border-color: var(--accent-primary);
-    }
-
-    .month-day.current-month {
-      background: var(--bg-primary);
-    }
-
-    .month-day:not(.current-month) {
-      background: var(--bg-tertiary);
-      color: var(--text-muted);
-    }
-
-    .month-day.today {
-      background: var(--accent-primary);
-      color: var(--text-light);
-    }
-
-    .month-day.today .month-day-number {
-      color: var(--text-light);
-    }
-
-    .month-day.has-tasks {
-      border-bottom: 2px solid var(--accent-primary);
-    }
-
-    .month-day-number {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-primary);
-    }
-
-    .month-day-tasks {
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
-      gap: 2px;
-      margin-top: 0.25rem;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
     }
 
-    .month-day-task-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent-primary);
+    .modal-content {
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      width: 100%;
     }
 
-    .month-day-task-count {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .add-task-hint-month {
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-
-    .month-day:hover .plus-icon {
-      opacity: 1;
-      color: var(--accent-primary);
-    }
-
-    /* Day Details Styles */
-    .day-details {
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      padding: 1.5rem;
-      border: 1px solid var(--border-color);
-      transition: all var(--transition-normal);
-    }
-
-    .day-details-header {
+    .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
+      padding: 2rem 2rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .day-details-header h3 {
+    .modal-header h3 {
       margin: 0;
-      color: var(--text-primary);
-    }
-
-    .day-summary {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .completed-summary {
-      color: #28a745;
-      font-weight: 600;
+      color: white;
+      font-size: 1.5rem;
     }
 
     .close-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 2rem;
       cursor: pointer;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
       padding: 0.25rem;
       border-radius: 4px;
-      transition: all var(--transition-normal);
+      transition: all 0.3s ease;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .close-btn:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #667eea;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex: 1;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #c0392b;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Day Details Modal */
+    .day-details-modal {
+      max-width: 500px;
+    }
+
+    .day-summary {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .completed-summary {
+      color: #4ade80;
+      font-weight: 600;
     }
 
     .day-tasks-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
     .day-task-item {
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 1rem;
-      background: var(--bg-primary);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      transition: all var(--transition-normal);
+      padding: 1.25rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
     }
 
     .day-task-item.completed {
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #f0f9f0 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(74, 222, 128, 0.15) 100%);
     }
 
     .day-task-item.loading {
@@ -1885,19 +1657,18 @@ interface EditModalData {
 
     .day-task-item.completed .task-title {
       text-decoration: line-through;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .day-task-item:hover:not(.loading) {
-      box-shadow: var(--shadow-md);
-      background: var(--bg-secondary);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .task-checkbox input {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       cursor: pointer;
-      accent-color: var(--accent-primary);
+      accent-color: #667eea;
     }
 
     .task-content {
@@ -1906,25 +1677,26 @@ interface EditModalData {
 
     .task-title {
       font-weight: 600;
-      color: var(--text-primary);
+      color: white;
       margin-bottom: 0.25rem;
       display: flex;
       align-items: center;
+      gap: 0.5rem;
     }
 
     .task-meta {
       display: flex;
       gap: 1rem;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       align-items: center;
     }
 
     .task-category {
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      padding: 0.2rem 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 0.3rem 0.75rem;
       border-radius: 12px;
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .task-priority {
@@ -1937,291 +1709,46 @@ interface EditModalData {
     }
 
     .btn-small {
-      padding: 0.4rem 0.8rem;
-      border: 1px solid var(--border-color);
-      background: var(--bg-primary);
-      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 0.8rem;
-      transition: all var(--transition-normal);
-      color: var(--text-primary);
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      color: white;
     }
 
     .btn-small:hover:not(:disabled) {
-      background: var(--bg-secondary);
-      border-color: var(--accent-primary);
-      color: var(--accent-primary);
-    }
-
-    .btn-small:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #667eea;
     }
 
     .no-tasks {
       text-align: center;
-      padding: 2rem;
-      color: var(--text-muted);
+      padding: 3rem 2rem;
+      color: rgba(255, 255, 255, 0.6);
       font-style: italic;
     }
 
-    /* Enhanced Create Task Modal Styles */
-    .create-task-modal {
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .create-task-modal .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .create-task-modal .modal-header h3 {
-      margin: 0;
-      color: var(--text-primary);
-      flex: 1;
-    }
-
-    .selected-date {
-      background: var(--bg-secondary);
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      margin: 0 1rem;
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-    }
-
-    .create-task-modal .modal-body {
-      padding: 1.5rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 1rem;
-      transition: all var(--transition-normal);
-    }
-
-    .form-control:focus {
-      outline: none;
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    textarea.form-control {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    .tag-input-container {
-      position: relative;
-    }
-
-    .tag-hint {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    .tag-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .tag-badge {
-      background: var(--accent-primary);
-      color: var(--text-light);
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .tag-remove {
-      background: none;
-      border: none;
-      color: var(--text-light);
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      padding: 0;
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-    }
-
-    .tag-remove:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .recurrence-options {
-      margin-top: 0.5rem;
-    }
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      cursor: pointer;
-    }
-
-    .checkbox-label input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--accent-primary);
-    }
-
-    .recurrence-settings {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .recurrence-hint {
-      margin-top: 0.5rem;
-      padding: 0.5rem;
-      background: var(--bg-tertiary);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all var(--transition-normal);
-      flex: 1;
-    }
-
-    .btn-primary {
-      background: var(--accent-primary);
-      color: var(--text-light);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-accent);
-    }
-
-    .btn-primary:disabled {
-      background: var(--text-muted);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .btn-secondary {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background: var(--bg-tertiary);
-      border-color: var(--accent-primary);
-    }
-
-    /* Edit Task Modal Styles */
-    .edit-task-modal {
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
     .loading {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      justify-content: center;
       padding: 2rem;
-      color: var(--accent-primary);
+      color: white;
       font-weight: 600;
-        opacity: 0.6;
-  pointer-events: none;
-  position: relative;
     }
-
-    .loading::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
 
     .error-message {
-      background: #fee;
-      color: #c33;
+      background: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1rem;
       text-align: center;
-      border: 1px solid #fcc;
-    }
-
-    .btn-danger {
-      background: #e74c3c;
-      color: var(--text-light);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: #c0392b;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-    }
-
-    .btn-danger:disabled {
-      background: var(--text-muted);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      border: 1px solid rgba(231, 76, 60, 0.3);
     }
 
     /* Responsive Design */
@@ -2232,28 +1759,51 @@ interface EditModalData {
     }
 
     @media (max-width: 768px) {
-      .calendar-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+      .container {
+        padding: 1rem 0.5rem;
       }
 
-      .calendar-nav {
-        justify-content: center;
+      .calendar-header {
+        padding: 1.5rem;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+      }
+
+      .calendar-nav-section {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .calendar-title {
+        font-size: 2rem;
+        min-width: auto;
       }
 
       .view-options {
+        width: 100%;
         justify-content: center;
+      }
+
+      .calendar-stats {
+        justify-content: center;
+      }
+
+      .month-view,
+      .week-view {
+        padding: 1.5rem;
       }
 
       .calendar-grid {
         grid-template-columns: repeat(7, 1fr);
-        gap: 0.5px;
       }
 
       .calendar-day {
-        min-height: 80px;
-        padding: 0.5rem;
+        min-height: 100px;
+        padding: 0.75rem 0.5rem;
       }
 
       .week-header,
@@ -2264,7 +1814,7 @@ interface EditModalData {
       .week-day-header,
       .week-day-column {
         border-right: none;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       }
 
       .week-day-header:last-child,
@@ -2276,57 +1826,12 @@ interface EditModalData {
         grid-template-columns: 1fr;
       }
 
-      .day-stats, .month-stats {
-        flex-direction: column;
-        gap: 0.1rem;
-      }
-      
-      .week-day-header {
-        padding: 0.5rem;
+      .modal-overlay {
+        padding: 1rem;
       }
 
       .modal-content {
         margin: 1rem;
-        max-height: 90vh;
-      }
-      
-      .modal-actions {
-        flex-direction: column;
-      }
-
-      .add-task-hint-week {
-        top: 0.25rem;
-        right: 0.25rem;
-      }
-
-      .month-days-weekday {
-        padding: 0.5rem;
-        font-size: 0.8rem;
-      }
-
-      .month-day {
-        min-height: 50px;
-        padding: 0.25rem;
-      }
-
-      .month-day-number {
-        font-size: 0.8rem;
-      }
-
-      .create-task-modal {
-        margin: 1rem;
-        max-height: 95vh;
-      }
-
-      .create-task-modal .modal-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-      }
-
-      .selected-date {
-        margin: 0;
-        text-align: center;
       }
 
       .form-row {
@@ -2337,48 +1842,46 @@ interface EditModalData {
         flex-direction: column;
       }
 
-      .month-header {
-        flex-direction: column;
-        gap: 0.75rem;
-        align-items: stretch;
-      }
-      
-      .month-stats {
-        align-items: stretch;
-      }
-      
-      .completion-progress {
-        justify-content: space-between;
-      }
-      
-      .month-completion-summary {
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: center;
-      }
-      
-      .summary-text {
-        text-align: center;
-      }
-
       .day-actions {
-        flex-direction: column;
-        gap: 0.1rem;
-        padding: 0 0.25rem;
+        position: static;
+        opacity: 1;
+        transform: none;
+        margin-top: 0.5rem;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .calendar-title {
+        font-size: 1.5rem;
       }
 
-      .action-btn {
-        max-width: none;
-        padding: 0.3rem 0.4rem;
-        font-size: 0.65rem;
+      .nav-btn {
+        width: 40px;
+        height: 40px;
       }
 
-      .action-text {
-        display: none;
+      .view-option {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .stat-badge {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
       }
 
       .calendar-day {
-        padding-bottom: 2.5rem;
+        min-height: 80px;
+      }
+
+      .day-number {
+        font-size: 1rem;
+      }
+
+      .task-indicator {
+        width: 8px;
+        height: 8px;
       }
     }
   `]
@@ -2391,11 +1894,9 @@ export class CalendarViewComponent implements OnInit {
   viewMode: 'month' | 'week' | 'year' = 'month';
   selectedDay: CalendarDay | null = null;
   
-  // Enhanced task creation properties
   showCreateTaskModal = false;
   selectedDateForNewTask: Date | null = null;
   
-  // Task form fields (same as in TasksComponent)
   newTaskTitle = '';
   newTaskDescription = '';
   newTaskDueDate: string = '';
@@ -2407,7 +1908,6 @@ export class CalendarViewComponent implements OnInit {
   newTaskRecurrencePattern: string = 'daily';
   newTaskRecurrenceInterval: number = 1;
 
-  // Categories (same as in TasksComponent)
   categories: Category[] = [
     { name: 'Personal', color: '#667eea', icon: '🏠' },
     { name: 'Work', color: '#764ba2', icon: '💼' },
@@ -2419,7 +1919,6 @@ export class CalendarViewComponent implements OnInit {
     { name: 'Other', color: '#a8edea', icon: '📦' }
   ];
   
-  // Month selection properties
   showMonthSelectionModal = false;
   selectedYearMonth: { month: string, year: number, monthIndex: number } | null = null;
   monthSelectionDays: CalendarDay[] = [];
@@ -2432,7 +1931,6 @@ export class CalendarViewComponent implements OnInit {
   calendarDays: CalendarDay[] = [];
   currentWeekDays: Date[] = [];
 
-  // Add these modal properties
   editModalData: EditModalData = {
     taskId: 0,
     task: null,
@@ -2453,7 +1951,6 @@ export class CalendarViewComponent implements OnInit {
   isEditing = false;
   editError = '';
 
-  // NEW: Track updating tasks to prevent multiple clicks and show loading states
   updatingTaskIds = new Set<number>();
 
   ngOnInit(): void {
@@ -2591,7 +2088,6 @@ export class CalendarViewComponent implements OnInit {
     return tasks.filter(task => task.completed).length;
   }
 
-  // NEW: Get completion percentage for progress bars
   getCompletionPercentage(tasks: Task[]): number {
     if (tasks.length === 0) return 0;
     const completed = tasks.filter(task => task.completed).length;
@@ -2617,6 +2113,18 @@ export class CalendarViewComponent implements OnInit {
       case 1: return '#27ae60';
       default: return '#667eea';
     }
+  }
+
+    getTotalTasks(): number {
+    return this.tasks.length;
+  }
+
+  getCompletedTasksCount(): number {
+    return this.tasks.filter(task => task.completed).length;
+  }
+
+  getPendingTasksCount(): number {
+    return this.tasks.filter(task => !task.completed).length;
   }
 
   getPriorityText(priority: number): string {
