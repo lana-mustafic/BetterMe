@@ -37,6 +37,10 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface RegisterResponse {
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,23 +61,17 @@ export class AuthService {
   }
 
   login(data: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, data
-    
-    ).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, data).pipe(
       tap(res => this.handleAuth(res))
     );
   }
 
-  register(data: RegisterRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/register`, data
-    
-    );
+  register(data: RegisterRequest): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.apiUrl}/auth/register`, data);
   }
 
   updateProfile(data: UpdateProfileRequest): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/profile`, data
-    
-    ).pipe(
+    return this.http.put<User>(`${this.apiUrl}/users/profile`, data).pipe(
       tap(user => {
         this.currentUserSubject.next(user);
         localStorage.setItem('currentUser', JSON.stringify(user));
@@ -82,9 +80,7 @@ export class AuthService {
   }
 
   changePassword(data: ChangePasswordRequest): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, data
-    
-    );
+    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, data);
   }
 
   getCurrentUser(): User | null {

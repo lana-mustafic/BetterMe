@@ -31,11 +31,24 @@ namespace BetterMe.Api.Services
             _appBaseUrl = _configuration["AppBaseUrl"] ?? "https://betterme-frontend.onrender.com";
         }
 
+        public async Task<bool> IsEmailConfiguredAsync()
+        {
+            return await Task.FromResult(!string.IsNullOrEmpty(_smtpUsername) &&
+                                       !string.IsNullOrEmpty(_smtpPassword));
+        }
+
         public async Task<bool> SendVerificationEmailAsync(string email, string verificationToken, string displayName)
         {
             try
             {
                 Console.WriteLine($"[EmailService] Starting verification email for: {email}");
+
+                if (!await IsEmailConfiguredAsync())
+                {
+                    Console.WriteLine($"[EmailService] SMTP not configured. Would send verification email to: {email}");
+                    Console.WriteLine($"[EmailService] Verification token: {verificationToken}");
+                    return true; // Return true to not block registration
+                }
 
                 var encodedToken = HttpUtility.UrlEncode(verificationToken);
                 var encodedEmail = HttpUtility.UrlEncode(email);
@@ -60,6 +73,13 @@ namespace BetterMe.Api.Services
         {
             try
             {
+                if (!await IsEmailConfiguredAsync())
+                {
+                    Console.WriteLine($"[EmailService] SMTP not configured. Would send password reset email to: {email}");
+                    Console.WriteLine($"[EmailService] Reset token: {resetToken}");
+                    return true;
+                }
+
                 var encodedToken = HttpUtility.UrlEncode(resetToken);
                 var encodedEmail = HttpUtility.UrlEncode(email);
                 var resetUrl = $"{_appBaseUrl}/reset-password?token={encodedToken}&email={encodedEmail}";
@@ -80,6 +100,12 @@ namespace BetterMe.Api.Services
         {
             try
             {
+                if (!await IsEmailConfiguredAsync())
+                {
+                    Console.WriteLine($"[EmailService] SMTP not configured. Would send welcome email to: {email}");
+                    return true;
+                }
+
                 var subject = "Welcome to BetterMe!";
                 var body = CreateWelcomeEmailBody(displayName);
 
@@ -88,6 +114,48 @@ namespace BetterMe.Api.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[EmailService] Failed to send welcome email: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SendGenericEmailAsync(string email, string subject, string body, bool isHtml = true)
+        {
+            try
+            {
+                if (!await IsEmailConfiguredAsync())
+                {
+                    Console.WriteLine($"[EmailService] SMTP not configured. Would send generic email to: {email}");
+                    Console.WriteLine($"[EmailService] Subject: {subject}");
+                    return true;
+                }
+
+                return await SendEmailAsync(email, subject, body, isHtml);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EmailService] Failed to send generic email: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SendNotificationEmailAsync(string email, string title, string message, string displayName)
+        {
+            try
+            {
+                if (!await IsEmailConfiguredAsync())
+                {
+                    Console.WriteLine($"[EmailService] SMTP not configured. Would send notification email to: {email}");
+                    return true;
+                }
+
+                var subject = $"{title} - BetterMe";
+                var body = CreateNotificationEmailBody(displayName, title, message);
+
+                return await SendEmailAsync(email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EmailService] Failed to send notification email: {ex.Message}");
                 return false;
             }
         }
@@ -102,9 +170,10 @@ namespace BetterMe.Api.Services
     <style>
         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; }}
-        .content {{ background: #f9f9f9; padding: 20px; }}
-        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; }}
+        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
     </style>
 </head>
 <body>
@@ -114,12 +183,17 @@ namespace BetterMe.Api.Services
         </div>
         <div class='content'>
             <h2>Hello {displayName}!</h2>
-            <p>Please verify your email address by clicking the button below:</p>
+            <p>Welcome to BetterMe! Please verify your email address by clicking the button below:</p>
             <p style='text-align: center;'>
                 <a href='{verificationUrl}' class='button'>Verify Email</a>
             </p>
-            <p>Or copy this link: {verificationUrl}</p>
-            <p>This link will expire in 24 hours.</p>
+            <p>Or copy this link to your browser:</p>
+            <p style='word-break: break-all; background: #eee; padding: 10px; border-radius: 5px;'>{verificationUrl}</p>
+            <p><strong>This link will expire in 24 hours.</strong></p>
+            <p>If you didn't create an account with BetterMe, please ignore this email.</p>
+        </div>
+        <div class='footer'>
+            <p>&copy; {DateTime.Now.Year} BetterMe. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -136,9 +210,10 @@ namespace BetterMe.Api.Services
     <style>
         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; }}
-        .content {{ background: #f9f9f9; padding: 20px; }}
-        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; }}
+        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
     </style>
 </head>
 <body>
@@ -148,11 +223,17 @@ namespace BetterMe.Api.Services
         </div>
         <div class='content'>
             <h2>Hello {displayName}!</h2>
-            <p>Click the button below to reset your password:</p>
+            <p>We received a request to reset your password. Click the button below to create a new password:</p>
             <p style='text-align: center;'>
                 <a href='{resetUrl}' class='button'>Reset Password</a>
             </p>
-            <p>This link will expire in 1 hour.</p>
+            <p>Or copy this link to your browser:</p>
+            <p style='word-break: break-all; background: #eee; padding: 10px; border-radius: 5px;'>{resetUrl}</p>
+            <p><strong>This link will expire in 1 hour.</strong></p>
+            <p>If you didn't request a password reset, please ignore this email.</p>
+        </div>
+        <div class='footer'>
+            <p>&copy; {DateTime.Now.Year} BetterMe. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -169,8 +250,9 @@ namespace BetterMe.Api.Services
     <style>
         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; }}
-        .content {{ background: #f9f9f9; padding: 20px; }}
+        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
     </style>
 </head>
 <body>
@@ -181,28 +263,60 @@ namespace BetterMe.Api.Services
         <div class='content'>
             <h2>Hello {displayName}!</h2>
             <p>Your account has been successfully verified!</p>
-            <p>Start organizing your tasks and boosting your productivity.</p>
+            <p>Start organizing your tasks and boosting your productivity with our features:</p>
+            <ul>
+                <li>📝 Smart task management</li>
+                <li>🔄 Recurring tasks</li>
+                <li>📊 Progress tracking</li>
+                <li>🏷️ Tag organization</li>
+            </ul>
+            <p>We're excited to help you achieve your goals!</p>
+        </div>
+        <div class='footer'>
+            <p>&copy; {DateTime.Now.Year} BetterMe. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>";
         }
 
-        private async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
+        private string CreateNotificationEmailBody(string displayName, string title, string message)
         {
-            // If no SMTP configuration, log and return true (for development)
-            if (string.IsNullOrEmpty(_smtpUsername) || string.IsNullOrEmpty(_smtpPassword))
-            {
-                Console.WriteLine($"[EmailService] SMTP not configured. Would send email to: {toEmail}");
-                Console.WriteLine($"[EmailService] Subject: {subject}");
-                Console.WriteLine($"[EmailService] Verification would use URL in email body");
-                return true; // Return true to not block registration
-            }
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: #667eea; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .footer {{ text-align: center; margin-top: 20px; font-size: 12px; color: #666; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>BetterMe Notification</h1>
+        </div>
+        <div class='content'>
+            <h2>Hello {displayName}!</h2>
+            <h3>{title}</h3>
+            <p>{message}</p>
+        </div>
+        <div class='footer'>
+            <p>&copy; {DateTime.Now.Year} BetterMe. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
 
+        private async Task<bool> SendEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
+        {
             try
             {
-                Console.WriteLine($"[EmailService] Attempting to send email via {_smtpHost}:{_smtpPort}");
-
                 using var client = new SmtpClient(_smtpHost, _smtpPort)
                 {
                     Credentials = new NetworkCredential(_smtpUsername, _smtpPassword),
@@ -215,7 +329,7 @@ namespace BetterMe.Api.Services
                     From = new MailAddress(_fromEmail, _fromName),
                     Subject = subject,
                     Body = body,
-                    IsBodyHtml = true
+                    IsBodyHtml = isHtml
                 };
                 mailMessage.To.Add(toEmail);
 

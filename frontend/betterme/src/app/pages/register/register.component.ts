@@ -28,90 +28,105 @@ import { AuthService } from '../../services/auth';
               <p class="subtitle">Start your productivity journey with us</p>
             </div>
 
+            <!-- Success Message -->
+            @if (successMessage) {
+              <div class="success-card">
+                <div class="success-icon">🎉</div>
+                <div class="success-content">
+                  <h3>Registration Successful!</h3>
+                  <p>{{ successMessage }}</p>
+                  <p class="success-note">Please check your email to verify your account before logging in.</p>
+                </div>
+              </div>
+            }
+
             <!-- Register Form -->
-            <form (ngSubmit)="onRegister()" class="auth-form">
-              <!-- Display Name Field -->
-              <div class="form-group">
-                <label class="form-label">Display Name</label>
-                <input 
-                  type="text"
-                  class="form-control"
-                  placeholder="Enter your full name"
-                  [(ngModel)]="displayName"
-                  name="displayName"
-                  required
-                />
-              </div>
-
-              <!-- Email Field -->
-              <div class="form-group">
-                <label class="form-label">Email Address</label>
-                <input 
-                  type="email"
-                  class="form-control"
-                  placeholder="your.email@example.com"
-                  [(ngModel)]="email"
-                  name="email"
-                  required
-                />
-              </div>
-
-              <!-- Password Field -->
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <div class="password-input-container">
+            @if (!successMessage) {
+              <form (ngSubmit)="onRegister()" class="auth-form">
+                <!-- Display Name Field -->
+                <div class="form-group">
+                  <label class="form-label">Display Name</label>
                   <input 
-                    [type]="showPassword ? 'text' : 'password'"
-                    class="form-control password-input"
-                    placeholder="Choose a strong password"
-                    [(ngModel)]="password"
-                    name="password"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter your full name"
+                    [(ngModel)]="displayName"
+                    name="displayName"
                     required
                   />
-                  <button 
-                    type="button" 
-                    class="password-toggle"
-                    (click)="togglePasswordVisibility()"
-                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-                  >
-                    <span class="password-toggle-icon">
-                      {{ showPassword ? '👁️' : '👁️‍🗨️' }}
-                    </span>
-                  </button>
                 </div>
-                <div class="password-hint">
-                  Use 8+ characters with mix of letters, numbers & symbols
-                </div>
-              </div>
 
-              <!-- Error Message -->
-              @if (errorMessage) {
-                <div class="error-card">
-                  <div class="error-icon">⚠️</div>
-                  <div class="error-content">
-                    <h3>Registration Failed</h3>
-                    <p>{{ errorMessage }}</p>
+                <!-- Email Field -->
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <input 
+                    type="email"
+                    class="form-control"
+                    placeholder="your.email@example.com"
+                    [(ngModel)]="email"
+                    name="email"
+                    required
+                  />
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                  <label class="form-label">Password</label>
+                  <div class="password-input-container">
+                    <input 
+                      [type]="showPassword ? 'text' : 'password'"
+                      class="form-control password-input"
+                      placeholder="Choose a strong password"
+                      [(ngModel)]="password"
+                      name="password"
+                      required
+                      minlength="6"
+                    />
+                    <button 
+                      type="button" 
+                      class="password-toggle"
+                      (click)="togglePasswordVisibility()"
+                      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                    >
+                      <span class="password-toggle-icon">
+                        {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+                      </span>
+                    </button>
+                  </div>
+                  <div class="password-hint">
+                    Use 6+ characters with mix of letters, numbers & symbols
                   </div>
                 </div>
-              }
 
-              <!-- Submit Button -->
-              <button 
-                class="btn btn-primary btn-full" 
-                type="submit" 
-                [disabled]="isLoading"
-              >
-                @if (isLoading) {
-                  <div class="button-loading">
-                    <div class="button-spinner"></div>
-                    Creating your account...
+                <!-- Error Message -->
+                @if (errorMessage) {
+                  <div class="error-card">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-content">
+                      <h3>Registration Failed</h3>
+                      <p>{{ errorMessage }}</p>
+                    </div>
                   </div>
-                } @else {
-                  <span class="btn-icon">🚀</span>
-                  Create Account
                 }
-              </button>
-            </form>
+
+                <!-- Submit Button -->
+                <button 
+                  class="btn btn-primary btn-full" 
+                  type="submit" 
+                  [disabled]="isLoading"
+                >
+                  @if (isLoading) {
+                    <div class="button-loading">
+                      <div class="button-spinner"></div>
+                      Creating your account...
+                    </div>
+                  } @else {
+                    <span class="btn-icon">🚀</span>
+                    Create Account
+                  }
+                </button>
+              </form>
+            }
 
             <!-- Divider -->
             <div class="divider">
@@ -434,6 +449,41 @@ import { AuthService } from '../../services/auth';
       margin: 0;
     }
 
+    /* Success Card */
+    .success-card {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .success-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .success-content h3 {
+      color: white;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .success-content p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .success-note {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
     /* Divider */
     .divider {
       text-align: center;
@@ -577,6 +627,7 @@ export class RegisterComponent implements OnDestroy {
   password = '';
   isLoading = false;
   errorMessage = '';
+  successMessage = '';
   showPassword = false;
 
   togglePasswordVisibility(): void {
@@ -586,6 +637,11 @@ export class RegisterComponent implements OnDestroy {
   onRegister(): void {
     if (!this.displayName.trim() || !this.email.trim() || !this.password.trim()) {
       this.errorMessage = 'Please fill in all required fields.';
+      return;
+    }
+
+    if (this.password.length < 6) {
+      this.errorMessage = 'Password must be at least 6 characters long.';
       return;
     }
 
@@ -599,9 +655,14 @@ export class RegisterComponent implements OnDestroy {
     }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: () => {
+      next: (response) => {
         this.isLoading = false;
-        this.router.navigate(['/login']);
+        this.successMessage = response.message || 'Registration successful! Please check your email for verification.';
+        
+        // Clear form
+        this.displayName = '';
+        this.email = '';
+        this.password = '';
       },
       error: (err) => {
         this.isLoading = false;

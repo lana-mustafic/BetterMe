@@ -84,6 +84,10 @@ namespace BetterMe.Api.Services
         public async Task<User> GetByEmailAsync(string email) =>
             await _usersRepo.GetByEmailAsync(email);
 
+        // ADD THIS METHOD - Same as GetByEmailAsync but with nullable return type
+        public async Task<User?> GetUserByEmailAsync(string email) =>
+            await _usersRepo.GetByEmailAsync(email);
+
         // Update user profile
         public async Task<User> UpdateUserProfileAsync(int userId, AuthDTOs.UpdateProfileRequest request)
         {
@@ -136,6 +140,22 @@ namespace BetterMe.Api.Services
 
             await _usersRepo.SaveChangesAsync();
             return true;
+        }
+
+        
+        public async Task<string> GenerateNewVerificationTokenAsync(string email)
+        {
+            var user = await _usersRepo.GetByEmailAsync(email);
+            if (user == null)
+                throw new ArgumentException("User not found.");
+
+            // Generate new token
+            var newToken = Guid.NewGuid().ToString();
+            user.EmailVerificationToken = newToken;
+            user.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
+
+            await _usersRepo.SaveChangesAsync();
+            return newToken;
         }
     }
 }

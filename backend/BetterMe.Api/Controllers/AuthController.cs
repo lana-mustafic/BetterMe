@@ -4,11 +4,13 @@ using BetterMe.Api.DTOs.Auth;
 using BetterMe.Api.Services.Interfaces;
 using System.Threading.Tasks;
 using AuthDTOs = BetterMe.Api.DTOs.Auth;
+using Microsoft.AspNetCore.Cors;
 
 namespace BetterMe.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors] // Add this to use your CORS policy
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -32,95 +34,172 @@ namespace BetterMe.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] AuthDTOs.RegisterRequest req)
         {
-            // MANUAL CORS HEADERS
-            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
-            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var user = await _userService.RegisterAsync(req);
-
-            // Send email verification
-            await _emailService.SendVerificationEmailAsync(
-                user.Email,
-                user.EmailVerificationToken!,
-                user.Name
-            );
-
-            return Ok(new
+            try
             {
-                message = "Registration successful! Please verify your email before logging in."
-            });
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+
+                var user = await _userService.RegisterAsync(req);
+
+                // Send email verification
+                var emailSent = await _emailService.SendVerificationEmailAsync(
+                    user.Email,
+                    user.EmailVerificationToken!,
+                    user.Name
+                );
+
+                var responseMessage = emailSent
+                    ? "Registration successful! Please check your email for verification instructions."
+                    : "Registration successful! Please contact support for email verification.";
+
+                return Ok(new { message = responseMessage });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "An error occurred during registration." });
+            }
         }
 
         // POST: api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthDTOs.LoginRequest req)
         {
-            // ✅ MANUAL CORS HEADERS
-            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
-            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = await _userService.LoginAsync(req);
-            if (user == null)
-                return Unauthorized(new { message = "Invalid credentials" });
-
-            if (!user.IsEmailVerified)
-                return Unauthorized(new { message = "Please verify your email before logging in." });
-
-            var token = _tokenService.CreateToken(user);
-            var userDto = _mapper.Map<UserResponse>(user);
-
-            return Ok(new AuthResponse
+            try
             {
-                AccessToken = token,
-                User = userDto
-            });
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+
+                var user = await _userService.LoginAsync(req);
+                if (user == null)
+                    return Unauthorized(new { message = "Invalid email or password." });
+
+                if (!user.IsEmailVerified)
+                    return Unauthorized(new
+                    {
+                        message = "Please verify your email before logging in.",
+                        requiresVerification = true
+                    });
+
+                var token = _tokenService.CreateToken(user);
+                var userDto = _mapper.Map<UserResponse>(user);
+
+                return Ok(new AuthResponse
+                {
+                    AccessToken = token,
+                    User = userDto
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "An error occurred during login." });
+            }
         }
 
         // GET: api/auth/verify
         [HttpGet("verify")]
         public async Task<IActionResult> VerifyEmail([FromQuery] string email, [FromQuery] string token)
         {
-           
-            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
-            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            try
+            {
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+                    return BadRequest(new { message = "Invalid verification link." });
 
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
-                return BadRequest(new { message = "Invalid verification link." });
+                var result = await _userService.VerifyEmailAsync(email, token);
 
-            var result = await _userService.VerifyEmailAsync(email, token);
+                if (!result)
+                    return BadRequest(new { message = "Verification link is invalid or expired." });
 
-            if (!result)
-                return BadRequest(new { message = "Verification link is invalid or expired." });
+                // Get user for welcome email
+                var user = await _userService.GetUserByEmailAsync(email);
+                if (user != null)
+                {
+                    await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
+                }
 
-            await _emailService.SendWelcomeEmailAsync(email, "");
-
-            return Ok(new { message = "🎉 Email verified successfully! You can now log in." });
+                return Ok(new { message = "🎉 Email verified successfully! You can now log in." });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "An error occurred during email verification." });
+            }
         }
 
-       
+        // GET: api/auth/check-verification
+        [HttpGet("check-verification")]
+        public async Task<IActionResult> CheckEmailVerification([FromQuery] string email)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(email))
+                    return BadRequest(new { message = "Email is required." });
+
+                var user = await _userService.GetUserByEmailAsync(email);
+                if (user == null)
+                    return NotFound(new { message = "User not found." });
+
+                return Ok(new
+                {
+                    isVerified = user.IsEmailVerified,
+                    email = user.Email
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "Error checking verification status." });
+            }
+        }
+
+        // POST: api/auth/resend-verification
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerificationEmail([FromBody] AuthDTOs.ResendVerificationRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(new { message = "Invalid request data.", errors = ModelState });
+
+                var user = await _userService.GetUserByEmailAsync(request.Email);
+                if (user == null)
+                    return NotFound(new { message = "User not found." });
+
+                if (user.IsEmailVerified)
+                    return BadRequest(new { message = "Email is already verified." });
+
+                // Generate new verification token
+                var newToken = await _userService.GenerateNewVerificationTokenAsync(user.Email);
+
+                var emailSent = await _emailService.SendVerificationEmailAsync(
+                    user.Email,
+                    newToken,
+                    user.Name
+                );
+
+                var responseMessage = emailSent
+                    ? "Verification email sent successfully!"
+                    : "Failed to send verification email. Please try again later.";
+
+                return Ok(new { message = responseMessage });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { message = "An error occurred while resending verification email." });
+            }
+        }
+
+        
         [HttpOptions("register")]
         [HttpOptions("login")]
         [HttpOptions("verify")]
+        [HttpOptions("check-verification")]
+        [HttpOptions("resend-verification")]
         public IActionResult Options()
         {
             
-            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
-            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-            Response.Headers.Append("Access-Control-Max-Age", "86400"); // 24 hours
-
             return Ok();
         }
     }
