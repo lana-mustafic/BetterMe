@@ -62,7 +62,7 @@ interface Category {
               <p class="subtitle">Manage your productivity and track your progress</p>
             </div>
             <div class="header-actions">
-              <button class="btn btn-gradient" (click)="showCreateForm = !showCreateForm">
+              <button class="btn btn-gradient" (click)="showCreateForm = !showCreateForm; editingTaskId = null;">
                 <span class="btn-icon">+</span>
                 Add New Task
               </button>
@@ -593,10 +593,10 @@ interface Category {
             </div>
           }
 
-          <!-- Create Task Form (only show in list view) -->
+          <!-- Create/Edit Task Form (only show in list view) -->
           @if (showCreateForm && activeView === 'list') {
             <div class="create-task-form glass-card">
-              <h3>Create New Task</h3>
+              <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
               <form (ngSubmit)="onCreateTask()">
                 <div class="form-group">
                   <input 
@@ -680,8 +680,10 @@ interface Category {
                   </select>
                 </div>
                 <div class="form-actions">
-                  <button type="submit" class="btn btn-gradient">Create Task</button>
-                  <button type="button" class="btn btn-outline" (click)="showCreateForm = false">
+                  <button type="submit" class="btn btn-gradient">
+                    {{ editingTaskId ? 'Update Task' : 'Create Task' }}
+                  </button>
+                  <button type="button" class="btn btn-outline" (click)="showCreateForm = false; editingTaskId = null;">
                     Cancel
                   </button>
                 </div>
@@ -768,6 +770,9 @@ interface Category {
                       }
                     </div>
                     <div class="task-actions-bottom">
+                      <button class="btn-small btn-edit" (click)="onEditTask(task)">
+                        Edit
+                      </button>
                       <button class="btn-small btn-danger" (click)="onDeleteTask(task.id)">
                         Delete
                       </button>
@@ -796,11 +801,21 @@ interface Category {
     </div>
   `,
   styles: [`
-  .tasks-page {
+    .tasks-page {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       position: relative;
       overflow-x: hidden;
+    }
+
+    .btn-edit {
+      background: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-edit:hover {
+      background: rgba(59, 130, 246, 0.5);
     }
 
     .background-animation {
@@ -2234,16 +2249,6 @@ interface Category {
     .tag-remove:hover {
       background: rgba(255, 255, 255, 0.2);
     }
-
-    /* Keep all your existing styles below... */
-    .tasks-page {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    /* ... rest of your existing styles remain the same ... */
   `]
 })
 export class TasksComponent implements OnInit {
@@ -2255,6 +2260,7 @@ export class TasksComponent implements OnInit {
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
   activeView: 'list' | 'stats' | 'calendar' = 'list';
+  editingTaskId: number | null = null;
 
   // Form fields
   newTaskTitle: string = '';
@@ -2774,7 +2780,7 @@ export class TasksComponent implements OnInit {
       return;
     }
 
-    this.taskService.createTask({
+    const taskData = {
       title: this.newTaskTitle,
       description: this.newTaskDescription,
       dueDate: this.newTaskDueDate || null,
@@ -2784,18 +2790,41 @@ export class TasksComponent implements OnInit {
       isRecurring: this.newTaskIsRecurring,
       recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
       recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
-    }).subscribe({
-      next: (newTask: Task) => {
-        this.tasks.unshift(newTask);
-        this.resetForm();
-        this.showCreateForm = false;
-        this.errorMessage = '';
-      },
-      error: (error: any) => {
-        this.errorMessage = 'Failed to create task. Please try again.';
-        console.error('Error creating task:', error);
-      }
-    });
+    };
+
+    if (this.editingTaskId) {
+      // Update existing task
+      this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
+        next: (updatedTask: Task) => {
+          const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
+          if (index !== -1) {
+            this.tasks[index] = updatedTask;
+          }
+          this.resetForm();
+          this.showCreateForm = false;
+          this.editingTaskId = null;
+          this.errorMessage = '';
+        },
+        error: (error: any) => {
+          this.errorMessage = 'Failed to update task. Please try again.';
+          console.error('Error updating task:', error);
+        }
+      });
+    } else {
+      // Create new task
+      this.taskService.createTask(taskData).subscribe({
+        next: (newTask: Task) => {
+          this.tasks.unshift(newTask);
+          this.resetForm();
+          this.showCreateForm = false;
+          this.errorMessage = '';
+        },
+        error: (error: any) => {
+          this.errorMessage = 'Failed to create task. Please try again.';
+          console.error('Error creating task:', error);
+        }
+      });
+    }
   }
   
   // FIXED: Added missing onToggleComplete method
@@ -2812,6 +2841,30 @@ export class TasksComponent implements OnInit {
         console.error('Error updating task:', error);
       }
     });
+  }
+
+  onEditTask(task: Task): void {
+    // Set the form values to the task being edited
+    this.newTaskTitle = task.title;
+    this.newTaskDescription = task.description || '';
+    this.newTaskDueDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '';
+    this.newTaskPriority = task.priority;
+    this.newTaskCategory = task.category || '';
+    this.newTaskTags = task.tags || [];
+    
+    // Store the task ID being edited
+    this.editingTaskId = task.id;
+    
+    // Show the create form (which will now work as edit form)
+    this.showCreateForm = true;
+    
+    // Scroll to the form
+    setTimeout(() => {
+      const formElement = document.querySelector('.create-task-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   }
   
   // FIXED: Added missing onDeleteTask method
@@ -2849,5 +2902,6 @@ export class TasksComponent implements OnInit {
     this.newTaskIsRecurring = false;
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
+    this.editingTaskId = null;
   }
 }
