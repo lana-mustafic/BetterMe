@@ -18,22 +18,23 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS Configuration
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(
-                "https://betterme-frontend.onrender.com", // Production
-                "http://localhost:4200"                   // Local Dev
+                "https://betterme-frontend.onrender.com",
+                "http://localhost:4200"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials(); // ADDED THIS - Required for authentication
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition"); // Optional: for file downloads
     });
 });
 
-// Database 
+// Database (PostgreSQL)
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -59,15 +60,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = false,
             ValidateAudience = false
         };
-
-        // ADDED for better CORS compatibility
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                return Task.CompletedTask;
-            }
-        };
     });
 
 builder.Services.AddAuthorization();
@@ -87,11 +79,11 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
-// CORRECT Middleware Order
-app.UseRouting(); // ✅ ADDED THIS - Required for proper middleware pipeline
 
-// CORS middleware goes AFTER Routing, BEFORE Authentication
-app.UseCors("AllowFrontend");
+app.UseRouting();
+
+
+app.UseCors(); // This applies the default policy
 
 // Swagger UI only in development
 if (app.Environment.IsDevelopment())

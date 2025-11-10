@@ -32,6 +32,12 @@ namespace BetterMe.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] AuthDTOs.RegisterRequest req)
         {
+            // MANUAL CORS HEADERS
+            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
+            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var user = await _userService.RegisterAsync(req);
@@ -45,7 +51,7 @@ namespace BetterMe.Api.Controllers
 
             return Ok(new
             {
-                message = "✅ Registration successful! Please verify your email before logging in."
+                message = "Registration successful! Please verify your email before logging in."
             });
         }
 
@@ -53,6 +59,12 @@ namespace BetterMe.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthDTOs.LoginRequest req)
         {
+            // ✅ MANUAL CORS HEADERS
+            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
+            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -73,11 +85,16 @@ namespace BetterMe.Api.Controllers
             });
         }
 
-        
         // GET: api/auth/verify
         [HttpGet("verify")]
         public async Task<IActionResult> VerifyEmail([FromQuery] string email, [FromQuery] string token)
         {
+           
+            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
+            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
                 return BadRequest(new { message = "Invalid verification link." });
 
@@ -89,6 +106,22 @@ namespace BetterMe.Api.Controllers
             await _emailService.SendWelcomeEmailAsync(email, "");
 
             return Ok(new { message = "🎉 Email verified successfully! You can now log in." });
+        }
+
+       
+        [HttpOptions("register")]
+        [HttpOptions("login")]
+        [HttpOptions("verify")]
+        public IActionResult Options()
+        {
+            
+            Response.Headers.Append("Access-Control-Allow-Origin", "https://betterme-frontend.onrender.com");
+            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            Response.Headers.Append("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            Response.Headers.Append("Access-Control-Max-Age", "86400"); // 24 hours
+
+            return Ok();
         }
     }
 }
