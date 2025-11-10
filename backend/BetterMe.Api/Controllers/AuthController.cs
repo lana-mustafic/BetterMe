@@ -5,6 +5,7 @@ using BetterMe.Api.Services.Interfaces;
 using System.Threading.Tasks;
 using AuthDTOs = BetterMe.Api.DTOs.Auth;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.Extensions.Logging;
 
 namespace BetterMe.Api.Controllers
 {
@@ -17,17 +18,20 @@ namespace BetterMe.Api.Controllers
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IUserService userService,
             ITokenService tokenService,
             IMapper mapper,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<AuthController> logger)
         {
             _userService = userService;
             _tokenService = tokenService;
             _mapper = mapper;
             _emailService = emailService;
+            _logger = logger;
         }
 
         // POST: api/auth/register
@@ -41,12 +45,19 @@ namespace BetterMe.Api.Controllers
 
                 var user = await _userService.RegisterAsync(req);
 
-                // Send email verification
-                var emailSent = await _emailService.SendVerificationEmailAsync(
-                    user.Email,
-                    user.EmailVerificationToken!,
-                    user.Name
-                );
+                var emailSent = false;
+                try
+                {
+                    emailSent = await _emailService.SendVerificationEmailAsync(
+                        user.Email,
+                        user.EmailVerificationToken!,
+                        user.Name
+                    );
+                }
+                catch (Exception emailEx)
+                {
+                    _logger.LogError(emailEx, "Failed to send verification email to {Email}", user.Email);
+                }
 
                 var responseMessage = emailSent
                     ? "Registration successful! Please check your email for verification instructions."
@@ -54,9 +65,14 @@ namespace BetterMe.Api.Controllers
 
                 return Ok(new { message = responseMessage });
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Registration rejected for {Email}", req.Email);
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                // Log the exception here
+                _logger.LogError(ex, "An error occurred during registration for {Email}", req.Email);
                 return StatusCode(500, new { message = "An error occurred during registration." });
             }
         }
@@ -191,7 +207,7 @@ namespace BetterMe.Api.Controllers
             }
         }
 
-        
+
         [HttpOptions("register")]
         [HttpOptions("login")]
         [HttpOptions("verify")]
@@ -199,7 +215,7 @@ namespace BetterMe.Api.Controllers
         [HttpOptions("resend-verification")]
         public IActionResult Options()
         {
-            
+
             return Ok();
         }
     }

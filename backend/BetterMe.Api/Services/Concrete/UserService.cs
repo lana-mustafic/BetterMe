@@ -12,19 +12,16 @@ namespace BetterMe.Api.Services
     {
         private readonly IUserRepository _usersRepo;
         private readonly IPasswordHasher<User> _passwordHasher;
-        private readonly IEmailService _emailService;
 
         public UserService(
             IUserRepository usersRepo,
-            IPasswordHasher<User> passwordHasher,
-            IEmailService emailService)
+            IPasswordHasher<User> passwordHasher)
         {
             _usersRepo = usersRepo;
             _passwordHasher = passwordHasher;
-            _emailService = emailService;
         }
 
-        // Register a new user + send verification email
+        // Register a new user
         public async Task<User> RegisterAsync(AuthDTOs.RegisterRequest request)
         {
             var existingUser = await _usersRepo.GetByEmailAsync(request.Email);
@@ -44,13 +41,6 @@ namespace BetterMe.Api.Services
 
             await _usersRepo.AddAsync(user);
             await _usersRepo.SaveChangesAsync();
-
-            // Send verification email
-            await _emailService.SendVerificationEmailAsync(
-                user.Email,
-                user.EmailVerificationToken!,
-                user.Name
-            );
 
             return user;
         }
@@ -142,7 +132,7 @@ namespace BetterMe.Api.Services
             return true;
         }
 
-        
+
         public async Task<string> GenerateNewVerificationTokenAsync(string email)
         {
             var user = await _usersRepo.GetByEmailAsync(email);
