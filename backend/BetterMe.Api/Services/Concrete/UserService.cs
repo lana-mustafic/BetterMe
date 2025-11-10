@@ -55,7 +55,7 @@ namespace BetterMe.Api.Services
             return user;
         }
 
-        // Login existing user (requires email verification)
+        // Login existing user (with auto-verification for testing)
         public async Task<User> LoginAsync(AuthDTOs.LoginRequest request)
         {
             var user = await _usersRepo.GetByEmailAsync(request.Email);
@@ -65,13 +65,18 @@ namespace BetterMe.Api.Services
             if (result != PasswordVerificationResult.Success)
                 return null;
 
-            // Require email verification
+            // ✅ TEMPORARY: Auto-verify users for testing
             if (!user.IsEmailVerified)
-                throw new UnauthorizedAccessException("Email is not verified. Please verify your email before logging in.");
+            {
+                user.IsEmailVerified = true;
+                user.EmailVerificationToken = null;
+                user.EmailVerificationTokenExpires = null;
+                await _usersRepo.SaveChangesAsync();
+                Console.WriteLine($"✅ Auto-verified user during login: {user.Email}");
+            }
 
             return user;
         }
-
 
         public async Task<User> GetByIdAsync(int id) =>
             await _usersRepo.GetByIdAsync(id);
