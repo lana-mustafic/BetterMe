@@ -2261,6 +2261,7 @@ export class TasksComponent implements OnInit {
   showTagManager: boolean = false;
   activeView: 'list' | 'stats' | 'calendar' = 'list';
   editingTaskId: number | null = null;
+availableTags: string[] = [];
 
   // Form fields
   newTaskTitle: string = '';
@@ -2378,9 +2379,13 @@ export class TasksComponent implements OnInit {
   addNewTag(): void {
     if (!this.newTagName.trim()) return;
     
-    const tagName = this.newTagName.trim();
-    // In a real app, you would save this to your backend
-    // For now, we'll just clear the input
+    const tagName = this.newTagName.trim().toLowerCase();
+    
+    // Check if tag already exists
+    if (!this.availableTags.includes(tagName)) {
+      this.availableTags.push(tagName);
+    }
+    
     this.newTagName = '';
   }
 
@@ -2388,8 +2393,8 @@ export class TasksComponent implements OnInit {
   deleteTag(tagName: string): void {
     const tag = this.tagsWithCount.find(t => t.name === tagName);
     if (tag && tag.count === 0) {
-      // In a real app, you would delete from backend
-      // For now, we'll just remove from the local list if not in use
+      // Remove from available tags
+      this.availableTags = this.availableTags.filter(name => name !== tagName);
       this.selectedTagNames = this.selectedTagNames.filter(name => name !== tagName);
       this.filteredTags = this.filteredTags.filter(name => name !== tagName);
     }
@@ -2457,14 +2462,22 @@ export class TasksComponent implements OnInit {
   }
 
   get tagsWithCount(): TagWithCount[] {
+    // Get tags from tasks with counts
     const allTags = this.tasks.flatMap(task => task.tags || []);
     const tagCounts = allTags.reduce((acc, tag) => {
       acc[tag] = (acc[tag] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(tagCounts)
-      .map(([name, count]) => ({ name, count, selected: this.selectedTagNames.includes(name) }))
+    // Combine with available tags (tags that exist but aren't used yet)
+    const allAvailableTags = [...new Set([...this.availableTags, ...Object.keys(tagCounts)])];
+    
+    return allAvailableTags
+      .map(name => ({ 
+        name, 
+        count: tagCounts[name] || 0, 
+        selected: this.selectedTagNames.includes(name) 
+      }))
       .sort((a, b) => b.count - a.count);
   }
 
@@ -2533,10 +2546,13 @@ export class TasksComponent implements OnInit {
            this.selectedPriority !== 'all';
   }
 
-  ngOnInit(): void {
+   ngOnInit(): void {
     this.loadTasks();
+    // Initialize available tags from existing tasks
+    this.availableTags = [...new Set(this.tasks.flatMap(task => task.tags || []))];
   }
 
+  // UPDATED: Load tasks without mock data
   // UPDATED: Load tasks without mock data
   loadTasks(): void {
     this.isLoading = true;
@@ -2544,8 +2560,9 @@ export class TasksComponent implements OnInit {
 
     this.taskService.getTasks().subscribe({
       next: (tasks: Task[]) => {
-        // Use only real data from backend - no mock data
         this.tasks = tasks;
+        // Update available tags from loaded tasks
+        this.availableTags = [...new Set([...this.availableTags, ...tasks.flatMap(task => task.tags || [])])];
         this.isLoading = false;
       },
       error: (error: any) => {
