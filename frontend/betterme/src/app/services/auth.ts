@@ -57,17 +57,23 @@ export class AuthService {
   }
 
   login(data: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, data).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, data, {
+      withCredentials: true 
+    }).pipe(
       tap(res => this.handleAuth(res))
     );
   }
 
   register(data: RegisterRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/register`, data);
+    return this.http.post(`${this.apiUrl}/auth/register`, data, {
+      withCredentials: true 
+    });
   }
 
   updateProfile(data: UpdateProfileRequest): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/users/profile`, data).pipe(
+    return this.http.put<User>(`${this.apiUrl}/users/profile`, data, {
+      withCredentials: true 
+    }).pipe(
       tap(user => {
         this.currentUserSubject.next(user);
         localStorage.setItem('currentUser', JSON.stringify(user));
@@ -76,18 +82,18 @@ export class AuthService {
   }
 
   changePassword(data: ChangePasswordRequest): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, data);
+    return this.http.put<{ message: string }>(`${this.apiUrl}/users/change-password`, data, {
+      withCredentials: true 
+    });
   }
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
 
-  
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
-
 
   isLoggedIn(): boolean {
     return !!this.getToken();

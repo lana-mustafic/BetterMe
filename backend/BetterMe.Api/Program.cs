@@ -18,7 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ✅ CORS (Must match frontend EXACTLY)
+// CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -28,12 +28,12 @@ builder.Services.AddCors(options =>
                 "http://localhost:4200"                   // Local Dev
             )
             .AllowAnyHeader()
-            .AllowAnyMethod();
-        // ❗ NO AllowCredentials — we use Bearer tokens, not cookies
+            .AllowAnyMethod()
+            .AllowCredentials(); // ADDED THIS - Required for authentication
     });
 });
 
-// Database (PostgreSQL)
+// Database 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -59,6 +59,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = false,
             ValidateAudience = false
         };
+
+        // ADDED for better CORS compatibility
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -78,7 +87,10 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
-// ✅ CORS middleware goes BEFORE Authentication & Routes
+// CORRECT Middleware Order
+app.UseRouting(); // ✅ ADDED THIS - Required for proper middleware pipeline
+
+// CORS middleware goes AFTER Routing, BEFORE Authentication
 app.UseCors("AllowFrontend");
 
 // Swagger UI only in development
