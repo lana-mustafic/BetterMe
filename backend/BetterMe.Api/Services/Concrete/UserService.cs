@@ -5,6 +5,7 @@ using BetterMe.Api.Services.Interfaces;
 using AuthDTOs = BetterMe.Api.DTOs.Auth;
 using System;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace BetterMe.Api.Services
 {
@@ -21,19 +22,21 @@ namespace BetterMe.Api.Services
             _passwordHasher = passwordHasher;
         }
 
-        // Register a new user - no email verification
         public async Task<User> RegisterAsync(AuthDTOs.RegisterRequest request)
         {
             var existingUser = await _usersRepo.GetByEmailAsync(request.Email);
             if (existingUser != null)
                 throw new ArgumentException("Email is already registered.");
 
+            // Additional business logic validation
+            ValidatePasswordStrength(request.Password);
+
             var user = new User
             {
                 Name = request.DisplayName,
                 Email = request.Email,
-                IsEmailVerified = true, // Auto-verify
-                EmailVerificationToken = null, // No token needed
+                IsEmailVerified = true,
+                EmailVerificationToken = null,
                 EmailVerificationTokenExpires = null
             };
 
@@ -45,7 +48,6 @@ namespace BetterMe.Api.Services
             return user;
         }
 
-        // Login existing user - no verification check
         public async Task<User> LoginAsync(AuthDTOs.LoginRequest request)
         {
             var user = await _usersRepo.GetByEmailAsync(request.Email);
@@ -58,11 +60,22 @@ namespace BetterMe.Api.Services
             return user;
         }
 
-        // Remove email verification methods
-        // - Remove VerifyEmailAsync
-        // - Remove GenerateNewVerificationTokenAsync
+        private void ValidatePasswordStrength(string password)
+        {
+            if (password.Length < 6)
+                throw new ArgumentException("Password must be at least 6 characters long.");
 
-        // Keep other methods...
+            if (!Regex.IsMatch(password, @"[a-zA-Z]"))
+                throw new ArgumentException("Password must contain at least one letter.");
+
+            if (!Regex.IsMatch(password, @"[0-9]"))
+                throw new ArgumentException("Password must contain at least one number.");
+
+            if (!Regex.IsMatch(password, @"[!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?]"))
+                throw new ArgumentException("Password must contain at least one symbol.");
+        }
+
+        // ... rest of your existing methods
         public async Task<User> GetByIdAsync(int id) =>
             await _usersRepo.GetByIdAsync(id);
 
@@ -99,12 +112,14 @@ namespace BetterMe.Api.Services
             if (result != PasswordVerificationResult.Success)
                 return false;
 
+            // Validate new password strength
+            ValidatePasswordStrength(request.NewPassword);
+
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
             await _usersRepo.SaveChangesAsync();
             return true;
         }
 
-        // Add this method for updating user
         public async Task<bool> UpdateUserAsync(User user)
         {
             await _usersRepo.SaveChangesAsync();
