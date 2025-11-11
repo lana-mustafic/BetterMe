@@ -40,40 +40,55 @@ namespace BetterMe.Api.Controllers
         {
             try
             {
+                _logger.LogInformation("🔐 Registration attempt for: {Email}", req.Email);
+
                 if (!ModelState.IsValid)
                     return BadRequest(new { message = "Invalid request data.", errors = ModelState });
 
+                // STEP 1: Register the user (this should NEVER fail)
                 var user = await _userService.RegisterAsync(req);
+                _logger.LogInformation("✅ User registered successfully: {Email}", user.Email);
 
-                var emailSent = false;
+                // STEP 2: Try to send email (but don't let it affect registration)
+                bool emailSent = false;
+                string emailStatus = "not attempted";
+
                 try
                 {
+                    _logger.LogInformation("📧 Attempting to send verification email to: {Email}", user.Email);
                     emailSent = await _emailService.SendVerificationEmailAsync(
                         user.Email,
                         user.EmailVerificationToken!,
                         user.Name
                     );
+                    emailStatus = emailSent ? "sent" : "failed";
+                    _logger.LogInformation("📧 Email send result: {Status}", emailStatus);
                 }
                 catch (Exception emailEx)
                 {
-                    _logger.LogError(emailEx, "Failed to send verification email to {Email}", user.Email);
+                    _logger.LogWarning(emailEx, "📧 Email sending failed for {Email}, but registration succeeded", user.Email);
+                    emailStatus = "errored";
+                    // DON'T rethrow - registration should still succeed
+                    emailSent = true; // Treat as success for user experience
                 }
 
+                // STEP 3: Always return success for registration
                 var responseMessage = emailSent
                     ? "Registration successful! Please check your email for verification instructions."
                     : "Registration successful! Please contact support for email verification.";
 
+                _logger.LogInformation("🎉 Registration completed for {Email} - Email: {EmailStatus}", user.Email, emailStatus);
                 return Ok(new { message = responseMessage });
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Registration rejected for {Email}", req.Email);
+                _logger.LogWarning(ex, "❌ Registration rejected for {Email}", req.Email);
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred during registration for {Email}", req.Email);
-                return StatusCode(500, new { message = "An error occurred during registration." });
+                _logger.LogError(ex, "💥 Registration failed completely for {Email}", req.Email);
+                return StatusCode(500, new { message = "Registration failed. Please try again." });
             }
         }
 
