@@ -30,6 +30,7 @@ namespace BetterMe.Api.Services
                 var fromEmail = _configuration["Email:FromEmail"] ?? "onboarding@resend.dev";
                 var fromName = _configuration["Email:FromName"] ?? "BetterMe";
                 var appBaseUrl = _configuration["AppBaseUrl"];
+                var allowedTestEmail = _configuration["Email:AllowedTestEmail"] ?? "lana.mustafic@edu.fit.ba";
 
                 // Create verification URL
                 var encodedToken = HttpUtility.UrlEncode(verificationToken);
@@ -45,13 +46,19 @@ namespace BetterMe.Api.Services
                     return true;
                 }
 
+                // For testing, only send to allowed email address
+                var emailToSendTo = email.EndsWith("@gmail.com") ? allowedTestEmail : email;
+
+                Console.WriteLine($"📤 [Resend] Sending email to (allowed): {emailToSendTo}");
+                Console.WriteLine($"📝 Original email was: {email}");
+
                 // Send with Resend API
                 var requestData = new
                 {
                     from = $"{fromName} <{fromEmail}>",
-                    to = email,
+                    to = emailToSendTo,
                     subject = "Verify Your Email - BetterMe",
-                    html = CreateVerificationEmailBody(displayName, verificationUrl),
+                    html = CreateVerificationEmailBody(displayName, verificationUrl, email),
                     text = $"Verify your BetterMe account: {verificationUrl}"
                 };
 
@@ -61,13 +68,12 @@ namespace BetterMe.Api.Services
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
-                Console.WriteLine($"📤 [Resend] Sending email to: {email}");
                 var response = await _httpClient.PostAsync("https://api.resend.com/emails", content);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"✅ [Resend] EMAIL SENT SUCCESSFULLY to: {email}");
+                    Console.WriteLine($"✅ [Resend] EMAIL SENT SUCCESSFULLY to: {emailToSendTo}");
                     Console.WriteLine($"📨 Resend response: {responseContent}");
                     return true;
                 }
@@ -89,7 +95,7 @@ namespace BetterMe.Api.Services
             }
         }
 
-        private string CreateVerificationEmailBody(string displayName, string verificationUrl)
+        private string CreateVerificationEmailBody(string displayName, string verificationUrl, string originalEmail)
         {
             return $@"
 <!DOCTYPE html>
@@ -103,6 +109,7 @@ namespace BetterMe.Api.Services
         .content {{ padding: 30px; background: #f9f9f9; }}
         .button {{ display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }}
         .footer {{ text-align: center; padding: 20px; color: #666; font-size: 14px; }}
+        .note {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }}
     </style>
 </head>
 <body>
@@ -112,6 +119,12 @@ namespace BetterMe.Api.Services
             <p>Your productivity journey starts here</p>
         </div>
         <div class='content'>
+            <div class='note'>
+                <strong>📧 Test Email</strong><br/>
+                This email was originally addressed to: <strong>{originalEmail}</strong><br/>
+                But was redirected to you for testing purposes.
+            </div>
+            
             <h2>Hello {displayName}!</h2>
             <p>Welcome to BetterMe! We're excited to help you organize your tasks and boost your productivity.</p>
             <p>Please verify your email address to get started:</p>
@@ -132,7 +145,6 @@ namespace BetterMe.Api.Services
 </body>
 </html>";
         }
-
         public async Task<bool> SendPasswordResetEmailAsync(string email, string resetToken, string displayName)
         {
             try
