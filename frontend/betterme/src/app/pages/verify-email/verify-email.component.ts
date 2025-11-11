@@ -349,36 +349,40 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
     this.verifyEmail(this.userEmail, token);
   }
 
-  private verifyEmail(email: string, token: string) {
-    const verifyUrl = `${environment.apiUrl}/auth/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
-    console.log('🔍 Calling verification API:', verifyUrl);
+private verifyEmail(email: string, token: string) {
+  const verifyUrl = `${environment.apiUrl}/auth/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+  
+  console.log('🔍 Environment:', environment);
+  console.log('🔍 Calling verification API:', verifyUrl);
+  console.log('🔍 Production mode:', environment.production);
 
-    this.http.get<{ message: string }>(verifyUrl)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          console.log('✅ Email verification successful:', response);
-          this.isLoading = false;
-          this.success = true;
-          this.showResendOption = false;
-        },
-        error: (error) => {
-          console.error('❌ Email verification failed:', error);
-          this.isLoading = false;
-          this.showResendOption = true;
-          
-          if (error.status === 400) {
-            this.errorMessage = error.error?.message || "This verification link is invalid or has expired.";
-          } else if (error.status === 404) {
-            this.errorMessage = "User not found. Please check if you used the correct email address.";
-          } else if (error.status === 0) {
-            this.errorMessage = "Unable to connect to the server. Please check your internet connection.";
-          } else {
-            this.errorMessage = error.error?.message || "Verification failed. Please try again or contact support.";
-          }
+  this.http.get<{ message: string }>(verifyUrl)
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        console.log('✅ Email verification successful:', response);
+        this.isLoading = false;
+        this.success = true;
+        this.showResendOption = false;
+      },
+      error: (error) => {
+        console.error('❌ Email verification failed:', error);
+        console.error('❌ Error details:', error);
+        this.isLoading = false;
+        this.showResendOption = true;
+        
+        if (error.status === 400) {
+          this.errorMessage = error.error?.message || "This verification link is invalid or has expired.";
+        } else if (error.status === 404) {
+          this.errorMessage = "User not found. Please check if you used the correct email address.";
+        } else if (error.status === 0) {
+          this.errorMessage = `Unable to connect to the server. Please check your internet connection. (Trying to reach: ${environment.apiUrl})`;
+        } else {
+          this.errorMessage = error.error?.message || "Verification failed. Please try again or contact support.";
         }
-      });
-  }
+      }
+    });
+}
 
   resendVerification() {
     if (!this.userEmail) return;
