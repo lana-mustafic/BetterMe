@@ -28,105 +28,136 @@ import { AuthService } from '../../services/auth';
               <p class="subtitle">Start your productivity journey with us</p>
             </div>
 
-            <!-- Success Message -->
-            @if (successMessage) {
-              <div class="success-card">
-                <div class="success-icon">🎉</div>
-                <div class="success-content">
-                  <h3>Registration Successful!</h3>
-                  <p>{{ successMessage }}</p>
-                  <p class="success-note">Please check your email to verify your account before logging in.</p>
-                </div>
-              </div>
-            }
-
             <!-- Register Form -->
-            @if (!successMessage) {
-              <form (ngSubmit)="onRegister()" class="auth-form">
-                <!-- Display Name Field -->
-                <div class="form-group">
-                  <label class="form-label">Display Name</label>
+            <form (ngSubmit)="onRegister()" class="auth-form">
+              <!-- Display Name Field -->
+              <div class="form-group">
+                <label class="form-label">Display Name</label>
+                <input 
+                  type="text"
+                  class="form-control"
+                  placeholder="Enter your full name"
+                  [(ngModel)]="displayName"
+                  name="displayName"
+                  required
+                  [class.error]="displayNameError"
+                />
+                @if (displayNameError) {
+                  <div class="field-error">{{ displayNameError }}</div>
+                }
+              </div>
+
+              <!-- Email Field -->
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input 
+                  type="email"
+                  class="form-control"
+                  placeholder="your.email@example.com"
+                  [(ngModel)]="email"
+                  name="email"
+                  required
+                  [class.error]="emailError"
+                />
+                @if (emailError) {
+                  <div class="field-error">{{ emailError }}</div>
+                }
+              </div>
+
+              <!-- Password Field -->
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="password-input-container">
                   <input 
-                    type="text"
-                    class="form-control"
-                    placeholder="Enter your full name"
-                    [(ngModel)]="displayName"
-                    name="displayName"
+                    [type]="showPassword ? 'text' : 'password'"
+                    class="form-control password-input"
+                    [class.error]="passwordErrors.length > 0 && password.length > 0"
+                    placeholder="Choose a strong password"
+                    [(ngModel)]="password"
+                    name="password"
                     required
+                    (input)="validatePassword()"
                   />
+                  <button 
+                    type="button" 
+                    class="password-toggle"
+                    (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <span class="password-toggle-icon">
+                      {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+                    </span>
+                  </button>
                 </div>
 
-                <!-- Email Field -->
-                <div class="form-group">
-                  <label class="form-label">Email Address</label>
-                  <input 
-                    type="email"
-                    class="form-control"
-                    placeholder="your.email@example.com"
-                    [(ngModel)]="email"
-                    name="email"
-                    required
-                  />
-                </div>
-
-                <!-- Password Field -->
-                <div class="form-group">
-                  <label class="form-label">Password</label>
-                  <div class="password-input-container">
-                    <input 
-                      [type]="showPassword ? 'text' : 'password'"
-                      class="form-control password-input"
-                      placeholder="Choose a strong password"
-                      [(ngModel)]="password"
-                      name="password"
-                      required
-                      minlength="6"
-                    />
-                    <button 
-                      type="button" 
-                      class="password-toggle"
-                      (click)="togglePasswordVisibility()"
-                      [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-                    >
-                      <span class="password-toggle-icon">
-                        {{ showPassword ? '👁️' : '👁️‍🗨️' }}
-                      </span>
-                    </button>
-                  </div>
-                  <div class="password-hint">
-                    Use 6+ characters with mix of letters, numbers & symbols
-                  </div>
-                </div>
-
-                <!-- Error Message -->
-                @if (errorMessage) {
-                  <div class="error-card">
-                    <div class="error-icon">⚠️</div>
-                    <div class="error-content">
-                      <h3>Registration Failed</h3>
-                      <p>{{ errorMessage }}</p>
+                <!-- Password Instructions -->
+                @if (password.length > 0) {
+                  <div class="password-instructions">
+                    <h4>Password Requirements:</h4>
+                    <div class="instruction-list">
+                      <div class="instruction" [class.completed]="hasMinLength">
+                        <span class="instruction-icon">{{ hasMinLength ? '✅' : '🔒' }}</span>
+                        <span class="instruction-text">At least 6 characters</span>
+                      </div>
+                      <div class="instruction" [class.completed]="hasLetters">
+                        <span class="instruction-icon">{{ hasLetters ? '✅' : '🔤' }}</span>
+                        <span class="instruction-text">Contains letters (A-Z)</span>
+                      </div>
+                      <div class="instruction" [class.completed]="hasNumbers">
+                        <span class="instruction-icon">{{ hasNumbers ? '✅' : '🔢' }}</span>
+                        <span class="instruction-text">Contains numbers (0-9)</span>
+                      </div>
+                      <div class="instruction" [class.completed]="hasSymbols">
+                        <span class="instruction-icon">{{ hasSymbols ? '✅' : '⚡' }}</span>
+                        <span class="instruction-text">Contains symbols (!@#$% etc.)</span>
+                      </div>
                     </div>
+                  </div>
+                } @else {
+                  <div class="password-hint">
+                    🔒 Use 6+ characters with mix of letters, numbers & symbols
                   </div>
                 }
 
-                <!-- Submit Button -->
-                <button 
-                  class="btn btn-primary btn-full" 
-                  type="submit" 
-                  [disabled]="isLoading"
-                >
-                  @if (isLoading) {
-                    <div class="button-loading">
-                      <div class="button-spinner"></div>
-                      Creating your account...
+                <!-- Password Strength Meter -->
+                @if (password) {
+                  <div class="password-strength">
+                    <div class="strength-meter">
+                      <div class="strength-bar" [class]="getStrengthClass()"></div>
                     </div>
-                  } @else {
-                    <span class="btn-icon">🚀</span>
-                    Create Account
-                  }
-                </button>
-              </form>
-            }
+                    <div class="strength-label">{{ getStrengthLabel() }}</div>
+                  </div>
+                }
+              </div>
+
+              <!-- Error Message -->
+              @if (errorMessage) {
+                <div class="error-card">
+                  <div class="error-icon">⚠️</div>
+                  <div class="error-content">
+                    <h3>Registration Failed</h3>
+                    <p>{{ errorMessage }}</p>
+                  </div>
+                </div>
+              }
+
+              <!-- Submit Button -->
+              <button 
+                class="btn btn-primary btn-full" 
+                type="submit" 
+                [disabled]="isLoading || !isFormValid()"
+              >
+                @if (isLoading) {
+                  <div class="button-loading">
+                    <div class="button-spinner"></div>
+                    Creating your account...
+                  </div>
+                } @else {
+                  <span class="btn-icon">🚀</span>
+                  Create Account & Start Organizing
+                }
+              </button>
+            </form>
 
             <!-- Divider -->
             <div class="divider">
@@ -150,34 +181,34 @@ import { AuthService } from '../../services/auth';
 
           <!-- Features Card -->
           <div class="features-card glass-card">
-            <h3 class="features-title">Why Join Us?</h3>
+            <h3 class="features-title">Ready to Get Organized? 🎯</h3>
             <div class="features-list">
               <div class="feature-item">
-                <span class="feature-icon">✅</span>
+                <span class="feature-icon">📝</span>
                 <div class="feature-content">
-                  <div class="feature-title">Smart Task Management</div>
-                  <div class="feature-description">Organize tasks with priorities and due dates</div>
+                  <div class="feature-title">Create Tasks Instantly</div>
+                  <div class="feature-description">Start organizing your to-dos right after registration</div>
                 </div>
               </div>
               <div class="feature-item">
-                <span class="feature-icon">🔄</span>
+                <span class="feature-icon">⏰</span>
                 <div class="feature-content">
-                  <div class="feature-title">Recurring Tasks</div>
-                  <div class="feature-description">Automate repeating tasks effortlessly</div>
+                  <div class="feature-title">Set Due Dates</div>
+                  <div class="feature-description">Never miss deadlines with smart reminders</div>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">🏷️</span>
+                <div class="feature-content">
+                  <div class="feature-title">Organize with Tags</div>
+                  <div class="feature-description">Categorize tasks for better organization</div>
                 </div>
               </div>
               <div class="feature-item">
                 <span class="feature-icon">📊</span>
                 <div class="feature-content">
-                  <div class="feature-title">Progress Tracking</div>
-                  <div class="feature-description">Monitor your productivity with insights</div>
-                </div>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">🔒</span>
-                <div class="feature-content">
-                  <div class="feature-title">Secure & Private</div>
-                  <div class="feature-description">Your data is always protected</div>
+                  <div class="feature-title">Track Progress</div>
+                  <div class="feature-description">See your productivity improve over time</div>
                 </div>
               </div>
             </div>
@@ -187,6 +218,129 @@ import { AuthService } from '../../services/auth';
     </div>
   `,
   styles: [`
+   /* Password Instructions */
+    .password-instructions {
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .password-instructions h4 {
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .instruction-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .instruction {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    .instruction.completed {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .instruction-icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .instruction-text {
+      flex: 1;
+    }
+
+    /* Enhanced Password Hint */
+    .password-hint {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Password Strength Meter */
+    .password-strength {
+      margin: 15px 0 10px 0;
+    }
+
+    .strength-meter {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .strength-bar {
+      height: 100%;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .strength-bar.weak {
+      background: #ef4444;
+      width: 25%;
+    }
+
+    .strength-bar.fair {
+      background: #f59e0b;
+      width: 50%;
+    }
+
+    .strength-bar.good {
+      background: #3b82f6;
+      width: 75%;
+    }
+
+    .strength-bar.strong {
+      background: #10b981;
+      width: 100%;
+    }
+
+    .strength-label {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: right;
+      font-weight: 600;
+    }
+
+    /* Field Errors */
+    .field-error {
+      color: #ef4444;
+      font-size: 0.8rem;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .form-control.error {
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.1) !important;
+    }
+
+    /* Enhanced Button */
+    .btn-primary:not(:disabled) {
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+    }
+
     .register-page {
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -627,21 +781,117 @@ export class RegisterComponent implements OnDestroy {
   password = '';
   isLoading = false;
   errorMessage = '';
-  successMessage = '';
   showPassword = false;
+
+  // Password validation states
+  passwordErrors: string[] = [];
+  hasMinLength = false;
+  hasLetters = false;
+  hasNumbers = false;
+  hasSymbols = false;
+
+  // Field errors
+  displayNameError = '';
+  emailError = '';
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
-  onRegister(): void {
-    if (!this.displayName.trim() || !this.email.trim() || !this.password.trim()) {
-      this.errorMessage = 'Please fill in all required fields.';
-      return;
+  validatePassword(): void {
+    this.passwordErrors = [];
+    
+    // Check minimum length
+    this.hasMinLength = this.password.length >= 6;
+    if (!this.hasMinLength) {
+      this.passwordErrors.push('Password must be at least 6 characters long');
     }
 
-    if (this.password.length < 6) {
-      this.errorMessage = 'Password must be at least 6 characters long.';
+    // Check for letters
+    this.hasLetters = /[a-zA-Z]/.test(this.password);
+    if (!this.hasLetters) {
+      this.passwordErrors.push('Password must contain letters');
+    }
+
+    // Check for numbers
+    this.hasNumbers = /[0-9]/.test(this.password);
+    if (!this.hasNumbers) {
+      this.passwordErrors.push('Password must contain numbers');
+    }
+
+    // Check for symbols
+    this.hasSymbols = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.password);
+    if (!this.hasSymbols) {
+      this.passwordErrors.push('Password must contain symbols');
+    }
+  }
+
+  getStrengthClass(): string {
+    const requirementsMet = [
+      this.hasMinLength,
+      this.hasLetters,
+      this.hasNumbers,
+      this.hasSymbols
+    ].filter(Boolean).length;
+
+    if (requirementsMet === 4) return 'strong';
+    if (requirementsMet === 3) return 'good';
+    if (requirementsMet === 2) return 'fair';
+    return 'weak';
+  }
+
+  getStrengthLabel(): string {
+    const strengthClass = this.getStrengthClass();
+    switch (strengthClass) {
+      case 'strong': return 'Strong password ✅';
+      case 'good': return 'Good password 👍';
+      case 'fair': return 'Fair password ⚠️';
+      case 'weak': return 'Weak password ❌';
+      default: return '';
+    }
+  }
+
+  validateForm(): boolean {
+    let isValid = true;
+
+    // Validate display name
+    this.displayNameError = '';
+    if (!this.displayName.trim()) {
+      this.displayNameError = 'Display name is required';
+      isValid = false;
+    } else if (this.displayName.trim().length < 2) {
+      this.displayNameError = 'Display name must be at least 2 characters';
+      isValid = false;
+    }
+
+    // Validate email
+    this.emailError = '';
+    if (!this.email.trim()) {
+      this.emailError = 'Email is required';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
+      this.emailError = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    // Validate password
+    this.validatePassword();
+    if (this.passwordErrors.length > 0) {
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  isFormValid(): boolean {
+    return this.displayName.trim().length >= 2 &&
+           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email) &&
+           this.hasMinLength && this.hasLetters && this.hasNumbers && this.hasSymbols;
+  }
+
+  onRegister(): void {
+    if (!this.validateForm()) {
+      this.errorMessage = 'Please fix the errors above before submitting.';
       return;
     }
 
@@ -657,12 +907,23 @@ export class RegisterComponent implements OnDestroy {
     ).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.successMessage = response.message || 'Registration successful! Please check your email for verification.';
         
-        // Clear form
-        this.displayName = '';
-        this.email = '';
-        this.password = '';
+        // Auto-login after successful registration
+        this.authService.login({
+          email: this.email,
+          password: this.password
+        }).pipe(
+          takeUntil(this.destroy$)
+        ).subscribe({
+          next: (loginResponse) => {
+            // Redirect to tasks page automatically
+            this.router.navigate(['/tasks']);
+          },
+          error: (loginError) => {
+            // If auto-login fails, still redirect to login page
+            this.router.navigate(['/login']);
+          }
+        });
       },
       error: (err) => {
         this.isLoading = false;
