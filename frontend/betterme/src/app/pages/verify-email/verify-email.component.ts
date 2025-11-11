@@ -10,316 +10,107 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <!-- DEBUG: Remove this after testing -->
-    <div style="background: red; color: white; padding: 10px; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
-      🔍 DEBUG: API URL = {{ getApiUrl() }} | Production = {{ isProduction() }}
-    </div>
-
     <div class="verify-page">
-      <!-- Background Decoration -->
-      <div class="background-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
+      <!-- Simple debug header -->
+      <div style="background: #667eea; color: white; padding: 15px; text-align: center;">
+        <h1>BetterMe - Email Verification</h1>
+        <p>API: {{ getApiUrl() }} | Production: {{ isProduction() }}</p>
       </div>
 
-      <div class="container">
-        <div class="verify-container">
-          <div class="verify-card glass-card">
-            <!-- Loading State -->
-            @if (isLoading) {
-              <div class="loading-section">
-                <div class="loading-spinner">
-                  <div class="spinner-ring"></div>
-                </div>
-                <h2 class="gradient-text">Verifying Your Email</h2>
-                <p>Please wait while we confirm your account...</p>
-                <p style="font-size: 0.9rem; color: #666;">Calling: {{ currentApiCall }}</p>
-              </div>
-            }
+      <div class="container" style="max-width: 600px; margin: 50px auto; padding: 20px;">
+        
+        <!-- Loading State -->
+        @if (isLoading) {
+          <div style="text-align: center; padding: 40px;">
+            <div style="width: 50px; height: 50px; border: 4px solid #667eea; border-top: 4px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <h2 style="color: #667eea;">Verifying Your Email</h2>
+            <p>Please wait while we confirm your account...</p>
+            <p style="font-size: 0.9rem; color: #666; background: #f5f5f5; padding: 10px; border-radius: 5px;">
+              Calling: {{ currentApiCall }}
+            </p>
+          </div>
+        }
 
-            <!-- Success State -->
-            @if (success && !isLoading) {
-              <div class="success-state">
-                <div class="success-icon">🎉</div>
-                <h2 class="gradient-text">Email Verified Successfully!</h2>
-                <p>Your account is now active and ready to use. You can log in and start organizing your tasks.</p>
-                <div class="success-actions">
-                  <a routerLink="/login" class="btn btn-primary">
-                    <span class="btn-icon">🔐</span>
-                    Continue to Login
-                  </a>
-                  <a routerLink="/" class="btn btn-secondary">
-                    <span class="btn-icon">🏠</span>
-                    Go to Homepage
-                  </a>
-                </div>
-              </div>
-            }
+        <!-- Success State -->
+        @if (success && !isLoading) {
+          <div style="text-align: center; padding: 40px; background: #f0fff4; border: 2px solid #68d391; border-radius: 10px;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
+            <h2 style="color: #2d3748; margin-bottom: 15px;">Email Verified Successfully!</h2>
+            <p style="color: #4a5568; margin-bottom: 30px; font-size: 1.1rem;">
+              Your account is now active and ready to use. You can log in and start organizing your tasks.
+            </p>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+              <a routerLink="/login" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Continue to Login
+              </a>
+              <a routerLink="/" style="background: #e2e8f0; color: #4a5568; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
+                Go to Homepage
+              </a>
+            </div>
+          </div>
+        }
 
-            <!-- Error State -->
-            @if (errorMessage && !isLoading) {
-              <div class="error-state">
-                <div class="error-icon">⚠️</div>
-                <h2 class="gradient-text">Verification Failed</h2>
-                <p>{{ errorMessage }}</p>
-                <div class="error-actions">
-                  <a routerLink="/login" class="btn btn-primary">
-                    <span class="btn-icon">↩️</span>
-                    Back to Login
-                  </a>
-                  <a routerLink="/register" class="btn btn-secondary">
-                    <span class="btn-icon">📝</span>
-                    Create New Account
-                  </a>
-                  @if (showResendOption) {
-                    <button class="btn btn-outline" (click)="resendVerification()" [disabled]="resendLoading">
-                      @if (resendLoading) {
-                        <div class="button-loading">
-                          <div class="button-spinner"></div>
-                          Sending...
-                        </div>
-                      } @else {
-                        <span class="btn-icon">🔄</span>
-                        Resend Verification Email
-                      }
-                    </button>
+        <!-- Error State -->
+        @if (errorMessage && !isLoading) {
+          <div style="text-align: center; padding: 40px; background: #fed7d7; border: 2px solid #feb2b2; border-radius: 10px;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">⚠️</div>
+            <h2 style="color: #2d3748; margin-bottom: 15px;">Verification Failed</h2>
+            <p style="color: #4a5568; margin-bottom: 25px; font-size: 1.1rem;">{{ errorMessage }}</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+              <a routerLink="/login" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; width: 200px; text-align: center;">
+                Back to Login
+              </a>
+              <a routerLink="/register" style="background: #e2e8f0; color: #4a5568; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; width: 200px; text-align: center;">
+                Create New Account
+              </a>
+              
+              @if (showResendOption) {
+                <button (click)="resendVerification()" [disabled]="resendLoading" 
+                        style="background: transparent; color: #667eea; border: 2px solid #667eea; padding: 12px 24px; border-radius: 6px; font-weight: 600; width: 200px; cursor: pointer;">
+                  @if (resendLoading) {
+                    <span>Sending...</span>
+                  } @else {
+                    <span>Resend Verification Email</span>
                   }
-                </div>
-                @if (resendSuccess) {
-                  <div class="resend-success">
-                    ✅ New verification email sent! Please check your inbox.
-                  </div>
-                }
+                </button>
+              }
+            </div>
+
+            @if (resendSuccess) {
+              <div style="background: #c6f6d5; color: #276749; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                ✅ New verification email sent! Please check your inbox.
               </div>
             }
           </div>
+        }
+
+        <!-- Debug Info -->
+        <div style="margin-top: 30px; padding: 15px; background: #f7fafc; border-radius: 6px; font-size: 0.9rem;">
+          <h3 style="margin-bottom: 10px;">Debug Information:</h3>
+          <p><strong>Email:</strong> {{ userEmail }}</p>
+          <p><strong>Environment:</strong> {{ isProduction() ? 'Production' : 'Development' }}</p>
+          <p><strong>API Base:</strong> {{ getApiUrl() }}</p>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .verify-page {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      position: relative;
-      overflow-x: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .background-shapes {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    .shape {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .shape-1 {
-      width: 200px;
-      height: 200px;
-      top: -50px;
-      right: -50px;
-    }
-
-    .shape-2 {
-      width: 150px;
-      height: 150px;
-      bottom: 100px;
-      left: -30px;
-    }
-
-    .shape-3 {
-      width: 100px;
-      height: 100px;
-      top: 50%;
-      right: 10%;
-    }
-
-    .verify-container {
-      max-width: 500px;
-      width: 100%;
-      position: relative;
-      z-index: 1;
-    }
-
-    .glass-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 3rem 2rem;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    }
-
-    .gradient-text {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 700;
-    }
-
-    .loading-spinner {
-      margin-bottom: 2rem;
-    }
-
-    .spinner-ring {
-      width: 60px;
-      height: 60px;
-      border: 4px solid rgba(102, 126, 234, 0.2);
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    .success-icon, .error-icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-    }
-
-    h2 {
-      margin-bottom: 1rem;
-      font-size: 1.8rem;
-    }
-
-    p {
-      color: #4a5568;
-      margin-bottom: 2rem;
-      line-height: 1.6;
-      font-size: 1.1rem;
-    }
-
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0.5rem;
-      transition: all 0.3s ease;
-      font-size: 1rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
-    }
-
-    .btn-secondary {
-      background: rgba(102, 126, 234, 0.1);
-      color: #667eea;
-      border: 2px solid rgba(102, 126, 234, 0.2);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: #667eea;
-      border: 2px solid #667eea;
-    }
-
-    .btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-icon {
-      font-size: 1.2rem;
-    }
-
-    .success-actions, .error-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      align-items: center;
-      margin-top: 2rem;
-    }
-
-    .button-loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .button-spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid transparent;
-      border-top: 2px solid currentColor;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    .resend-success {
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 1rem;
-      color: #16a34a;
-      font-weight: 500;
-    }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
 
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-      .glass-card {
-        padding: 2rem 1.5rem;
-      }
-
-      h2 {
-        font-size: 1.5rem;
-      }
-
-      .success-actions, .error-actions {
-        flex-direction: column;
-      }
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
+    .verify-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
-    @media (max-width: 480px) {
-      .glass-card {
-        padding: 1.5rem 1rem;
-        border-radius: 20px;
-      }
-
-      h2 {
-        font-size: 1.3rem;
-      }
-
-      p {
-        font-size: 1rem;
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .container {
+        margin: 20px auto !important;
+        padding: 10px !important;
       }
     }
   `]
@@ -337,7 +128,7 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
   resendLoading = false;
   resendSuccess = false;
   currentApiCall = '';
-  private userEmail: string | null = null;
+  userEmail: string | null = null;
 
   // Debug methods
   getApiUrl() {
