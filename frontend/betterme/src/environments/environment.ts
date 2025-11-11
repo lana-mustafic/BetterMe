@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5000/api' // Your .NET backend URL
+  apiUrl: 'https://betterme-pihl.onrender.com/api' // Changed to production URL
 };

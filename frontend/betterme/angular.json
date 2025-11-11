@@ -17,7 +17,6 @@
             "tsConfig": "tsconfig.app.json",
             "outputMode": "static",
             "outputPath": "dist/betterme",
-
             "assets": [
               {
                 "glob": "**/*",
@@ -29,7 +28,8 @@
             ],
             "styles": [
               "src/styles.css"
-            ]
+            ],
+            "index": "src/index.html"
           },
           "configurations": {
             "production": {
@@ -40,18 +40,9 @@
                 }
               ],
               "outputHashing": "all",
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "5MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "50kB",
-                  "maximumError": "100kB"
-                }
-              ]
+              "optimization": true,
+              "extractLicenses": true,
+              "sourceMap": false
             },
             "development": {
               "optimization": false,
@@ -59,9 +50,8 @@
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "production"
         },
-
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
@@ -74,11 +64,9 @@
           },
           "defaultConfiguration": "development"
         },
-
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
         },
-
         "test": {
           "builder": "@angular/build:karma",
           "options": {

@@ -10,6 +10,11 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
+    <!-- DEBUG: Remove this after testing -->
+    <div style="background: red; color: white; padding: 10px; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
+      🔍 DEBUG: API URL = {{ getApiUrl() }} | Production = {{ isProduction() }}
+    </div>
+
     <div class="verify-page">
       <!-- Background Decoration -->
       <div class="background-shapes">
@@ -29,6 +34,7 @@ import { environment } from '../../../environments/environment';
                 </div>
                 <h2 class="gradient-text">Verifying Your Email</h2>
                 <p>Please wait while we confirm your account...</p>
+                <p style="font-size: 0.9rem; color: #666;">Calling: {{ currentApiCall }}</p>
               </div>
             }
 
@@ -330,13 +336,24 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
   showResendOption = false;
   resendLoading = false;
   resendSuccess = false;
+  currentApiCall = '';
   private userEmail: string | null = null;
+
+  // Debug methods
+  getApiUrl() {
+    return environment.apiUrl;
+  }
+
+  isProduction() {
+    return environment.production;
+  }
 
   ngOnInit() {
     this.userEmail = this.route.snapshot.queryParamMap.get('email');
     const token = this.route.snapshot.queryParamMap.get('token');
 
     console.log('🔍 Email verification started with params:', { email: this.userEmail, token });
+    console.log('🔍 Environment:', environment);
 
     if (!this.userEmail || !token) {
       this.isLoading = false;
@@ -349,40 +366,41 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
     this.verifyEmail(this.userEmail, token);
   }
 
-private verifyEmail(email: string, token: string) {
-  const verifyUrl = `${environment.apiUrl}/auth/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
-  
-  console.log('🔍 Environment:', environment);
-  console.log('🔍 Calling verification API:', verifyUrl);
-  console.log('🔍 Production mode:', environment.production);
+  private verifyEmail(email: string, token: string) {
+    const verifyUrl = `${environment.apiUrl}/auth/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    this.currentApiCall = verifyUrl;
+    
+    console.log('🔍 Calling verification API:', verifyUrl);
+    console.log('🔍 Production mode:', environment.production);
 
-  this.http.get<{ message: string }>(verifyUrl)
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (response) => {
-        console.log('✅ Email verification successful:', response);
-        this.isLoading = false;
-        this.success = true;
-        this.showResendOption = false;
-      },
-      error: (error) => {
-        console.error('❌ Email verification failed:', error);
-        console.error('❌ Error details:', error);
-        this.isLoading = false;
-        this.showResendOption = true;
-        
-        if (error.status === 400) {
-          this.errorMessage = error.error?.message || "This verification link is invalid or has expired.";
-        } else if (error.status === 404) {
-          this.errorMessage = "User not found. Please check if you used the correct email address.";
-        } else if (error.status === 0) {
-          this.errorMessage = `Unable to connect to the server. Please check your internet connection. (Trying to reach: ${environment.apiUrl})`;
-        } else {
-          this.errorMessage = error.error?.message || "Verification failed. Please try again or contact support.";
+    this.http.get<{ message: string }>(verifyUrl)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('✅ Email verification successful:', response);
+          this.isLoading = false;
+          this.success = true;
+          this.showResendOption = false;
+        },
+        error: (error) => {
+          console.error('❌ Email verification failed:', error);
+          console.error('❌ Error status:', error.status);
+          console.error('❌ Error message:', error.message);
+          this.isLoading = false;
+          this.showResendOption = true;
+          
+          if (error.status === 400) {
+            this.errorMessage = error.error?.message || "This verification link is invalid or has expired.";
+          } else if (error.status === 404) {
+            this.errorMessage = "User not found. Please check if you used the correct email address.";
+          } else if (error.status === 0) {
+            this.errorMessage = `Unable to connect to the server. (Trying to reach: ${environment.apiUrl})`;
+          } else {
+            this.errorMessage = error.error?.message || "Verification failed. Please try again or contact support.";
+          }
         }
-      }
-    });
-}
+      });
+  }
 
   resendVerification() {
     if (!this.userEmail) return;
