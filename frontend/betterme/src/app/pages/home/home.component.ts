@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService, User } from '../../services/auth';
 
 @Component({
   selector: 'app-home',
@@ -21,28 +22,60 @@ import { CommonModule } from '@angular/common';
           <div class="hero-content glass-card">
             <!-- Main Hero Content -->
             <div class="hero-main">
-              <h1 class="hero-title gradient-text">Welcome to BetterMe</h1>
-              <p class="hero-subtitle">Transform your productivity with beautiful task management</p>
+              <h1 class="hero-title gradient-text">
+                {{ isLoggedIn ? 'Welcome Back!' : 'Welcome to BetterMe' }}
+              </h1>
+              <p class="hero-subtitle">
+                {{ isLoggedIn ? 'Ready to continue organizing your tasks?' : 'Transform your productivity with beautiful task management' }}
+              </p>
               
               <div class="hero-actions">
-                <a routerLink="/register" class="btn btn-gradient btn-large">
-                  <span class="btn-icon">🚀</span>
-                  Start Your Journey
-                </a>
-                <a routerLink="/login" class="btn btn-outline btn-large">
-                  <span class="btn-icon">🔑</span>
-                  Sign In
-                </a>
+                <!-- Show Tasks/Dashboard when logged in -->
+                @if (isLoggedIn) {
+                  <a routerLink="/tasks" class="btn btn-gradient btn-large">
+                    <span class="btn-icon">📝</span>
+                    View My Tasks
+                  </a>
+                  <a routerLink="/profile" class="btn btn-outline btn-large">
+                    <span class="btn-icon">👤</span>
+                    My Profile
+                  </a>
+                  <button (click)="logout()" class="btn btn-outline btn-large">
+                    <span class="btn-icon">🚪</span>
+                    Log Out
+                  </button>
+                } 
+                <!-- Show Login/Register when logged out -->
+                @else {
+                  <a routerLink="/register" class="btn btn-gradient btn-large">
+                    <span class="btn-icon">🚀</span>
+                    Start Your Journey
+                  </a>
+                  <a routerLink="/login" class="btn btn-outline btn-large">
+                    <span class="btn-icon">🔑</span>
+                    Sign In
+                  </a>
+                }
               </div>
+
+              <!-- Welcome message for logged in users -->
+              @if (isLoggedIn && currentUser) {
+                <div class="welcome-message">
+                  <p>Hello, <strong>{{ currentUser.displayName }}</strong>! 👋</p>
+                  <p class="welcome-subtext">Great to see you back. Let's get things done!</p>
+                </div>
+              }
             </div>
 
             <!-- Features Grid -->
             <div class="features-grid">
-              <div class="feature-card" *ngFor="let feature of features">
-                <div class="feature-icon">{{ feature.icon }}</div>
-                <h3 class="feature-title">{{ feature.title }}</h3>
-                <p class="feature-description">{{ feature.description }}</p>
-              </div>
+              @for (feature of features; track feature.title) {
+                <div class="feature-card">
+                  <div class="feature-icon">{{ feature.icon }}</div>
+                  <h3 class="feature-title">{{ feature.title }}</h3>
+                  <p class="feature-description">{{ feature.description }}</p>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -76,7 +109,7 @@ import { CommonModule } from '@angular/common';
     .shape-1 {
       width: 120px;
       height: 120px;
-      top: 10%; /* Adjusted upward */
+      top: 10%;
       left: 8%;
       animation-delay: 0s;
     }
@@ -84,7 +117,7 @@ import { CommonModule } from '@angular/common';
     .shape-2 {
       width: 80px;
       height: 80px;
-      top: 65%; /* Adjusted upward */
+      top: 65%;
       right: 12%;
       animation-delay: 2s;
     }
@@ -92,7 +125,7 @@ import { CommonModule } from '@angular/common';
     .shape-3 {
       width: 60px;
       height: 60px;
-      bottom: 30%; /* Adjusted upward */
+      bottom: 30%;
       left: 18%;
       animation-delay: 4s;
     }
@@ -100,7 +133,7 @@ import { CommonModule } from '@angular/common';
     .shape-4 {
       width: 90px;
       height: 90px;
-      top: 30%; /* Adjusted upward */
+      top: 30%;
       right: 25%;
       animation-delay: 1s;
     }
@@ -118,10 +151,10 @@ import { CommonModule } from '@angular/common';
     .hero-section {
       min-height: 100vh;
       display: flex;
-      align-items: flex-start; /* Changed from center to flex-start */
+      align-items: flex-start;
       justify-content: center;
       padding: 1rem;
-      padding-top: 4rem; /* Added top padding to push content upward */
+      padding-top: 4rem;
     }
 
     .glass-card {
@@ -133,7 +166,7 @@ import { CommonModule } from '@angular/common';
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
       width: 100%;
       max-width: 1000px;
-      margin-top: 2rem; /* Added margin to lift the box */
+      margin-top: 2rem;
     }
 
     .hero-main {
@@ -165,6 +198,7 @@ import { CommonModule } from '@angular/common';
       justify-content: center;
       align-items: center;
       flex-wrap: wrap;
+      margin-bottom: 1.5rem;
     }
 
     .btn {
@@ -216,6 +250,31 @@ import { CommonModule } from '@angular/common';
       font-size: 1.1rem;
     }
 
+    /* Welcome Message */
+    .welcome-message {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .welcome-message p {
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .welcome-message strong {
+      color: white;
+    }
+
+    .welcome-subtext {
+      color: rgba(255, 255, 255, 0.7) !important;
+      font-size: 0.95rem !important;
+      margin-top: 0.5rem !important;
+    }
+
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -262,13 +321,13 @@ import { CommonModule } from '@angular/common';
     @media (max-width: 768px) {
       .hero-section {
         padding: 0.5rem;
-        padding-top: 3rem; /* Adjusted for mobile */
+        padding-top: 3rem;
       }
 
       .glass-card {
         padding: 2rem 1.5rem;
         border-radius: 20px;
-        margin-top: 1rem; /* Adjusted for mobile */
+        margin-top: 1rem;
       }
 
       .gradient-text {
@@ -298,17 +357,21 @@ import { CommonModule } from '@angular/common';
       .feature-card {
         padding: 1.25rem 1rem;
       }
+
+      .welcome-message {
+        padding: 1rem;
+      }
     }
 
     @media (max-width: 480px) {
       .hero-section {
-        padding-top: 2rem; /* Further adjusted for small mobile */
+        padding-top: 2rem;
       }
 
       .glass-card {
         padding: 1.5rem 1rem;
         border-radius: 16px;
-        margin-top: 0.5rem; /* Further adjusted for small mobile */
+        margin-top: 0.5rem;
       }
 
       .gradient-text {
@@ -326,10 +389,20 @@ import { CommonModule } from '@angular/common';
       .feature-icon {
         font-size: 1.8rem;
       }
+
+      .welcome-message {
+        padding: 0.75rem;
+      }
+
+      .welcome-message p {
+        font-size: 1rem;
+      }
     }
   `]
 })
 export class HomeComponent {
+  private authService = inject(AuthService);
+
   features = [
     {
       icon: '✅',
@@ -347,4 +420,17 @@ export class HomeComponent {
       description: 'Your data is protected with enterprise-grade security'
     }
   ];
+
+  // Authentication properties with proper typing
+  get isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
+  }
+
+  get currentUser(): User | null {
+    return this.authService.getCurrentUser();
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }

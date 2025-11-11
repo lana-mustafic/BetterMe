@@ -47,7 +47,5 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // REMOVED: verify-email route
-
   { path: '**', redirectTo: '' }
 ];
