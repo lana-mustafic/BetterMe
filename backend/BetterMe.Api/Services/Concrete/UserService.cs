@@ -21,7 +21,7 @@ namespace BetterMe.Api.Services
             _passwordHasher = passwordHasher;
         }
 
-        // Register a new user
+        // Register a new user - no email verification
         public async Task<User> RegisterAsync(AuthDTOs.RegisterRequest request)
         {
             var existingUser = await _usersRepo.GetByEmailAsync(request.Email);
@@ -32,9 +32,9 @@ namespace BetterMe.Api.Services
             {
                 Name = request.DisplayName,
                 Email = request.Email,
-                IsEmailVerified = false,
-                EmailVerificationToken = Guid.NewGuid().ToString(),
-                EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24)
+                IsEmailVerified = true, // Auto-verify
+                EmailVerificationToken = null, // No token needed
+                EmailVerificationTokenExpires = null
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
@@ -45,7 +45,7 @@ namespace BetterMe.Api.Services
             return user;
         }
 
-        // Login existing user (with auto-verification for testing)
+        // Login existing user - no verification check
         public async Task<User> LoginAsync(AuthDTOs.LoginRequest request)
         {
             var user = await _usersRepo.GetByEmailAsync(request.Email);
@@ -55,30 +55,23 @@ namespace BetterMe.Api.Services
             if (result != PasswordVerificationResult.Success)
                 return null;
 
-            // ✅ TEMPORARY: Auto-verify users for testing
-            if (!user.IsEmailVerified)
-            {
-                user.IsEmailVerified = true;
-                user.EmailVerificationToken = null;
-                user.EmailVerificationTokenExpires = null;
-                await _usersRepo.SaveChangesAsync();
-                Console.WriteLine($"✅ Auto-verified user during login: {user.Email}");
-            }
-
             return user;
         }
 
+        // Remove email verification methods
+        // - Remove VerifyEmailAsync
+        // - Remove GenerateNewVerificationTokenAsync
+
+        // Keep other methods...
         public async Task<User> GetByIdAsync(int id) =>
             await _usersRepo.GetByIdAsync(id);
 
         public async Task<User> GetByEmailAsync(string email) =>
             await _usersRepo.GetByEmailAsync(email);
 
-        // ADD THIS METHOD - Same as GetByEmailAsync but with nullable return type
         public async Task<User?> GetUserByEmailAsync(string email) =>
             await _usersRepo.GetByEmailAsync(email);
 
-        // Update user profile
         public async Task<User> UpdateUserProfileAsync(int userId, AuthDTOs.UpdateProfileRequest request)
         {
             var user = await _usersRepo.GetByIdAsync(userId);
@@ -96,7 +89,6 @@ namespace BetterMe.Api.Services
             return user;
         }
 
-        // Change password
         public async Task<bool> ChangePasswordAsync(int userId, AuthDTOs.ChangePasswordRequest request)
         {
             var user = await _usersRepo.GetByIdAsync(userId);
@@ -112,40 +104,11 @@ namespace BetterMe.Api.Services
             return true;
         }
 
-        // Verify Email
-        public async Task<bool> VerifyEmailAsync(string email, string token)
+        // Add this method for updating user
+        public async Task<bool> UpdateUserAsync(User user)
         {
-            var user = await _usersRepo.GetByEmailAsync(email);
-            if (user == null) return false;
-
-            if (user.IsEmailVerified) return true;
-
-            if (user.EmailVerificationToken != token ||
-                user.EmailVerificationTokenExpires < DateTime.UtcNow)
-                return false;
-
-            user.IsEmailVerified = true;
-            user.EmailVerificationToken = null;
-            user.EmailVerificationTokenExpires = null;
-
             await _usersRepo.SaveChangesAsync();
             return true;
-        }
-
-
-        public async Task<string> GenerateNewVerificationTokenAsync(string email)
-        {
-            var user = await _usersRepo.GetByEmailAsync(email);
-            if (user == null)
-                throw new ArgumentException("User not found.");
-
-            // Generate new token
-            var newToken = Guid.NewGuid().ToString();
-            user.EmailVerificationToken = newToken;
-            user.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
-
-            await _usersRepo.SaveChangesAsync();
-            return newToken;
         }
     }
 }

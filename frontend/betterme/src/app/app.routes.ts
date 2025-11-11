@@ -8,7 +8,6 @@ import { ProfileComponent } from './pages/profile/profile.component';
 import { EditTaskComponent } from './pages/edit-task/edit-task.component';
 import { EditProfileComponent } from './pages/edit-profile/edit-profile.component';
 import { ChangePasswordComponent } from './pages/password/change-password.component';
-import { VerifyEmailComponent } from './pages/verify-email/verify-email.component'; // ADD THIS IMPORT
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -48,8 +47,7 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
-  // FIXED: Direct component import
-  { path: 'verify-email', component: VerifyEmailComponent },
+  // REMOVED: verify-email route
 
   { path: '**', redirectTo: '' }
 ];

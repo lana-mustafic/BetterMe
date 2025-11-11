@@ -11,8 +11,8 @@ namespace BetterMe.Api.Services.Interfaces
         Task<User> UpdateUserProfileAsync(int userId, AuthDTOs.UpdateProfileRequest request);
         Task<bool> ChangePasswordAsync(int userId, AuthDTOs.ChangePasswordRequest request);
         Task<User> GetByEmailAsync(string email);
-        Task<bool> VerifyEmailAsync(string email, string token);
-        Task<string> GenerateNewVerificationTokenAsync(string email);
-        Task<User?> GetUserByEmailAsync(string email); // This is the same as GetByEmailAsync but with nullable return
+        Task<User?> GetUserByEmailAsync(string email);
+        Task<bool> UpdateUserAsync(User user); // Add this
+
     }
 }
