@@ -10,7 +10,7 @@ import {
   of,
   switchMap
 } from 'rxjs';
-import { Task, CreateTaskRequest, UpdateTaskRequest, TaskCategory, TagGroup, RecurrenceTemplate } from '../models/task.model';
+import { Task, CreateTaskRequest, UpdateTaskRequest, TaskCategory, TagGroup, RecurrenceTemplate, TaskContext } from '../models/task.model';
 import { AuthService } from './auth';
 import { environment } from '../../environments/environment';
 
@@ -580,35 +580,33 @@ export class TaskService {
   }
 
   // Task Organization
-  organizeTasksByContext(tasks: Task[]): { context: string; tasks: Task[] }[] {
-    const contexts = new Map<string, Task[]>();
-    
-    const commonContexts = ['home', 'work', 'computer', 'phone', 'errands', 'anywhere'];
-    commonContexts.forEach(context => {
-      contexts.set(context, []);
-    });
-    
-    tasks.forEach(task => {
-      if (task.context && task.context.length > 0) {
-        task.context.forEach((contextItem: string) => {
-          if (contextItem && contextItem.trim() !== '') {
-            if (contexts.has(contextItem)) {
-              contexts.get(contextItem)!.push(task);
-            } else {
-              contexts.set(contextItem, [task]);
-            }
-          }
-        });
-      } else {
-        contexts.get('anywhere')!.push(task);
-      }
-    });
-    
-    return Array.from(contexts.entries())
-      .filter(([_, contextTasks]) => contextTasks.length > 0)
-      .map(([context, contextTasks]) => ({ context, tasks: contextTasks }));
-  }
-
+  organizeTasksByContext(tasks: Task[]): { context: TaskContext; tasks: Task[] }[] {
+  const contexts = new Map<TaskContext, Task[]>();
+  
+  const commonContexts: TaskContext[] = ['home', 'work', 'computer', 'phone', 'errands', 'anywhere'];
+  
+  commonContexts.forEach(context => {
+    contexts.set(context, []);
+  });
+  
+  tasks.forEach(task => {
+    if (task.context && task.context.length > 0) {
+      task.context.forEach((contextItem: TaskContext) => {
+        if (contexts.has(contextItem)) {
+          contexts.get(contextItem)!.push(task);
+        } else {
+          contexts.set(contextItem, [task]);
+        }
+      });
+    } else {
+      contexts.get('anywhere')!.push(task);
+    }
+  });
+  
+  return Array.from(contexts.entries())
+    .filter(([_, contextTasks]) => contextTasks.length > 0)
+    .map(([context, contextTasks]) => ({ context, tasks: contextTasks }));
+}
   // Recurring Tasks
   completeRecurringInstance(taskId: number, completionDate: string): Observable<Task> {
     return this.http.post<Task>(
@@ -780,5 +778,294 @@ export class TaskService {
       code, 
       originalError: error 
     } as ApiError));
+  }
+
+  // Additional Productivity Methods
+
+  // Get tasks for a specific date range
+  getTasksForDateRange(startDate: Date, endDate: Date): Observable<Task[]> {
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        return taskDate >= startDate && taskDate <= endDate;
+      }))
+    );
+  }
+
+  // Get overdue tasks
+  getOverdueTasks(): Observable<Task[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => {
+        if (task.completed || !task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate < today;
+      }))
+    );
+  }
+
+  // Get today's tasks
+  getTodaysTasks(): Observable<Task[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate >= today && dueDate < tomorrow;
+      }))
+    );
+  }
+
+  // Get tasks for the current week
+  getThisWeeksTasks(): Observable<Task[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+    
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate >= today && dueDate <= endOfWeek;
+      }))
+    );
+  }
+
+  // Calculate task statistics
+  getTaskStatistics(): Observable<{
+    total: number;
+    completed: number;
+    pending: number;
+    overdue: number;
+    dueToday: number;
+    highPriority: number;
+    byCategory: { [category: string]: number };
+    completionRate: number;
+  }> {
+    return this.getTasks().pipe(
+      map(tasks => {
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.completed).length;
+        const pending = total - completed;
+        const overdue = tasks.filter(t => 
+          !t.completed && t.dueDate && new Date(t.dueDate) < new Date()
+        ).length;
+        const dueToday = tasks.filter(t => 
+          !t.completed && t.dueDate && 
+          new Date(t.dueDate).toDateString() === new Date().toDateString()
+        ).length;
+        const highPriority = tasks.filter(t => t.priority === 3).length;
+        
+        const byCategory: { [category: string]: number } = {};
+        tasks.forEach(task => {
+          const category = task.category || 'Uncategorized';
+          byCategory[category] = (byCategory[category] || 0) + 1;
+        });
+        
+        const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        return {
+          total,
+          completed,
+          pending,
+          overdue,
+          dueToday,
+          highPriority,
+          byCategory,
+          completionRate
+        };
+      })
+    );
+  }
+
+  // Search tasks with advanced filtering
+  searchTasks(query: string, filters?: {
+    category?: string;
+    priority?: number;
+    status?: 'all' | 'active' | 'completed';
+    tags?: string[];
+  }): Observable<Task[]> {
+    return this.getTasks(filters).pipe(
+      map(tasks => tasks.filter(task => 
+        task.title.toLowerCase().includes(query.toLowerCase()) ||
+        task.description?.toLowerCase().includes(query.toLowerCase()) ||
+        task.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase())) ||
+        task.category?.toLowerCase().includes(query.toLowerCase())
+      ))
+    );
+  }
+
+  // Export tasks to various formats
+  exportTasks(format: 'json' | 'csv' | 'txt' = 'json'): Observable<string> {
+    return this.getTasks().pipe(
+      map(tasks => {
+        switch (format) {
+          case 'json':
+            return JSON.stringify(tasks, null, 2);
+          case 'csv':
+            return this.convertToCSV(tasks);
+          case 'txt':
+            return this.convertToText(tasks);
+          default:
+            return JSON.stringify(tasks);
+        }
+      })
+    );
+  }
+
+  private convertToCSV(tasks: Task[]): string {
+    const headers = ['ID', 'Title', 'Description', 'Category', 'Priority', 'Due Date', 'Completed', 'Tags'];
+    const rows = tasks.map(task => [
+      task.id,
+      `"${task.title.replace(/"/g, '""')}"`,
+      `"${(task.description || '').replace(/"/g, '""')}"`,
+      task.category || '',
+      task.priority,
+      task.dueDate || '',
+      task.completed ? 'Yes' : 'No',
+      `"${(task.tags || []).join(', ')}"`
+    ]);
+    
+    return [headers, ...rows].map(row => row.join(',')).join('\n');
+  }
+
+  private convertToText(tasks: Task[]): string {
+    return tasks.map(task => 
+      `Task: ${task.title}
+Description: ${task.description || 'No description'}
+Category: ${task.category || 'Uncategorized'}
+Priority: ${task.priority}
+Due Date: ${task.dueDate || 'No due date'}
+Completed: ${task.completed ? 'Yes' : 'No'}
+Tags: ${(task.tags || []).join(', ')}
+---
+`
+    ).join('\n');
+  }
+
+  // Import tasks from JSON
+  importTasks(jsonData: string): Observable<BulkOperationResult> {
+    try {
+      const tasks: CreateTaskRequest[] = JSON.parse(jsonData);
+      const operations = tasks.map(taskData => 
+        this.createTask(taskData).pipe(
+          map(() => ({ success: true })),
+          catchError(err => of({ success: false, error: err.message }))
+        )
+      );
+
+      return forkJoin(operations).pipe(
+        map(results => {
+          const success = results.filter((r: any) => r.success).length;
+          const failed = results.filter((r: any) => !r.success).length;
+          const errors = results.filter((r: any) => !r.success).map((r: any) => r.error);
+          
+          return { success, failed, errors };
+        })
+      );
+    } catch (error) {
+      return of({
+        success: 0,
+        failed: 0,
+        errors: ['Invalid JSON format']
+      });
+    }
+  }
+
+  // Task analytics and insights
+  getProductivityInsights(): Observable<{
+    averageCompletionTime: number;
+    mostProductiveDay: string;
+    peakProductivityHours: string[];
+    commonCategories: string[];
+    completionTrend: number[];
+  }> {
+    return this.getTasks().pipe(
+      map(tasks => {
+        // Mock data for demonstration - in real app, this would come from backend analytics
+        return {
+          averageCompletionTime: 2.5, // hours
+          mostProductiveDay: 'Tuesday',
+          peakProductivityHours: ['10:00', '14:00', '16:00'],
+          commonCategories: ['Work', 'Personal', 'Health'],
+          completionTrend: [65, 70, 75, 80, 78, 82, 85] // Weekly trend
+        };
+      })
+    );
+  }
+
+  // Smart task recommendations
+  getTaskRecommendations(): Observable<Task[]> {
+    return this.getTasks().pipe(
+      map(tasks => {
+        const pendingTasks = tasks.filter(task => !task.completed);
+        
+        // Recommend tasks based on various factors
+        return pendingTasks
+          .sort((a, b) => {
+            // Sort by importance score, then by due date
+            const scoreA = this.calculateTaskImportanceScore(a);
+            const scoreB = this.calculateTaskImportanceScore(b);
+            
+            if (scoreB !== scoreA) {
+              return scoreB - scoreA;
+            }
+            
+            // If same score, sort by due date (sooner first)
+            if (a.dueDate && b.dueDate) {
+              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+            }
+            
+            return 0;
+          })
+          .slice(0, 5); // Return top 5 recommendations
+      })
+    );
+  }
+
+  // Context-based task filtering
+getTasksByContext(context: TaskContext): Observable<Task[]> {
+  return this.getTasks().pipe(
+    map(tasks => tasks.filter(task => 
+      task.context && task.context.includes(context)
+    ))
+  );
+}
+
+  // Energy-level based task filtering
+  getTasksByEnergyLevel(energyLevel: 'low' | 'medium' | 'high'): Observable<Task[]> {
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => 
+        task.tags && (
+          (energyLevel === 'low' && task.tags.includes('low-energy')) ||
+          (energyLevel === 'medium' && task.tags.includes('medium-energy')) ||
+          (energyLevel === 'high' && task.tags.includes('high-energy'))
+        )
+      ))
+    );
+  }
+
+  // Time-based task filtering
+  getTasksByTimeRequired(timeRequired: 'quick' | 'medium' | 'long'): Observable<Task[]> {
+    return this.getTasks().pipe(
+      map(tasks => tasks.filter(task => 
+        task.tags && (
+          (timeRequired === 'quick' && task.tags.includes('quick')) ||
+          (timeRequired === 'medium' && task.tags.includes('medium-time')) ||
+          (timeRequired === 'long' && task.tags.includes('time-consuming'))
+        )
+      ))
+    );
   }
 }

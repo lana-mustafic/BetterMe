@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern } from '../../models/task.model';
-import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, CdkDragPlaceholder, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 // Productivity Interfaces
 interface EisenhowerCategory {
@@ -64,9 +64,7 @@ interface EditModalData {
     CommonModule, 
     FormsModule,
     CdkDrag,
-    CdkDropList, 
-    CdkDropListGroup,
-    CdkDragPlaceholder
+    CdkDropList
   ],
   template: `
     <div class="calendar-page">
@@ -107,14 +105,6 @@ interface EditModalData {
                   >
                     <span class="view-icon">📅</span>
                     Month
-                  </button>
-                  <button 
-                    class="view-option" 
-                    [class.active]="viewMode === 'week'"
-                    (click)="setViewMode('week')"
-                  >
-                    <span class="view-icon">📆</span>
-                    Week
                   </button>
                   <button 
                     class="view-option" 
@@ -260,119 +250,6 @@ interface EditModalData {
                           <span class="action-icon">⏰</span>
                         </button>
                       </div>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- Week View with Enhanced Time Blocking -->
-            @if (viewMode === 'week') {
-              <div class="week-view glass-card">
-                <div class="week-header">
-                  @for (day of currentWeekDays; track day; let i = $index) {
-                    <div 
-                      class="week-day-header"
-                      [class.current-month]="isCurrentMonthWeek(day)"
-                      (click)="onWeekDayClick(day, $event)"
-                    >
-                      <div class="week-day-name">{{ getWeekdayName(day) }}</div>
-                      <div class="week-date">{{ day.getDate() }}</div>
-                      <div class="day-stats">
-                        <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
-                        <span class="total-count">/{{ getTasksForDate(day).length }}</span>
-                      </div>
-                      <div class="time-block-count" *ngIf="getTimeBlocksForDate(day).length > 0">
-                        ⏰ {{ getTimeBlocksForDate(day).length }}
-                      </div>
-                    </div>
-                  }
-                </div>
-                
-                <div class="week-grid" cdkDropListGroup>
-                  @for (day of currentWeekDays; track day; let i = $index) {
-                    <div 
-                      class="week-day-column"
-                      cdkDropList
-                      [cdkDropListData]="{ day: day, tasks: getTasksForDate(day) }"
-                      [id]="'day-' + i"
-                      (cdkDropListDropped)="onTaskDrop($event)"
-                      (click)="onWeekDayColumnClick(day, $event)"
-                    >
-                      <!-- Time Blocks Section -->
-                      <div class="time-blocks-section" *ngIf="getTimeBlocksForDate(day).length > 0">
-                        <div class="time-blocks-title">Time Blocks:</div>
-                        @for (block of getTimeBlocksForDate(day); track block.id) {
-                          <div class="week-time-block" [style.background]="getTimeBlockColor(block)">
-                            <div class="time-block-time">{{ formatTime(block.startTime) }} - {{ formatTime(block.endTime) }}</div>
-                            <div class="time-block-title">{{ block.title || 'Time Block' }}</div>
-                            <button class="time-block-complete" (click)="completeTimeBlock(block.id)">✓</button>
-                          </div>
-                        }
-                      </div>
-
-                      <div class="week-day-tasks">
-                        @for (task of getTasksForDate(day); track task.id) {
-                          <div 
-                            class="week-task-item"
-                            cdkDrag
-                            [class.completed]="task.completed"
-                            [class.loading]="updatingTaskIds.has(task.id)"
-                            [class.frog-task]="task.id === eatTheFrogTask?.id"
-                          >
-                            <div class="drag-handle" cdkDragHandle>
-                              <span class="drag-icon">⣿</span>
-                            </div>
-                            
-                            <div 
-                              class="week-task-content"
-                              (click)="toggleTaskCompletionFromCalendar(task.id, $event)"
-                            >
-                              <div class="week-task-title">
-                                @if (task.completed) {
-                                  <span class="completion-check">✓</span>
-                                }
-                                @if (task.id === eatTheFrogTask?.id) {
-                                  <span class="frog-indicator">🐸</span>
-                                }
-                                {{ task.title }}
-                                @if (updatingTaskIds.has(task.id)) {
-                                  <span class="loading-spinner-small"></span>
-                                }
-                              </div>
-                              <div class="week-task-meta">
-                                <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
-                                <span class="eisenhower-badge" [style.background]="getEisenhowerCategory(task)?.color">
-                                  {{ getEisenhowerCategory(task)?.name }}
-                                </span>
-                                @if (task.completed) {
-                                  <span class="completed-badge">Completed</span>
-                                }
-                              </div>
-                            </div>
-
-                            <div class="task-quick-actions">
-                              <button class="quick-action-btn" (click)="scheduleTimeBlock(task, day, $event)" title="Schedule Time Block">
-                                ⏰
-                              </button>
-                              <button class="quick-action-btn" (click)="setTaskPriority(task.id, 'urgent-important', $event)" title="Mark as Urgent & Important">
-                                🚨
-                              </button>
-                            </div>
-                          </div>
-                        }
-                        
-                        @if (getTasksForDate(day).length === 0) {
-                          <div class="drop-zone">
-                            <div class="drop-zone-content">
-                              <div class="drop-zone-plus">+</div>
-                              <div class="drop-zone-text">Drop tasks here or click to add</div>
-                            </div>
-                          </div>
-                        }
-                      </div>
-                      
-                      <div class="task-drag-placeholder" *cdkDragPlaceholder></div>
                     </div>
                   }
                 </div>
@@ -1358,336 +1235,6 @@ interface EditModalData {
       50% { opacity: 1; }
     }
 
-    /* Week View Styles */
-    .week-view {
-      padding: 2rem;
-    }
-
-    .week-header {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 16px 16px 0 0;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .week-day-header {
-      padding: 1.5rem 1rem;
-      text-align: center;
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .week-day-header:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .week-day-header:last-child {
-      border-right: none;
-    }
-
-    .week-day-name {
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 0.5rem;
-      font-size: 1.1rem;
-    }
-
-    .week-date {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: white;
-      margin-bottom: 0.5rem;
-    }
-
-    .day-stats {
-      display: flex;
-      gap: 0.25rem;
-      font-size: 0.9rem;
-      justify-content: center;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .completed-count {
-      color: #4ade80;
-      font-weight: 700;
-    }
-
-    .total-count {
-      color: rgba(255, 255, 255, 0.6);
-    }
-
-    .time-block-count {
-      font-size: 0.8rem;
-      color: #3498db;
-      font-weight: 600;
-    }
-
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-top: none;
-      border-radius: 0 0 16px 16px;
-      min-height: 500px;
-    }
-
-    .week-day-column {
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
-      min-height: 500px;
-      transition: all 0.3s ease;
-      background: rgba(255, 255, 255, 0.05);
-      cursor: pointer;
-      position: relative;
-    }
-
-    .week-day-column:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .week-day-column:last-child {
-      border-right: none;
-    }
-
-    .time-blocks-section {
-      margin-bottom: 1rem;
-    }
-
-    .time-blocks-title {
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-
-    .week-time-block {
-      background: #3498db;
-      color: white;
-      padding: 0.5rem;
-      border-radius: 6px;
-      margin-bottom: 0.5rem;
-      font-size: 0.8rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .time-block-time {
-      font-weight: 600;
-      flex: 1;
-    }
-
-    .time-block-title {
-      flex: 2;
-    }
-
-    .time-block-complete {
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: white;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .week-day-tasks {
-      padding: 1rem;
-      height: 100%;
-    }
-
-    .week-task-item {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 1rem;
-      margin-bottom: 0.75rem;
-      border-radius: 12px;
-      border-left: 4px solid #667eea;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .week-task-item.completed {
-      opacity: 0.8;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(74, 222, 128, 0.2) 100%);
-    }
-
-    .week-task-item.loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    .week-task-item.frog-task {
-      border-left: 4px solid #27ae60 !important;
-    }
-
-    .week-task-item.completed .week-task-title {
-      text-decoration: line-through;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .week-task-item:hover:not(.loading) {
-      transform: translateX(4px);
-      background: rgba(255, 255, 255, 0.15);
-    }
-
-    .drag-handle {
-      cursor: grab;
-      padding: 0.5rem;
-      margin-right: 0.75rem;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-
-    .drag-handle:hover {
-      background: #667eea;
-    }
-
-    .drag-icon {
-      font-size: 0.8rem;
-      opacity: 0.7;
-      color: white;
-    }
-
-    .week-task-content {
-      flex: 1;
-      cursor: pointer;
-    }
-
-    .week-task-title {
-      font-weight: 600;
-      color: white;
-      margin-bottom: 0.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .completion-check {
-      color: #4ade80;
-      font-weight: bold;
-    }
-
-    .frog-indicator {
-      font-size: 0.9rem;
-    }
-
-    .week-task-meta {
-      display: flex;
-      gap: 0.75rem;
-      font-size: 0.85rem;
-      align-items: center;
-    }
-
-    .week-task-time {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .eisenhower-badge {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 0.2rem 0.5rem;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-
-    .completed-badge {
-      background: #4ade80;
-      color: white;
-      padding: 0.2rem 0.5rem;
-      border-radius: 8px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-
-    /* Task Quick Actions */
-    .task-quick-actions {
-      display: flex;
-      gap: 0.25rem;
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-
-    .week-task-item:hover .task-quick-actions {
-      opacity: 1;
-    }
-
-    .quick-action-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      border-radius: 4px;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      transition: all 0.3s ease;
-    }
-
-    .quick-action-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.1);
-    }
-
-    .drop-zone {
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      border-radius: 12px;
-      padding: 2rem;
-      text-align: center;
-      color: rgba(255, 255, 255, 0.6);
-      margin: 0.5rem;
-      transition: all 0.3s ease;
-      background: rgba(255, 255, 255, 0.05);
-      cursor: pointer;
-      height: calc(100% - 1rem);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .drop-zone:hover {
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.1);
-      color: #667eea;
-    }
-
-    .drop-zone-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .drop-zone-plus {
-      font-size: 2rem;
-      font-weight: bold;
-    }
-
-    .drop-zone-text {
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-
-    .task-drag-placeholder {
-      opacity: 0.3;
-      background: #667eea;
-      border-radius: 12px;
-      min-height: 60px;
-      margin-bottom: 0.75rem;
-    }
-
     /* Year View Styles */
     .year-view {
       padding: 0;
@@ -2531,8 +2078,7 @@ interface EditModalData {
         justify-content: center;
       }
 
-      .month-view,
-      .week-view {
+      .month-view {
         padding: 1.5rem;
       }
 
@@ -2543,22 +2089,6 @@ interface EditModalData {
       .calendar-day {
         min-height: 100px;
         padding: 0.75rem 0.5rem;
-      }
-
-      .week-header,
-      .week-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .week-day-header,
-      .week-day-column {
-        border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      }
-
-      .week-day-header:last-child,
-      .week-day-column:last-child {
-        border-bottom: none;
       }
 
       .year-grid {
@@ -2605,10 +2135,6 @@ interface EditModalData {
         flex-direction: column;
         gap: 0.5rem;
       }
-      
-      .task-quick-actions {
-        opacity: 1;
-      }
     }
 
     @media (max-width: 480px) {
@@ -2651,7 +2177,7 @@ export class CalendarViewComponent implements OnInit {
 
   tasks: Task[] = [];
   currentDate: Date = new Date();
-  viewMode: 'month' | 'week' | 'year' = 'month';
+  viewMode: 'month' | 'year' = 'month';
   selectedDay: CalendarDay | null = null;
   
   showCreateTaskModal = false;
@@ -2690,7 +2216,6 @@ export class CalendarViewComponent implements OnInit {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   calendarDays: CalendarDay[] = [];
-  currentWeekDays: Date[] = [];
 
   editModalData: EditModalData = {
     taskId: 0,
@@ -2771,7 +2296,6 @@ export class CalendarViewComponent implements OnInit {
   ngOnInit(): void {
     this.loadTasks();
     this.generateCalendar();
-    this.generateWeekView();
     this.initializeTimeBlocks();
   }
 
@@ -2780,7 +2304,6 @@ export class CalendarViewComponent implements OnInit {
       next: (tasks: Task[]) => {
         this.tasks = tasks;
         this.generateCalendar();
-        this.generateWeekView();
       },
       error: (error: any) => {
         console.error('Error loading tasks for calendar:', error);
@@ -2804,7 +2327,7 @@ getFormattedBlockDate(dateString: string): string {
     return this.currentDate.getFullYear();
   }
 
-  setViewMode(mode: 'month' | 'week' | 'year'): void {
+  setViewMode(mode: 'month' | 'year'): void {
     this.viewMode = mode;
     if (mode === 'year') {
       this.currentDate = new Date(this.currentYear, 0, 1);
@@ -2817,7 +2340,6 @@ getFormattedBlockDate(dateString: string): string {
     } else {
       this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
       this.generateCalendar();
-      this.generateWeekView();
     }
   }
 
@@ -2827,7 +2349,6 @@ getFormattedBlockDate(dateString: string): string {
     } else {
       this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
       this.generateCalendar();
-      this.generateWeekView();
     }
   }
 
@@ -2867,20 +2388,6 @@ getFormattedBlockDate(dateString: string): string {
       });
       
       currentDate.setDate(currentDate.getDate() + 1);
-    }
-  }
-
-  generateWeekView(): void {
-    this.currentWeekDays = [];
-    const currentDate = new Date(this.currentDate);
-    
-    const startDate = new Date(currentDate);
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      this.currentWeekDays.push(date);
     }
   }
 
@@ -3000,27 +2507,6 @@ getFormattedBlockDate(dateString: string): string {
     this.selectedDateForNewTask = new Date(day.date);
     this.initializeTaskForm();
     this.showCreateTaskModal = true;
-  }
-
-  onWeekDayClick(day: Date, event: Event): void {
-    event.stopPropagation();
-    if (!this.isCurrentMonthWeek(day)) return;
-    
-    this.selectedDateForNewTask = new Date(day);
-    this.initializeTaskForm();
-    this.showCreateTaskModal = true;
-  }
-
-  onWeekDayColumnClick(day: Date, event: Event): void {
-    if ((event.target as HTMLElement).classList.contains('week-day-column') || 
-        (event.target as HTMLElement).classList.contains('drop-zone')) {
-      event.stopPropagation();
-      if (!this.isCurrentMonthWeek(day)) return;
-      
-      this.selectedDateForNewTask = new Date(day);
-      this.initializeTaskForm();
-      this.showCreateTaskModal = true;
-    }
   }
 
   onYearMonthClick(monthData: { month: string, year: number, tasks: Task[] }, event: Event): void {
@@ -3149,41 +2635,6 @@ getFormattedBlockDate(dateString: string): string {
     this.monthSelectionDays = [];
   }
 
-  isCurrentMonthWeek(day: Date): boolean {
-    return day.getMonth() === this.currentDate.getMonth();
-  }
-
-  getAllDropLists(): string[] {
-    return this.currentWeekDays.map((_, index) => `day-${index}`);
-  }
-
-  onTaskDrop(event: CdkDragDrop<any>): void {
-    if (event.previousContainer === event.container) {
-      moveItemInArray(
-        event.container.data.tasks,
-        event.previousIndex,
-        event.currentIndex
-      );
-    } else {
-      const previousTasks = [...event.previousContainer.data.tasks];
-      const currentTasks = [...event.container.data.tasks];
-      const task = previousTasks[event.previousIndex];
-      
-      const newDueDate = event.container.data.day;
-      this.updateTaskDueDate(task.id, newDueDate);
-      
-      transferArrayItem(
-        previousTasks,
-        currentTasks,
-        event.previousIndex,
-        event.currentIndex
-      );
-
-      event.previousContainer.data.tasks = previousTasks;
-      event.container.data.tasks = currentTasks;
-    }
-  }
-
   getYearViewMonths(): { month: string, year: number, tasks: Task[] }[] {
     const currentYear = this.currentDate.getFullYear();
     
@@ -3217,13 +2668,11 @@ getFormattedBlockDate(dateString: string): string {
           if (index !== -1) {
             this.tasks[index] = updatedTask;
             this.generateCalendar();
-            this.generateWeekView();
           }
         },
         error: (error) => {
           console.error('Error updating task date:', error);
           this.generateCalendar();
-          this.generateWeekView();
         }
       });
     }
@@ -3243,7 +2692,6 @@ getFormattedBlockDate(dateString: string): string {
           this.tasks[index] = updatedTask;
           
           this.generateCalendar();
-          this.generateWeekView();
           
           if (this.selectedDay) {
             this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
@@ -3277,7 +2725,6 @@ getFormattedBlockDate(dateString: string): string {
           this.tasks[index] = updatedTask;
           
           this.generateCalendar();
-          this.generateWeekView();
           
           if (this.selectedDay) {
             this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
@@ -3358,7 +2805,6 @@ getFormattedBlockDate(dateString: string): string {
         this.closeEditModal();
         
         this.generateCalendar();
-        this.generateWeekView();
         
         if (this.selectedDay) {
           this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
@@ -3383,7 +2829,6 @@ getFormattedBlockDate(dateString: string): string {
           this.closeEditModal();
           
           this.generateCalendar();
-          this.generateWeekView();
           
           if (this.selectedDay) {
             const freshTasks = this.getTasksForDate(this.selectedDay.date);
@@ -3453,7 +2898,6 @@ getFormattedBlockDate(dateString: string): string {
       next: (createdTask) => {
         this.tasks.push(createdTask);
         this.generateCalendar();
-        this.generateWeekView();
         this.closeCreateTaskModal();
       },
       error: (error) => {
@@ -3553,7 +2997,6 @@ getFormattedBlockDate(dateString: string): string {
           if (index !== -1) {
             this.tasks[index] = updatedTask;
             this.generateCalendar();
-            this.generateWeekView();
           }
         },
         error: (error) => {
@@ -3717,7 +3160,6 @@ getFormattedBlockDate(dateString: string): string {
     this.timeBlocks.push(newTimeBlock);
     this.saveTimeBlocksToStorage();
     this.generateCalendar();
-    this.generateWeekView();
     this.closeTimeBlockModal();
   }
 
@@ -3727,7 +3169,6 @@ getFormattedBlockDate(dateString: string): string {
       block.completed = !block.completed;
       this.saveTimeBlocksToStorage();
       this.generateCalendar();
-      this.generateWeekView();
     }
   }
 
@@ -3735,7 +3176,6 @@ getFormattedBlockDate(dateString: string): string {
     this.timeBlocks = this.timeBlocks.filter(b => b.id !== blockId);
     this.saveTimeBlocksToStorage();
     this.generateCalendar();
-    this.generateWeekView();
   }
 
   getTimeBlocksForDate(date: Date): TimeBlock[] {
