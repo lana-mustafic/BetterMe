@@ -900,123 +900,180 @@ interface Category {
             </div>
           }
           
-          <!-- Tasks List (only show in list view) -->
+          <!-- BEAUTIFUL TASKS LIST (only show in list view) -->
           @if (activeView === 'list') {
-            <div class="task-list">
-              @for (task of smartFilteredTasks; track task.id) {
-                <div class="task-item glass-card" [class.completed]="task.completed">
-                  <!-- Clickable task content that navigates to details -->
-                  <div class="task-content clickable" [routerLink]="['/tasks', task.id]">
-                    <div class="task-header">
-                      <h3 class="task-title">{{ task.title }}</h3>
-                      <div class="task-actions">
-                        <input 
-                          type="checkbox" 
-                          [checked]="isTaskSelected(task.id)"
-                          (change)="toggleTaskSelection(task.id); $event.stopPropagation()"
-                          class="task-checkbox"
-                        />
-                        <button 
-                          class="btn-status" 
-                          (click)="onToggleComplete(task.id); $event.stopPropagation()"
-                          [class.completed]="task.completed"
-                        >
-                          {{ task.completed ? '✅' : '⏳' }}
-                        </button>
+            <div class="tasks-list-container">
+              <!-- Tasks Grid Layout -->
+              @if (smartFilteredTasks.length > 0) {
+                <div class="tasks-grid">
+                  @for (task of smartFilteredTasks; track task.id) {
+                    <div class="task-card glass-card" [class.completed]="task.completed">
+                      <!-- Task Header -->
+                      <div class="task-header">
+                        <div class="task-main-info">
+                          <!-- Completion Checkbox -->
+                          <label class="task-checkbox-container">
+                            <input 
+                              type="checkbox" 
+                              [checked]="isTaskSelected(task.id)"
+                              (change)="toggleTaskSelection(task.id); $event.stopPropagation()"
+                              class="task-checkbox"
+                            />
+                            <span class="checkmark"></span>
+                          </label>
+                          
+                          <!-- Task Title -->
+                          <h3 class="task-title" [class.completed]="task.completed">
+                            {{ task.title }}
+                          </h3>
+                          
+                          <!-- Priority Badge -->
+                          @if (task.priority === 3) {
+                            <span class="priority-badge high">🔥 High</span>
+                          } @else if (task.priority === 2) {
+                            <span class="priority-badge medium">⚡ Medium</span>
+                          } @else {
+                            <span class="priority-badge low">💤 Low</span>
+                          }
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="task-quick-actions">
+                          <button 
+                            class="btn-complete" 
+                            (click)="onToggleComplete(task.id); $event.stopPropagation()"
+                            [class.completed]="task.completed"
+                            [title]="task.completed ? 'Mark as pending' : 'Mark as completed'"
+                          >
+                            @if (task.completed) {
+                              <span class="completed-icon">✓</span>
+                            } @else {
+                              <span class="pending-icon">○</span>
+                            }
+                          </button>
+                          
+                          <button 
+                            class="btn-edit" 
+                            (click)="onEditTask(task); $event.stopPropagation()"
+                            title="Edit task"
+                          >
+                            ✏️
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    
-                    @if (task.description) {
-                      <p class="task-description">{{ task.description }}</p>
-                    }
-                    
-                    <!-- Enhanced Category Badge -->
-                    @if (task.category) {
-                      <div class="task-category">
-                        <span 
-                          class="category-badge" 
-                          [style.background]="getCategoryColor(task.category)"
-                          [style.border-color]="getCategoryColor(task.category)"
-                        >
-                          <span class="category-icon">{{ getCategoryIcon(task.category) }}</span>
-                          {{ task.category }}
-                        </span>
-                      </div>
-                    }
-                    
-                    <!-- Tags Display -->
-                    @if (task.tags && task.tags.length > 0) {
-                      <div class="task-tags">
-                        @for (tag of task.tags; track tag) {
-                          <span class="tag-badge-small" [style.background]="getTagColor(tag)">
-                            {{ tag }}
-                          </span>
+
+                      <!-- Task Description -->
+                      @if (task.description) {
+                        <p class="task-description">{{ task.description }}</p>
+                      }
+
+                      <!-- Task Meta Information -->
+                      <div class="task-meta-grid">
+                        <!-- Category -->
+                        @if (task.category) {
+                          <div class="meta-item category">
+                            <span class="meta-icon">{{ getCategoryIcon(task.category) }}</span>
+                            <span class="meta-text">{{ task.category }}</span>
+                          </div>
+                        }
+
+                        <!-- Due Date -->
+                        @if (task.dueDate) {
+                          <div class="meta-item date" [class.overdue]="isOverdue(task.dueDate) && !task.completed">
+                            <span class="meta-icon">📅</span>
+                            <span class="meta-text">{{ formatDate(task.dueDate) }}</span>
+                            @if (isOverdue(task.dueDate) && !task.completed) {
+                              <span class="overdue-badge">Overdue</span>
+                            }
+                          </div>
+                        }
+
+                        <!-- Duration -->
+                        @if (task.estimatedDuration) {
+                          <div class="meta-item duration">
+                            <span class="meta-icon">⏱️</span>
+                            <span class="meta-text">{{ task.estimatedDuration }}min</span>
+                          </div>
+                        }
+
+                        <!-- Difficulty -->
+                        @if (task.difficulty) {
+                          <div class="meta-item difficulty" [class]="'difficulty-' + task.difficulty">
+                            <span class="meta-icon">{{ getDifficultyIcon(task.difficulty) }}</span>
+                            <span class="meta-text">{{ task.difficulty }}</span>
+                          </div>
                         }
                       </div>
-                    }
 
-                    <!-- Smart Task Properties -->
-                    <div class="smart-properties">
-                      @if (task.estimatedDuration) {
-                        <span class="property-badge">
-                          ⏱️ {{ task.estimatedDuration }}min
-                        </span>
+                      <!-- Tags -->
+                      @if (task.tags && task.tags.length > 0) {
+                        <div class="task-tags">
+                          @for (tag of task.tags.slice(0, 3); track tag) {
+                            <span class="tag" [style.background]="getTagColor(tag)">
+                              {{ tag }}
+                            </span>
+                          }
+                          @if (task.tags.length > 3) {
+                            <span class="tag-more">+{{ task.tags.length - 3 }} more</span>
+                          }
+                        </div>
                       }
-                      @if (task.difficulty) {
-                        <span class="property-badge" [class]="'difficulty-' + task.difficulty">
-                          {{ getDifficultyIcon(task.difficulty) }} {{ task.difficulty }}
-                        </span>
-                      }
-                      @if (this.getTaskContext(task)) {
-                        <span class="property-badge">
-                          {{ getContextIcon(this.getTaskContext(task)) }} {{ this.getTaskContext(task) }}
-                        </span>
-                      }
+
+                      <!-- Task Footer -->
+                      <div class="task-footer">
+                        <div class="task-created">
+                          <span class="created-text">Created {{ formatRelativeDate(task.createdAt) }}</span>
+                        </div>
+                        
+                        <div class="task-actions">
+                          <button 
+                            class="btn-action btn-view" 
+                            [routerLink]="['/tasks', task.id]"
+                            (click)="$event.stopPropagation()"
+                          >
+                            👁️ View
+                          </button>
+                          <button 
+                            class="btn-action btn-delete" 
+                            (click)="onDeleteTask(task.id); $event.stopPropagation()"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Completion Status Bar -->
+                      <div class="completion-bar" [class.completed]="task.completed">
+                        <div class="completion-fill"></div>
+                      </div>
                     </div>
-                    
-                    <div class="task-meta">
-                      <span class="task-date">
-                        Created: {{ formatDate(task.createdAt) }}
-                      </span>
-                      @if (task.dueDate) {
-                        <span class="task-date">
-                          Due: {{ formatDate(task.dueDate) }}
-                        </span>
-                      }
-                      @if (task.priority === 3) {
-                        <span class="priority-high">🔥 High Priority</span>
-                      } @else if (task.priority === 2) {
-                        <span class="priority-medium">⚡ Medium Priority</span>
-                      }
-                    </div>
-                  </div>
-                  
-                  <!-- Action buttons that don't trigger navigation -->
-                  <div class="task-actions-bottom">
-                    <button class="btn-small btn-edit" (click)="onEditTask(task); $event.stopPropagation()">
-                      Edit
-                    </button>
-                    <button class="btn-small btn-danger" (click)="onDeleteTask(task.id); $event.stopPropagation()">
-                      Delete
-                    </button>
-                    <button class="btn-small btn-primary" [routerLink]="['/tasks', task.id]" (click)="$event.stopPropagation()">
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              } @empty {
-                <div class="empty-state glass-card">
-                  @if (tasks.length === 0) {
-                    <p>No tasks yet. Create your first task to get started!</p>
-                    <button class="btn btn-gradient" (click)="showCreateForm = true">
-                      Create Your First Task
-                    </button>
-                  } @else {
-                    <p>No tasks match your current filters.</p>
-                    <button class="btn btn-outline" (click)="clearFilters()">
-                      Clear Filters
-                    </button>
                   }
+                </div>
+              } @else {
+                <!-- Empty State -->
+                <div class="empty-state glass-card">
+                  <div class="empty-state-content">
+                    <div class="empty-icon">📝</div>
+                    <h3>No tasks found</h3>
+                    <p>
+                      @if (tasks.length === 0) {
+                        You haven't created any tasks yet. Start by creating your first task!
+                      } @else {
+                        No tasks match your current filters. Try adjusting your search criteria.
+                      }
+                    </p>
+                    <div class="empty-actions">
+                      @if (tasks.length === 0) {
+                        <button class="btn btn-gradient" (click)="showCreateForm = true">
+                          Create Your First Task
+                        </button>
+                      } @else {
+                        <button class="btn btn-outline" (click)="clearFilters()">
+                          Clear Filters
+                        </button>
+                      }
+                    </div>
+                  </div>
                 </div>
               }
             </div>
@@ -1031,35 +1088,6 @@ interface Category {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       position: relative;
       overflow-x: hidden;
-    }
-
-    .btn-edit {
-      background: rgba(59, 130, 246, 0.3);
-      color: #93c5fd;
-      border: 1px solid rgba(59, 130, 246, 0.5);
-    }
-
-    .btn-edit:hover {
-      background: rgba(59, 130, 246, 0.5);
-    }
-
-    .btn-primary {
-      background: rgba(59, 130, 246, 0.3);
-      color: #93c5fd;
-      border: 1px solid rgba(59, 130, 246, 0.5);
-    }
-
-    .btn-primary:hover {
-      background: rgba(59, 130, 246, 0.5);
-    }
-
-    .clickable {
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .clickable:hover {
-      transform: translateY(-2px);
     }
 
     .background-animation {
@@ -1238,6 +1266,405 @@ interface Category {
       background: rgba(255, 255, 255, 0.1);
       color: white;
       transform: translateY(-1px);
+    }
+
+    /* BEAUTIFUL TASKS GRID STYLES */
+    .tasks-list-container {
+      margin-top: 2rem;
+    }
+
+    .tasks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .task-card {
+      padding: 1.5rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+    }
+
+    .task-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .task-card.completed {
+      opacity: 0.7;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .task-card.completed::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
+    }
+
+    /* Task Header */
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .task-main-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    /* Custom Checkbox */
+    .task-checkbox-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-top: 0.25rem;
+    }
+
+    .task-checkbox {
+      display: none;
+    }
+
+    .checkmark {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .task-checkbox:checked + .checkmark {
+      background: #4ade80;
+      border-color: #4ade80;
+    }
+
+    .task-checkbox:checked + .checkmark::after {
+      content: '✓';
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .task-title {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .task-title.completed {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    /* Priority Badges */
+    .priority-badge {
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .priority-badge.high {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+    }
+
+    .priority-badge.medium {
+      background: rgba(245, 158, 11, 0.3);
+      color: #fed7aa;
+      border: 1px solid rgba(245, 158, 11, 0.5);
+    }
+
+    .priority-badge.low {
+      background: rgba(34, 197, 94, 0.3);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.5);
+    }
+
+    /* Quick Actions */
+    .task-quick-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-complete, .btn-edit {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .btn-complete {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .btn-complete:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+
+    .btn-complete.completed {
+      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    .btn-edit {
+      background: rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+    }
+
+    .btn-edit:hover {
+      background: rgba(59, 130, 246, 0.5);
+      transform: scale(1.1);
+    }
+
+    /* Task Description */
+    .task-description {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Task Meta Grid */
+    .task-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .meta-icon {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .meta-text {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+    }
+
+    .meta-item.date.overdue {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .overdue-badge {
+      background: rgba(239, 68, 68, 0.6);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    .meta-item.difficulty-easy {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .meta-item.difficulty-medium {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .meta-item.difficulty-hard {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Tags */
+    .task-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .tag {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .tag-more {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 0.4rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Task Footer */
+    .task-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .task-created {
+      flex: 1;
+    }
+
+    .created-text {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-action {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-view {
+      background: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-view:hover {
+      background: rgba(59, 130, 246, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-delete {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      padding: 0.5rem;
+    }
+
+    .btn-delete:hover {
+      background: rgba(239, 68, 68, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Completion Bar */
+    .completion-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .completion-bar.completed .completion-fill {
+      width: 100%;
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
+    }
+
+    .completion-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s ease;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .empty-state-content {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.7;
+    }
+
+    .empty-state h3 {
+      color: white;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .empty-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
     }
 
     /* Dashboard Styles */
@@ -1994,233 +2421,6 @@ interface Category {
       gap: 1rem;
     }
 
-    /* Task List */
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .task-item {
-      padding: 1.5rem;
-      transition: all 0.3s ease;
-      border-left: 4px solid #667eea;
-    }
-
-    .task-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
-    }
-
-    .task-item.completed {
-      opacity: 0.7;
-      border-left-color: #4ade80;
-    }
-
-    .task-item.completed .task-title {
-      text-decoration: line-through;
-    }
-
-    .task-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-    }
-
-    .task-title {
-      color: white;
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin: 0;
-      flex: 1;
-    }
-
-    .task-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-status {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 0.5rem;
-      border-radius: 6px;
-      transition: background-color 0.2s ease;
-      color: white;
-    }
-
-    .btn-status:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .task-category {
-      margin-bottom: 1rem;
-    }
-
-    .category-badge {
-      background: #667eea;
-      color: white;
-      padding: 0.3rem 0.8rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      border: 2px solid transparent;
-      transition: all 0.2s ease;
-    }
-
-    .category-badge:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .category-icon {
-      font-size: 0.9rem;
-    }
-
-    /* Smart Properties */
-    .smart-properties {
-      display: flex;
-      gap: 0.5rem;
-      margin: 0.5rem 0;
-      flex-wrap: wrap;
-    }
-
-    .property-badge {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .property-badge.difficulty-easy {
-      background: rgba(34, 197, 94, 0.3);
-      border-color: rgba(34, 197, 94, 0.5);
-    }
-
-    .property-badge.difficulty-medium {
-      background: rgba(245, 158, 11, 0.3);
-      border-color: rgba(245, 158, 11, 0.5);
-    }
-
-    .property-badge.difficulty-hard {
-      background: rgba(239, 68, 68, 0.3);
-      border-color: rgba(239, 68, 68, 0.5);
-    }
-
-    .task-meta {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .task-date {
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .priority-high {
-      font-size: 0.8rem;
-      color: #fecaca;
-      font-weight: 600;
-    }
-
-    .priority-medium {
-      font-size: 0.8rem;
-      color: #fed7aa;
-      font-weight: 600;
-    }
-
-    .task-actions-bottom {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-small {
-      padding: 0.5rem 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: transparent;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      color: white;
-    }
-
-    .btn-small:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    .btn-small.btn-danger {
-      color: #fecaca;
-      border-color: rgba(239, 68, 68, 0.5);
-    }
-
-    .btn-small.btn-danger:hover {
-      background: rgba(239, 68, 68, 0.3);
-    }
-
-    /* Loading State */
-    .loading {
-      padding: 3rem;
-      text-align: center;
-      color: white;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Error Message */
-    .error-message {
-      background: rgba(239, 68, 68, 0.1);
-      color: #fecaca;
-      padding: 1.5rem;
-      text-align: center;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-
-    /* Empty State */
-    .empty-state {
-      padding: 3rem;
-      text-align: center;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .empty-state p {
-      margin-bottom: 1.5rem;
-      font-size: 1.1rem;
-    }
-
     /* NEW: Smart Suggestions Styles */
     .smart-suggestions {
       padding: 1.5rem;
@@ -2305,104 +2505,37 @@ interface Category {
       align-items: center;
     }
 
-    /* NEW: Task Checkbox */
-    .task-checkbox {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
+    /* Loading State */
+    .loading {
+      padding: 3rem;
+      text-align: center;
+      color: white;
     }
 
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-      .charts-section {
-        grid-template-columns: 1fr;
-      }
-      
-      .bottom-section {
-        grid-template-columns: 1fr;
-      }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
     }
 
-    @media (max-width: 768px) {
-      .tasks-header {
-        flex-direction: column;
-        gap: 1.5rem;
-        text-align: center;
-      }
-
-      .header-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .view-toggle {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .toggle-btn {
-        min-width: auto;
-        justify-content: center;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .filters-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .form-actions {
-        flex-direction: column;
-      }
-
-      .completion-widget {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .task-header {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .task-actions-bottom {
-        flex-wrap: wrap;
-      }
-
-      .bulk-actions {
-        flex-direction: column;
-      }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
-    @media (max-width: 480px) {
-      .tasks-container {
-        padding: 1rem 0.5rem;
-      }
-
-      .header-content h1 {
-        font-size: 2.2rem;
-      }
-
-      .subtitle {
-        font-size: 1rem;
-      }
-
-      .chart-widget,
-      .stat-card,
-      .filters-section,
-      .create-task-form,
-      .task-item {
-        padding: 1.5rem;
-      }
+    /* Error Message */
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fecaca;
+      padding: 1.5rem;
+      text-align: center;
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
-    
+
     /* Modal Styles */
     .modal-overlay {
       position: fixed;
@@ -2552,30 +2685,6 @@ interface Category {
       color: rgba(255, 255, 255, 0.6);
     }
 
-    /* Task Description Style */
-    .task-description {
-      color: rgba(255, 255, 255, 0.8);
-      margin: 0.5rem 0;
-      line-height: 1.4;
-    }
-
-    /* Task Tags Style */
-    .task-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin: 0.5rem 0;
-    }
-
-    .tag-badge-small {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 0.3rem 0.6rem;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-
     /* Form Control Style */
     .form-control {
       width: 100%;
@@ -2626,6 +2735,126 @@ interface Category {
 
     .tag-remove:hover {
       background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .charts-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .bottom-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .tasks-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tasks-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+      }
+
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .view-toggle {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .toggle-btn {
+        min-width: auto;
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .completion-widget {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .tasks-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .task-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .task-main-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .task-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .task-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .task-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .bulk-actions {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tasks-container {
+        padding: 1rem 0.5rem;
+      }
+
+      .header-content h1 {
+        font-size: 2.2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .chart-widget,
+      .stat-card,
+      .filters-section,
+      .create-task-form,
+      .task-card {
+        padding: 1.5rem;
+      }
+      
+      .tasks-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
@@ -3144,6 +3373,15 @@ export class TasksComponent implements OnInit {
   showAllCategories(): void {
     this.activeView = 'list';
     this.selectedCategory = '';
+  }
+
+  // NEW: Check if task is overdue
+  isOverdue(dueDate: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const taskDueDate = new Date(dueDate);
+    taskDueDate.setHours(0, 0, 0, 0);
+    return taskDueDate < today;
   }
 
   // Sample insight methods
