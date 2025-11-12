@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
+import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
 import { 
   Task, 
@@ -48,6 +49,7 @@ interface Category {
   imports: [
     FormsModule, 
     CalendarViewComponent,
+    KanbanBoardComponent,
     CommonModule,
     RouterLink
   ],
@@ -94,10 +96,18 @@ interface Category {
               </button>
               <button 
                 class="toggle-btn" 
+                [class.active]="activeView === 'kanban'"
+                (click)="activeView = 'kanban'"
+              >
+                <span class="toggle-icon">📊</span>
+                <span class="toggle-text">Kanban Board</span>
+              </button>
+              <button 
+                class="toggle-btn" 
                 [class.active]="activeView === 'stats'"
                 (click)="activeView = 'stats'"
               >
-                <span class="toggle-icon">📊</span>
+                <span class="toggle-icon">📈</span>
                 <span class="toggle-text">Analytics</span>
               </button>
               <button 
@@ -114,6 +124,11 @@ interface Category {
           <!-- Calendar View -->
           @if (activeView === 'calendar') {
             <app-calendar-view></app-calendar-view>
+          }
+
+          <!-- Kanban Board View -->
+          @if (activeView === 'kanban') {
+            <app-kanban-board></app-kanban-board>
           }
 
           <!-- Tag Manager Modal -->
@@ -730,6 +745,65 @@ interface Category {
                 }
               </div>
             </div>
+
+            <!-- Sorting Controls -->
+            @if (smartFilteredTasks.length > 0) {
+              <div class="sorting-controls glass-card">
+                <div class="sorting-header">
+                  <h4>Sort Tasks</h4>
+                  <span class="sorting-info">
+                    {{ smartFilteredTasks.length }} tasks sorted by {{ sortField }} ({{ sortDirection }})
+                  </span>
+                </div>
+                <div class="sorting-options">
+                  <button 
+                    class="sort-btn" 
+                    [class.active]="sortField === 'dueDate'"
+                    (click)="sortTasks('dueDate')"
+                  >
+                    <span class="sort-icon">📅</span>
+                    Due Date
+                    <span class="sort-direction">{{ getSortIcon('dueDate') }}</span>
+                  </button>
+                  <button 
+                    class="sort-btn" 
+                    [class.active]="sortField === 'priority'"
+                    (click)="sortTasks('priority')"
+                  >
+                    <span class="sort-icon">🎯</span>
+                    Priority
+                    <span class="sort-direction">{{ getSortIcon('priority') }}</span>
+                  </button>
+                  <button 
+                    class="sort-btn" 
+                    [class.active]="sortField === 'title'"
+                    (click)="sortTasks('title')"
+                  >
+                    <span class="sort-icon">📝</span>
+                    Title
+                    <span class="sort-direction">{{ getSortIcon('title') }}</span>
+                  </button>
+                  <button 
+                    class="sort-btn" 
+                    [class.active]="sortField === 'category'"
+                    (click)="sortTasks('category')"
+                  >
+                    <span class="sort-icon">📂</span>
+                    Category
+                    <span class="sort-direction">{{ getSortIcon('category') }}</span>
+                  </button>
+                  <button 
+                    class="sort-btn" 
+                    [class.active]="sortField === 'createdAt'"
+                    (click)="sortTasks('createdAt')"
+                  >
+                    <span class="sort-icon">🕒</span>
+                    Created
+                    <span class="sort-direction">{{ getSortIcon('createdAt') }}</span>
+                  </button>
+                </div>
+              </div>
+            }
           }
 
           <!-- Create/Edit Task Form (only show in list view) -->
@@ -1266,6 +1340,71 @@ interface Category {
       background: rgba(255, 255, 255, 0.1);
       color: white;
       transform: translateY(-1px);
+    }
+
+    /* Sorting Controls */
+    .sorting-controls {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sorting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .sorting-header h4 {
+      margin: 0;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .sorting-info {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+
+    .sorting-options {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .sort-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .sort-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .sort-btn.active {
+      background: rgba(102, 126, 234, 0.3);
+      border-color: rgba(102, 126, 234, 0.5);
+      color: white;
+    }
+
+    .sort-icon {
+      font-size: 1rem;
+    }
+
+    .sort-direction {
+      font-weight: bold;
+      margin-left: 0.25rem;
     }
 
     /* BEAUTIFUL TASKS GRID STYLES */
@@ -2829,6 +2968,10 @@ interface Category {
       .bulk-actions {
         flex-direction: column;
       }
+
+      .sorting-options {
+        flex-direction: column;
+      }
     }
 
     @media (max-width: 480px) {
@@ -2867,7 +3010,7 @@ export class TasksComponent implements OnInit {
   errorMessage: string = '';
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
-  activeView: 'list' | 'stats' | 'calendar' = 'list';
+  activeView: 'list' | 'stats' | 'calendar' | 'kanban' = 'list';
   editingTaskId: number | null = null;
   availableTags: string[] = [];
 
@@ -2916,6 +3059,10 @@ export class TasksComponent implements OnInit {
   smartFilterTime: string = 'all';
   smartFilterDifficulty: string = 'all';
   smartFilterFocus: string = 'all';
+
+  // Sorting
+  sortField: 'title' | 'dueDate' | 'priority' | 'createdAt' | 'category' = 'dueDate';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Enhanced Categories System
   categories: Category[] = [
@@ -3146,7 +3293,7 @@ export class TasksComponent implements OnInit {
     return this.tagsWithCount.filter(tag => tag.selected);
   }
 
-  // UPDATED: Use smart filtered tasks
+  // UPDATED: Use smart filtered tasks with sorting
   get filteredTasks(): Task[] {
     return this.tasks.filter(task => {
       // Search filter
@@ -3235,7 +3382,8 @@ export class TasksComponent implements OnInit {
       });
     }
 
-    return tasks;
+    // Apply sorting
+    return this.applySortingToTasks(tasks);
   }
 
   get hasActiveFilters(): boolean {
@@ -3672,62 +3820,118 @@ export class TasksComponent implements OnInit {
   get organizedTasks(): { context: string; tasks: Task[] }[] {
     return this.taskService.organizeTasksByContext(this.filteredTasks);
   }
+
+  // NEW: Sorting methods
+  sortTasks(field: 'title' | 'dueDate' | 'priority' | 'createdAt' | 'category'): void {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    // Sorting is applied in the smartFilteredTasks getter
+  }
+
+  applySortingToTasks(tasks: Task[]): Task[] {
+    return [...tasks].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (this.sortField) {
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'dueDate':
+          aValue = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+          bValue = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+          break;
+        case 'priority':
+          aValue = a.priority;
+          bValue = b.priority;
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case 'category':
+          aValue = a.category || 'ZZZ';
+          bValue = b.category || 'ZZZ';
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  getSortIcon(field: string): string {
+    if (this.sortField !== field) return '↕️';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
   
   onCreateTask(): void {
-  if (!this.newTaskTitle.trim()) {
-    this.errorMessage = 'Task title is required';
-    return;
-  }
+    if (!this.newTaskTitle.trim()) {
+      this.errorMessage = 'Task title is required';
+      return;
+    }
 
-  // Create the task data object with proper type handling
-  const taskData = {
-    title: this.newTaskTitle,
-    description: this.newTaskDescription,
-    dueDate: this.newTaskDueDate || undefined,
-    priority: this.newTaskPriority,
-    category: this.newTaskCategory || 'Other',
-    tags: this.newTaskTags,
-    isRecurring: this.newTaskIsRecurring,
-    recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
-    recurrenceInterval: this.newTaskRecurrenceInterval,
-    estimatedDuration: this.newTaskEstimatedDuration || undefined, // Convert null to undefined
-    difficulty: this.newTaskDifficulty as TaskDifficulty
-  };
+    // Create the task data object with proper type handling
+    const taskData = {
+      title: this.newTaskTitle,
+      description: this.newTaskDescription,
+      dueDate: this.newTaskDueDate || undefined,
+      priority: this.newTaskPriority,
+      category: this.newTaskCategory || 'Other',
+      tags: this.newTaskTags,
+      isRecurring: this.newTaskIsRecurring,
+      recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
+      recurrenceInterval: this.newTaskRecurrenceInterval,
+      estimatedDuration: this.newTaskEstimatedDuration || undefined, // Convert null to undefined
+      difficulty: this.newTaskDifficulty as TaskDifficulty
+    };
 
-  if (this.editingTaskId) {
-    // For update, you can use taskData directly since it matches UpdateTaskRequest
-    this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
-      next: (updatedTask: Task) => {
-        const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
-        if (index !== -1) {
-          this.tasks[index] = updatedTask;
+    if (this.editingTaskId) {
+      // For update, you can use taskData directly since it matches UpdateTaskRequest
+      this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
+        next: (updatedTask: Task) => {
+          const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
+          if (index !== -1) {
+            this.tasks[index] = updatedTask;
+          }
+          this.resetForm();
+          this.showCreateForm = false;
+          this.editingTaskId = null;
+          this.errorMessage = '';
+        },
+        error: (error: any) => {
+          this.errorMessage = 'Failed to update task. Please try again.';
+          console.error('Error updating task:', error);
         }
-        this.resetForm();
-        this.showCreateForm = false;
-        this.editingTaskId = null;
-        this.errorMessage = '';
-      },
-      error: (error: any) => {
-        this.errorMessage = 'Failed to update task. Please try again.';
-        console.error('Error updating task:', error);
-      }
-    });
-  } else {
-    // For create, use taskData directly
-    this.taskService.createTask(taskData).subscribe({
-      next: (newTask: Task) => {
-        this.tasks.unshift(newTask);
-        this.resetForm();
-        this.showCreateForm = false;
-        this.errorMessage = '';
-      },
-      error: (error: any) => {
-        this.errorMessage = 'Failed to create task. Please try again.';
-        console.error('Error creating task:', error);
-      }
-    });
+      });
+    } else {
+      // For create, use taskData directly
+      this.taskService.createTask(taskData).subscribe({
+        next: (newTask: Task) => {
+          this.tasks.unshift(newTask);
+          this.resetForm();
+          this.showCreateForm = false;
+          this.errorMessage = '';
+        },
+        error: (error: any) => {
+          this.errorMessage = 'Failed to create task. Please try again.';
+          console.error('Error creating task:', error);
+        }
+      });
+    }
   }
-}
     
   
   // FIXED: Added missing onToggleComplete method

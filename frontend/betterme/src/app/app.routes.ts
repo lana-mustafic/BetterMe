@@ -64,6 +64,15 @@ export const routes: Routes = [
       breadcrumb: 'Create Task'
     }
   },
+  { 
+    path: 'tasks/kanban', 
+    component: TasksComponent,
+    canActivate: [authGuard],
+    data: { 
+      title: 'Kanban Board - TaskFlow',
+      breadcrumb: 'Kanban Board'
+    }
+  },
 
   // Profile Routes
   { 
