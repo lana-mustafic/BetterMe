@@ -11,41 +11,93 @@ import { ChangePasswordComponent } from './pages/password/change-password.compon
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { 
+    path: '', 
+    component: HomeComponent,
+    data: { title: 'Home - TaskFlow' }
+  },
+  { 
+    path: 'login', 
+    component: LoginComponent,
+    data: { title: 'Login - TaskFlow' }
+  },
+  { 
+    path: 'register', 
+    component: RegisterComponent,
+    data: { title: 'Register - TaskFlow' }
+  },
 
+  // Tasks Routes
   { 
     path: 'tasks', 
     component: TasksComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'My Tasks - TaskFlow',
+      breadcrumb: 'Tasks'
+    }
   },
   { 
     path: 'tasks/:id', 
     component: TaskDetailComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'Task Details - TaskFlow',
+      breadcrumb: 'Task Details'
+    }
   },
   { 
     path: 'tasks/:id/edit',
     component: EditTaskComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'Edit Task - TaskFlow',
+      breadcrumb: 'Edit Task'
+    }
+  },
+  { 
+    path: 'tasks/new',
+    component: EditTaskComponent,
+    canActivate: [authGuard],
+    data: { 
+      title: 'Create Task - TaskFlow',
+      breadcrumb: 'Create Task'
+    }
   },
 
+  // Profile Routes
   { 
     path: 'profile', 
     component: ProfileComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'My Profile - TaskFlow',
+      breadcrumb: 'Profile'
+    }
   },
   { 
     path: 'profile/edit',
     component: EditProfileComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'Edit Profile - TaskFlow',
+      breadcrumb: 'Edit Profile'
+    }
   },
   { 
     path: 'profile/change-password',
     component: ChangePasswordComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+    data: { 
+      title: 'Change Password - TaskFlow',
+      breadcrumb: 'Change Password'
+    }
   },
 
-  { path: '**', redirectTo: '' }
+  // Redirect all unknown routes to home
+  { 
+    path: '**', 
+    redirectTo: '',
+    pathMatch: 'full'
+  }
 ];

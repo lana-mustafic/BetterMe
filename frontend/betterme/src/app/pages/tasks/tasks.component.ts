@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
@@ -48,7 +48,8 @@ interface Category {
   imports: [
     FormsModule, 
     CalendarViewComponent,
-    CommonModule
+    CommonModule,
+    RouterLink
   ],
   template: `
     <div class="tasks-page">
@@ -904,19 +905,20 @@ interface Category {
             <div class="task-list">
               @for (task of smartFilteredTasks; track task.id) {
                 <div class="task-item glass-card" [class.completed]="task.completed">
-                  <div class="task-content">
+                  <!-- Clickable task content that navigates to details -->
+                  <div class="task-content clickable" [routerLink]="['/tasks', task.id]">
                     <div class="task-header">
                       <h3 class="task-title">{{ task.title }}</h3>
                       <div class="task-actions">
                         <input 
                           type="checkbox" 
                           [checked]="isTaskSelected(task.id)"
-                          (change)="toggleTaskSelection(task.id)"
+                          (change)="toggleTaskSelection(task.id); $event.stopPropagation()"
                           class="task-checkbox"
                         />
                         <button 
                           class="btn-status" 
-                          (click)="onToggleComplete(task.id)"
+                          (click)="onToggleComplete(task.id); $event.stopPropagation()"
                           [class.completed]="task.completed"
                         >
                           {{ task.completed ? '✅' : '⏳' }}
@@ -987,14 +989,19 @@ interface Category {
                         <span class="priority-medium">⚡ Medium Priority</span>
                       }
                     </div>
-                    <div class="task-actions-bottom">
-                      <button class="btn-small btn-edit" (click)="onEditTask(task)">
-                        Edit
-                      </button>
-                      <button class="btn-small btn-danger" (click)="onDeleteTask(task.id)">
-                        Delete
-                      </button>
-                    </div>
+                  </div>
+                  
+                  <!-- Action buttons that don't trigger navigation -->
+                  <div class="task-actions-bottom">
+                    <button class="btn-small btn-edit" (click)="onEditTask(task); $event.stopPropagation()">
+                      Edit
+                    </button>
+                    <button class="btn-small btn-danger" (click)="onDeleteTask(task.id); $event.stopPropagation()">
+                      Delete
+                    </button>
+                    <button class="btn-small btn-primary" [routerLink]="['/tasks', task.id]" (click)="$event.stopPropagation()">
+                      View Details
+                    </button>
                   </div>
                 </div>
               } @empty {
@@ -1034,6 +1041,25 @@ interface Category {
 
     .btn-edit:hover {
       background: rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-primary {
+      background: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-primary:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+
+    .clickable {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .clickable:hover {
+      transform: translateY(-2px);
     }
 
     .background-animation {
@@ -2122,6 +2148,9 @@ interface Category {
       display: flex;
       gap: 1rem;
       align-items: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .btn-small {
@@ -2602,6 +2631,7 @@ interface Category {
 })
 export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
+  private router = inject(Router);
 
   tasks: Task[] = [];
   isLoading: boolean = false;
