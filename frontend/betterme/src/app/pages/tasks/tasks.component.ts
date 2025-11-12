@@ -13,7 +13,6 @@ import {
   TaskDifficulty      
 } from '../../models/task.model';
 
-
 interface TagWithCount {
   name: string;
   count: number;
@@ -42,7 +41,6 @@ interface Category {
   icon: string;
   custom?: boolean;
 }
-
 
 @Component({
   selector: 'app-tasks',
@@ -517,7 +515,7 @@ interface Category {
           @if (activeView === 'list') {
             <div class="filters-section glass-card">
               <div class="filters-header">
-                <h3>Filters</h3>
+                <h3>Smart Filters</h3>
                 @if (hasActiveFilters) {
                   <button class="btn-clear-filters" (click)="clearFilters()">
                     Clear All Filters
@@ -629,6 +627,35 @@ interface Category {
                     <option value="time-consuming">⏳ Time-consuming (>1hr)</option>
                   </select>
                 </div>
+
+                <!-- Smart Difficulty Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Difficulty</label>
+                  <select
+                    class="filter-select"
+                    [(ngModel)]="smartFilterDifficulty"
+                    (change)="onFiltersChange()"
+                  >
+                    <option value="all">Any Difficulty</option>
+                    <option value="easy">😊 Easy</option>
+                    <option value="medium">😐 Medium</option>
+                    <option value="hard">😰 Hard</option>
+                  </select>
+                </div>
+
+                <!-- Smart Focus Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Focus Required</label>
+                  <select
+                    class="filter-select"
+                    [(ngModel)]="smartFilterFocus"
+                    (change)="onFiltersChange()"
+                  >
+                    <option value="all">Any Focus</option>
+                    <option value="high-focus">🎯 Deep Focus</option>
+                    <option value="low-focus">🧘 Light Focus</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Active Filters Display -->
@@ -662,7 +689,7 @@ interface Category {
                     }
                     @if (smartFilterContext !== 'all') {
                       <span class="active-filter">
-                        Context: {{ smartFilterContext }}
+                        Context: {{ getContextDisplayName(smartFilterContext) }}
                         <button (click)="smartFilterContext = 'all'">×</button>
                       </span>
                     }
@@ -676,6 +703,18 @@ interface Category {
                       <span class="active-filter">
                         Time: {{ smartFilterTime === 'quick' ? 'Quick' : 'Time-consuming' }}
                         <button (click)="smartFilterTime = 'all'">×</button>
+                      </span>
+                    }
+                    @if (smartFilterDifficulty !== 'all') {
+                      <span class="active-filter">
+                        Difficulty: {{ getDifficultyDisplayName(smartFilterDifficulty) }}
+                        <button (click)="smartFilterDifficulty = 'all'">×</button>
+                      </span>
+                    }
+                    @if (smartFilterFocus !== 'all') {
+                      <span class="active-filter">
+                        Focus: {{ smartFilterFocus === 'high-focus' ? 'Deep Focus' : 'Light Focus' }}
+                        <button (click)="smartFilterFocus = 'all'">×</button>
                       </span>
                     }
                   </div>
@@ -806,6 +845,33 @@ interface Category {
                     <option value="3">High</option>
                   </select>
                 </div>
+
+                <!-- Smart Task Properties -->
+                <div class="form-group">
+                  <label class="form-label">Estimated Duration (minutes)</label>
+                  <input 
+                    type="number" 
+                    class="form-input"
+                    placeholder="e.g., 30"
+                    [(ngModel)]="newTaskEstimatedDuration"
+                    name="estimatedDuration"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Difficulty</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskDifficulty"
+                    name="difficulty"
+                  >
+                    <option value="easy">😊 Easy</option>
+                    <option value="medium">😐 Medium</option>
+                    <option value="hard">😰 Hard</option>
+                  </select>
+                </div>
+
                 <div class="form-actions">
                   <button type="submit" class="btn btn-gradient">
                     {{ editingTaskId ? 'Update Task' : 'Create Task' }}
@@ -886,6 +952,25 @@ interface Category {
                         }
                       </div>
                     }
+
+                    <!-- Smart Task Properties -->
+                    <div class="smart-properties">
+                      @if (task.estimatedDuration) {
+                        <span class="property-badge">
+                          ⏱️ {{ task.estimatedDuration }}min
+                        </span>
+                      }
+                      @if (task.difficulty) {
+                        <span class="property-badge" [class]="'difficulty-' + task.difficulty">
+                          {{ getDifficultyIcon(task.difficulty) }} {{ task.difficulty }}
+                        </span>
+                      }
+                      @if (this.getTaskContext(task)) {
+                        <span class="property-badge">
+                          {{ getContextIcon(this.getTaskContext(task)) }} {{ this.getTaskContext(task) }}
+                        </span>
+                      }
+                    </div>
                     
                     <div class="task-meta">
                       <span class="task-date">
@@ -1972,6 +2057,42 @@ interface Category {
       font-size: 0.9rem;
     }
 
+    /* Smart Properties */
+    .smart-properties {
+      display: flex;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .property-badge {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .property-badge.difficulty-easy {
+      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    .property-badge.difficulty-medium {
+      background: rgba(245, 158, 11, 0.3);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .property-badge.difficulty-hard {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
     .task-meta {
       display: flex;
       gap: 1rem;
@@ -2503,6 +2624,8 @@ export class TasksComponent implements OnInit {
   newTaskIsRecurring: boolean = false;
   newTaskRecurrencePattern: string = 'daily';
   newTaskRecurrenceInterval: number = 1;
+  newTaskEstimatedDuration: number | null = null;
+  newTaskDifficulty: string = 'medium';
 
   // Filter fields
   searchTerm: string = '';
@@ -2532,6 +2655,8 @@ export class TasksComponent implements OnInit {
   smartFilterContext: string = 'all';
   smartFilterEnergy: string = 'all';
   smartFilterTime: string = 'all';
+  smartFilterDifficulty: string = 'all';
+  smartFilterFocus: string = 'all';
 
   // Enhanced Categories System
   categories: Category[] = [
@@ -2796,14 +2921,14 @@ export class TasksComponent implements OnInit {
     });
   }
 
-  // NEW: Smart filtering
+  // NEW: Smart filtering with all options
   get smartFilteredTasks(): Task[] {
     let tasks = this.filteredTasks;
 
     // Context filter
     if (this.smartFilterContext !== 'all') {
       tasks = tasks.filter(task => {
-        const context = this.taskService.organizeTasksByContext([task])[0]?.context;
+        const context = this.getTaskContext(task);
         return context === this.smartFilterContext;
       });
     }
@@ -2832,6 +2957,25 @@ export class TasksComponent implements OnInit {
       });
     }
 
+    // Difficulty filter
+    if (this.smartFilterDifficulty !== 'all') {
+      tasks = tasks.filter(task => {
+        return task.difficulty === this.smartFilterDifficulty;
+      });
+    }
+
+    // Focus filter
+    if (this.smartFilterFocus !== 'all') {
+      tasks = tasks.filter(task => {
+        if (this.smartFilterFocus === 'high-focus') {
+          return task.tags?.includes('deep-focus') || task.difficulty === 'hard';
+        } else if (this.smartFilterFocus === 'low-focus') {
+          return task.tags?.includes('light-focus') || task.difficulty === 'easy';
+        }
+        return true;
+      });
+    }
+
     return tasks;
   }
 
@@ -2842,7 +2986,9 @@ export class TasksComponent implements OnInit {
            this.selectedPriority !== 'all' ||
            this.smartFilterContext !== 'all' ||
            this.smartFilterEnergy !== 'all' ||
-           this.smartFilterTime !== 'all';
+           this.smartFilterTime !== 'all' ||
+           this.smartFilterDifficulty !== 'all' ||
+           this.smartFilterFocus !== 'all';
   }
 
   ngOnInit(): void {
@@ -3035,6 +3181,8 @@ export class TasksComponent implements OnInit {
     this.smartFilterContext = 'all';
     this.smartFilterEnergy = 'all';
     this.smartFilterTime = 'all';
+    this.smartFilterDifficulty = 'all';
+    this.smartFilterFocus = 'all';
   }
   
   clearSearch(): void { this.searchTerm = ''; }
@@ -3051,6 +3199,75 @@ export class TasksComponent implements OnInit {
       case 1: return 'Low';
       default: return 'All';
     }
+  }
+
+  // NEW: Smart filter helper methods
+  getContextDisplayName(context: string): string {
+    const contextMap: { [key: string]: string } = {
+      'home': '🏠 Home',
+      'work': '💼 Work',
+      'errands': '🛒 Errands',
+      'calls': '📞 Calls',
+      'computer': '💻 Computer',
+      'other': '📦 Other'
+    };
+    return contextMap[context] || context;
+  }
+
+  getDifficultyDisplayName(difficulty: string): string {
+    const difficultyMap: { [key: string]: string } = {
+      'easy': '😊 Easy',
+      'medium': '😐 Medium',
+      'hard': '😰 Hard'
+    };
+    return difficultyMap[difficulty] || difficulty;
+  }
+
+  getContextIcon(context: string): string {
+    const contextIcons: { [key: string]: string } = {
+      'home': '🏠',
+      'work': '💼',
+      'errands': '🛒',
+      'calls': '📞',
+      'computer': '💻',
+      'other': '📦'
+    };
+    return contextIcons[context] || '📦';
+  }
+
+  getDifficultyIcon(difficulty: string): string {
+    const difficultyIcons: { [key: string]: string } = {
+      'easy': '😊',
+      'medium': '😐',
+      'hard': '😰'
+    };
+    return difficultyIcons[difficulty] || '😐';
+  }
+
+  // NEW: Smart task context detection
+  getTaskContext(task: Task): string {
+    // Check tags first
+    if (task.tags) {
+      if (task.tags.includes('home') || task.tags.includes('personal')) return 'home';
+      if (task.tags.includes('work') || task.tags.includes('office')) return 'work';
+      if (task.tags.includes('errands') || task.tags.includes('shopping')) return 'errands';
+      if (task.tags.includes('calls') || task.tags.includes('phone')) return 'calls';
+      if (task.tags.includes('computer') || task.tags.includes('digital')) return 'computer';
+    }
+    
+    // Check category
+    if (task.category) {
+      const categoryLower = task.category.toLowerCase();
+      if (categoryLower.includes('personal') || categoryLower.includes('home')) return 'home';
+      if (categoryLower.includes('work') || categoryLower.includes('business')) return 'work';
+      if (categoryLower.includes('shopping') || categoryLower.includes('errands')) return 'errands';
+      if (categoryLower.includes('health') || categoryLower.includes('medical')) return 'other';
+      if (categoryLower.includes('education') || categoryLower.includes('learning')) return 'other';
+      if (categoryLower.includes('finance') || categoryLower.includes('money')) return 'other';
+      if (categoryLower.includes('travel')) return 'other';
+    }
+    
+    return 'other';
   }
 
   // Tag Management Methods
@@ -3194,18 +3411,19 @@ export class TasksComponent implements OnInit {
     return;
   }
 
-  // Create the task data object
+  // Create the task data object with proper type handling
   const taskData = {
     title: this.newTaskTitle,
     description: this.newTaskDescription,
-    dueDate: this.newTaskDueDate || null,
+    dueDate: this.newTaskDueDate || undefined,
     priority: this.newTaskPriority,
     category: this.newTaskCategory || 'Other',
     tags: this.newTaskTags,
     isRecurring: this.newTaskIsRecurring,
     recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
-    recurrenceInterval: this.newTaskRecurrenceInterval
-    // Remove estimatedDuration and difficulty since they don't exist in your taskData
+    recurrenceInterval: this.newTaskRecurrenceInterval,
+    estimatedDuration: this.newTaskEstimatedDuration || undefined, // Convert null to undefined
+    difficulty: this.newTaskDifficulty as TaskDifficulty
   };
 
   if (this.editingTaskId) {
@@ -3268,6 +3486,8 @@ export class TasksComponent implements OnInit {
     this.newTaskPriority = task.priority;
     this.newTaskCategory = task.category || '';
     this.newTaskTags = task.tags || [];
+    this.newTaskEstimatedDuration = task.estimatedDuration || null;
+    this.newTaskDifficulty = task.difficulty || 'medium';
     
     // Store the task ID being edited
     this.editingTaskId = task.id;
@@ -3319,6 +3539,8 @@ export class TasksComponent implements OnInit {
     this.newTaskIsRecurring = false;
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
+    this.newTaskEstimatedDuration = null;
+    this.newTaskDifficulty = 'medium';
     this.editingTaskId = null;
     this.suggestedCategory = null;
     this.suggestedTags = [];
