@@ -4,11 +4,44 @@ import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern } from '../../models/task.model';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, CdkDragPlaceholder, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+
+// Productivity Interfaces
+interface EisenhowerCategory {
+  id: 'urgent-important' | 'urgent-not-important' | 'not-urgent-important' | 'not-urgent-not-important';
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+interface TimeBlock {
+  id: number;
+  taskId: number;
+  startTime: string;
+  endTime: string;
+  date: string;
+  duration: number;
+  completed: boolean;
+  title?: string;
+}
+
+interface ProductivitySettings {
+  enableEatTheFrog: boolean;
+  defaultTimeBlockDuration: number;
+  reminderNotifications: boolean;
+  reminderTime: number;
+  workingHours: {
+    start: string;
+    end: string;
+  };
+}
+
 interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
   isToday: boolean;
   tasks: Task[];
+  timeBlocks: TimeBlock[];
 }
 
 interface Category {
@@ -46,7 +79,7 @@ interface EditModalData {
 
       <div class="container">
         <div class="calendar-container">
-          <!-- Header Section -->
+          <!-- Header Section with Productivity Features -->
           <div class="calendar-header glass-card">
             <div class="header-content">
               <div class="calendar-nav-section">
@@ -94,6 +127,22 @@ interface EditModalData {
                 </div>
               </div>
 
+              <!-- Productivity Quick Actions -->
+              <div class="productivity-actions">
+                <button class="productivity-btn" (click)="showEisenhowerMatrix()" title="Eisenhower Matrix">
+                  <span class="btn-icon">🎯</span>
+                  Priority Matrix
+                </button>
+                <button class="productivity-btn" (click)="showTimeBlocking()" title="Time Blocking">
+                  <span class="btn-icon">⏰</span>
+                  Time Blocks
+                </button>
+                <button class="productivity-btn frog-btn" *ngIf="eatTheFrogTask" (click)="focusOnFrogTask()" title="Eat the Frog - Tackle most important task">
+                  <span class="btn-icon">🐸</span>
+                  Eat the Frog
+                </button>
+              </div>
+
               <div class="calendar-stats">
                 <div class="stat-badge">
                   <span class="stat-icon">📊</span>
@@ -107,13 +156,31 @@ interface EditModalData {
                   <span class="stat-icon">⏳</span>
                   <span class="stat-text">{{ getPendingTasksCount() }} Pending</span>
                 </div>
+                <div class="stat-badge" *ngIf="eatTheFrogTask">
+                  <span class="stat-icon">🐸</span>
+                  <span class="stat-text">1 Frog</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Eat the Frog Banner -->
+            <div class="frog-banner" *ngIf="eatTheFrogTask && productivitySettings.enableEatTheFrog">
+              <div class="frog-content">
+                <span class="frog-icon">🐸</span>
+                <div class="frog-text">
+                  <strong>Eat the Frog:</strong> {{ eatTheFrogTask.title }}
+                  <span class="frog-priority" [style.background]="getPriorityColor(eatTheFrogTask.priority)">
+                    {{ getPriorityText(eatTheFrogTask.priority) }} Priority
+                  </span>
+                </div>
+                <button class="frog-action-btn" (click)="startFrogTask()">Start Now</button>
               </div>
             </div>
           </div>
 
           <!-- Main Calendar Content -->
           <div class="calendar-content">
-            <!-- Month View -->
+            <!-- Month View with Time Blocks -->
             @if (viewMode === 'month') {
               <div class="month-view glass-card">
                 <div class="calendar-grid">
@@ -128,6 +195,7 @@ interface EditModalData {
                       [class.today]="day.isToday"
                       [class.has-tasks]="day.tasks.length > 0"
                       [class.has-completed-tasks]="hasCompletedTasks(day.tasks)"
+                      [class.has-time-blocks]="day.timeBlocks.length > 0"
                     >
                       <div class="day-header">
                         <span class="day-number">{{ day.date.getDate() }}</span>
@@ -135,6 +203,19 @@ interface EditModalData {
                           <span class="today-badge">Today</span>
                         }
                       </div>
+                      
+                      <!-- Time Blocks Visualization -->
+                      @if (day.timeBlocks.length > 0) {
+                        <div class="time-block-indicators">
+                          @for (block of getTopTimeBlocks(day.timeBlocks, 2); track block.id) {
+                            <div 
+                              class="time-block-indicator"
+                              [style.background]="getTimeBlockColor(block)"
+                              [title]="getTimeBlockTooltip(block)"
+                            ></div>
+                          }
+                        </div>
+                      }
                       
                       @if (day.tasks.length > 0) {
                         <div class="task-indicators">
@@ -172,6 +253,12 @@ interface EditModalData {
                                 title="Add task">
                           <span class="action-icon">+</span>
                         </button>
+
+                        <button class="action-btn time-block-btn" 
+                                (click)="addTimeBlockToDay(day)"
+                                title="Add time block">
+                          <span class="action-icon">⏰</span>
+                        </button>
                       </div>
                     </div>
                   }
@@ -179,7 +266,7 @@ interface EditModalData {
               </div>
             }
 
-            <!-- Week View -->
+            <!-- Week View with Enhanced Time Blocking -->
             @if (viewMode === 'week') {
               <div class="week-view glass-card">
                 <div class="week-header">
@@ -195,8 +282,8 @@ interface EditModalData {
                         <span class="completed-count">{{ getCompletedTasksForDate(day) }}</span>
                         <span class="total-count">/{{ getTasksForDate(day).length }}</span>
                       </div>
-                      <div class="add-task-hint-week">
-                        <span class="plus-icon">+</span>
+                      <div class="time-block-count" *ngIf="getTimeBlocksForDate(day).length > 0">
+                        ⏰ {{ getTimeBlocksForDate(day).length }}
                       </div>
                     </div>
                   }
@@ -212,6 +299,18 @@ interface EditModalData {
                       (cdkDropListDropped)="onTaskDrop($event)"
                       (click)="onWeekDayColumnClick(day, $event)"
                     >
+                      <!-- Time Blocks Section -->
+                      <div class="time-blocks-section" *ngIf="getTimeBlocksForDate(day).length > 0">
+                        <div class="time-blocks-title">Time Blocks:</div>
+                        @for (block of getTimeBlocksForDate(day); track block.id) {
+                          <div class="week-time-block" [style.background]="getTimeBlockColor(block)">
+                            <div class="time-block-time">{{ formatTime(block.startTime) }} - {{ formatTime(block.endTime) }}</div>
+                            <div class="time-block-title">{{ block.title || 'Time Block' }}</div>
+                            <button class="time-block-complete" (click)="completeTimeBlock(block.id)">✓</button>
+                          </div>
+                        }
+                      </div>
+
                       <div class="week-day-tasks">
                         @for (task of getTasksForDate(day); track task.id) {
                           <div 
@@ -219,6 +318,7 @@ interface EditModalData {
                             cdkDrag
                             [class.completed]="task.completed"
                             [class.loading]="updatingTaskIds.has(task.id)"
+                            [class.frog-task]="task.id === eatTheFrogTask?.id"
                           >
                             <div class="drag-handle" cdkDragHandle>
                               <span class="drag-icon">⣿</span>
@@ -232,6 +332,9 @@ interface EditModalData {
                                 @if (task.completed) {
                                   <span class="completion-check">✓</span>
                                 }
+                                @if (task.id === eatTheFrogTask?.id) {
+                                  <span class="frog-indicator">🐸</span>
+                                }
                                 {{ task.title }}
                                 @if (updatingTaskIds.has(task.id)) {
                                   <span class="loading-spinner-small"></span>
@@ -239,10 +342,22 @@ interface EditModalData {
                               </div>
                               <div class="week-task-meta">
                                 <span class="week-task-time">{{ formatTime(task.dueDate) }}</span>
+                                <span class="eisenhower-badge" [style.background]="getEisenhowerCategory(task)?.color">
+                                  {{ getEisenhowerCategory(task)?.name }}
+                                </span>
                                 @if (task.completed) {
                                   <span class="completed-badge">Completed</span>
                                 }
                               </div>
+                            </div>
+
+                            <div class="task-quick-actions">
+                              <button class="quick-action-btn" (click)="scheduleTimeBlock(task, day, $event)" title="Schedule Time Block">
+                                ⏰
+                              </button>
+                              <button class="quick-action-btn" (click)="setTaskPriority(task.id, 'urgent-important', $event)" title="Mark as Urgent & Important">
+                                🚨
+                              </button>
                             </div>
                           </div>
                         }
@@ -290,9 +405,6 @@ interface EditModalData {
                               {{ getCompletedTasksForMonth(monthData.tasks) }}/{{ monthData.tasks.length }}
                             </span>
                           </div>
-                        </div>
-                        <div class="add-task-hint-year">
-                          <span class="plus-icon">+</span>
                         </div>
                       </div>
                       
@@ -347,6 +459,163 @@ interface EditModalData {
         </div>
       </div>
 
+      <!-- Eisenhower Matrix Modal -->
+      @if (showEisenhowerModal) {
+        <div class="modal-overlay" (click)="showEisenhowerModal = false">
+          <div class="modal-content eisenhower-modal glass-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>🎯 Eisenhower Matrix</h3>
+              <button class="close-btn" (click)="showEisenhowerModal = false">×</button>
+            </div>
+            
+            <div class="eisenhower-grid">
+              @for (category of eisenhowerMatrix; track category.id) {
+                <div class="eisenhower-quadrant" [style.border-color]="category.color">
+                  <div class="quadrant-header" [style.background]="category.color">
+                    <span class="quadrant-icon">{{ category.icon }}</span>
+                    <h4>{{ category.name }}</h4>
+                    <span class="quadrant-count">{{ getTasksByEisenhowerCategory(category.id).length }}</span>
+                  </div>
+                  
+                  <div class="quadrant-content">
+                    <p class="quadrant-description">{{ category.description }}</p>
+                    
+                    <div class="quadrant-tasks" cdkDropList
+                         [id]="category.id"
+                         [cdkDropListData]="category.id"
+                         (cdkDropListDropped)="onEisenhowerDrop($event)">
+                         
+                      @for (task of getTasksByEisenhowerCategory(category.id); track task.id) {
+                        <div class="quadrant-task" cdkDrag [cdkDragData]="task">
+                          <div class="quadrant-task-content">
+                            <div class="quadrant-task-title">{{ task.title }}</div>
+                            <div class="quadrant-task-meta">
+                              <span class="task-priority" [style.color]="getPriorityColor(task.priority)">
+                                {{ getPriorityText(task.priority) }}
+                              </span>
+                              @if (task.dueDate) {
+                                <span class="task-due">{{ formatTime(task.dueDate) }}</span>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      }
+                      
+                      @if (getTasksByEisenhowerCategory(category.id).length === 0) {
+                        <div class="empty-quadrant">
+                          Drop tasks here
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+            
+            <div class="eisenhower-legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c"></div>
+                <span>Urgent & Important - Do First</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12"></div>
+                <span>Urgent & Not Important - Schedule</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #3498db"></div>
+                <span>Not Urgent & Important - Delegate</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #95a5a6"></div>
+                <span>Not Urgent & Not Important - Eliminate</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Time Blocking Modal -->
+      @if (showTimeBlockModal) {
+        <div class="modal-overlay" (click)="closeTimeBlockModal()">
+          <div class="modal-content time-block-modal glass-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>⏰ Schedule Time Block</h3>
+              <button class="close-btn" (click)="closeTimeBlockModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+              <form (ngSubmit)="saveTimeBlock()">
+                <div class="form-group">
+                  <label class="form-label">Task</label>
+                  <select class="form-control" [(ngModel)]="selectedTimeBlockTaskId" name="task" required>
+                    <option value="">Select a task</option>
+                    @for (task of getPendingTasks(); track task.id) {
+                      <option [value]="task.id">{{ task.title }} ({{ getPriorityText(task.priority) }} Priority)</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" [(ngModel)]="newTimeBlockDate" name="date" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Duration (minutes)</label>
+                    <select class="form-control" [(ngModel)]="newTimeBlockDuration" name="duration">
+                      <option [value]="30">30 minutes</option>
+                      <option [value]="60">1 hour</option>
+                      <option [value]="90">1.5 hours</option>
+                      <option [value]="120">2 hours</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Start Time</label>
+                    <select class="form-control" [(ngModel)]="newTimeBlockStartTime" name="startTime" required>
+                      @for (time of getAvailableTimeSlots(); track time) {
+                        <option [value]="time">{{ time }}</option>
+                      }
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">End Time</label>
+                    <input type="text" class="form-control" [value]="calculateEndTime()" readonly>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" [disabled]="!selectedTimeBlockTaskId">
+                    Schedule Time Block
+                  </button>
+                  <button type="button" class="btn btn-secondary" (click)="closeTimeBlockModal()">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+              
+              <!-- Existing Time Blocks -->
+              <div class="existing-time-blocks" *ngIf="timeBlocks.length > 0">
+                <h4>Scheduled Time Blocks</h4>
+                @for (block of timeBlocks.slice(0, 5); track block.id) {
+                  <div class="time-block-item">
+                    <div class="time-block-info">
+                      <strong>{{ getTaskTitle(block.taskId) }}</strong>
+                      <span>{{ getFormattedBlockDate(block.date) }} | {{ block.startTime }} - {{ block.endTime }}</span>
+                    </div>
+                    <button class="btn-small" (click)="completeTimeBlock(block.id)">✓ Complete</button>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Selected Day Details Modal -->
       @if (selectedDay) {
         <div class="modal-overlay" (click)="selectedDay = null">
@@ -357,9 +626,36 @@ interface EditModalData {
                 <span class="completed-summary">
                   {{ getCompletedTasks(selectedDay.tasks) }} of {{ selectedDay.tasks.length }} completed
                 </span>
+                <span class="time-block-summary" *ngIf="selectedDay.timeBlocks.length > 0">
+                  • {{ selectedDay.timeBlocks.length }} time blocks
+                </span>
               </div>
               <button class="close-btn" (click)="selectedDay = null">×</button>
             </div>
+            
+            <!-- Time Blocks Section -->
+            @if (selectedDay.timeBlocks.length > 0) {
+              <div class="time-blocks-section">
+                <h4>⏰ Time Blocks</h4>
+                @for (block of selectedDay.timeBlocks; track block.id) {
+                  <div class="time-block-card" [class.completed]="block.completed">
+                    <div class="time-block-header">
+                      <span class="time-range">{{ block.startTime }} - {{ block.endTime }}</span>
+                      <span class="time-block-status" [class.completed]="block.completed">
+                        {{ block.completed ? 'Completed' : 'Scheduled' }}
+                      </span>
+                    </div>
+                    <div class="time-block-title">{{ block.title || 'Focus Time' }}</div>
+                    <div class="time-block-actions">
+                      <button class="btn-small" (click)="completeTimeBlock(block.id)">
+                        {{ block.completed ? 'Undo' : 'Complete' }}
+                      </button>
+                      <button class="btn-small btn-danger" (click)="deleteTimeBlock(block.id)">Delete</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
             
             <div class="day-tasks-list">
               @for (task of selectedDay.tasks; track task.id) {
@@ -389,10 +685,16 @@ interface EditModalData {
                       <span class="task-priority" [style.color]="getPriorityColor(task.priority)">
                         {{ getPriorityText(task.priority) }}
                       </span>
+                      <span class="eisenhower-category" [style.background]="getEisenhowerCategory(task)?.color">
+                        {{ getEisenhowerCategory(task)?.name }}
+                      </span>
                     </div>
                   </div>
                   
                   <div class="task-actions">
+                    <button class="btn-small" (click)="scheduleTimeBlock(task, selectedDay.date, $event)">
+                      ⏰ Schedule
+                    </button>
                     <button class="btn-small" 
                             (click)="editTask(task.id)"
                             [disabled]="updatingTaskIds.has(task.id)">
@@ -472,17 +774,33 @@ interface EditModalData {
                     name="dueDate"
                   />
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Priority</label>
-                  <select 
-                    class="form-control"
-                    [(ngModel)]="newTaskPriority"
-                    name="priority"
-                  >
-                    <option value="1">Low</option>
-                    <option value="2">Medium</option>
-                    <option value="3">High</option>
-                  </select>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="newTaskPriority"
+                      name="priority"
+                    >
+                      <option [value]="1">Low</option>
+                      <option [value]="2">Medium</option>
+                      <option [value]="3">High</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Eisenhower Category</label>
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="newTaskEisenhowerCategory"
+                      name="eisenhower"
+                    >
+                      @for (category of eisenhowerMatrix; track category.id) {
+                        <option [value]="category.id">{{ category.icon }} {{ category.name }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
                 
                 <div class="form-actions">
@@ -874,6 +1192,10 @@ interface EditModalData {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(74, 222, 128, 0.1) 100%);
     }
 
+    .calendar-day.has-time-blocks {
+      border-bottom: 3px solid #3498db;
+    }
+
     .day-header {
       display: flex;
       justify-content: space-between;
@@ -894,6 +1216,20 @@ interface EditModalData {
       border-radius: 8px;
       font-size: 0.7rem;
       font-weight: 600;
+    }
+
+    /* Time Block Indicators */
+    .time-block-indicators {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-block-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .task-indicators {
@@ -980,6 +1316,10 @@ interface EditModalData {
 
     .add-task-btn {
       background: #4ade80;
+    }
+
+    .time-block-btn {
+      background: #3498db;
     }
 
     /* Loading Spinners */
@@ -1079,6 +1419,12 @@ interface EditModalData {
       color: rgba(255, 255, 255, 0.6);
     }
 
+    .time-block-count {
+      font-size: 0.8rem;
+      color: #3498db;
+      font-weight: 600;
+    }
+
     .week-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -1103,6 +1449,51 @@ interface EditModalData {
 
     .week-day-column:last-child {
       border-right: none;
+    }
+
+    .time-blocks-section {
+      margin-bottom: 1rem;
+    }
+
+    .time-blocks-title {
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .week-time-block {
+      background: #3498db;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .time-block-time {
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .time-block-title {
+      flex: 2;
+    }
+
+    .time-block-complete {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .week-day-tasks {
@@ -1130,6 +1521,10 @@ interface EditModalData {
     .week-task-item.loading {
       opacity: 0.6;
       pointer-events: none;
+    }
+
+    .week-task-item.frog-task {
+      border-left: 4px solid #27ae60 !important;
     }
 
     .week-task-item.completed .week-task-title {
@@ -1183,6 +1578,10 @@ interface EditModalData {
       font-weight: bold;
     }
 
+    .frog-indicator {
+      font-size: 0.9rem;
+    }
+
     .week-task-meta {
       display: flex;
       gap: 0.75rem;
@@ -1194,6 +1593,14 @@ interface EditModalData {
       color: rgba(255, 255, 255, 0.7);
     }
 
+    .eisenhower-badge {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
     .completed-badge {
       background: #4ade80;
       color: white;
@@ -1201,6 +1608,37 @@ interface EditModalData {
       border-radius: 8px;
       font-size: 0.7rem;
       font-weight: 600;
+    }
+
+    /* Task Quick Actions */
+    .task-quick-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .week-task-item:hover .task-quick-actions {
+      opacity: 1;
+    }
+
+    .quick-action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+    }
+
+    .quick-action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
     }
 
     .drop-zone {
@@ -1440,6 +1878,295 @@ interface EditModalData {
       animation: pulse 2s infinite;
     }
 
+    /* Productivity Features Styles */
+    .productivity-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .productivity-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .productivity-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .frog-btn {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      border-color: #27ae60;
+    }
+
+    .frog-btn:hover {
+      background: linear-gradient(135deg, #229954, #27ae60);
+    }
+
+    .btn-icon {
+      font-size: 1.1rem;
+    }
+
+    .frog-banner {
+      background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.2));
+      border: 1px solid rgba(39, 174, 96, 0.5);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .frog-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .frog-icon {
+      font-size: 1.5rem;
+    }
+
+    .frog-text {
+      flex: 1;
+      color: white;
+      font-weight: 600;
+    }
+
+    .frog-priority {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-left: 1rem;
+    }
+
+    .frog-action-btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .frog-action-btn:hover {
+      background: #229954;
+      transform: scale(1.05);
+    }
+
+    /* Eisenhower Matrix Styles */
+    .eisenhower-modal {
+      max-width: 1000px;
+    }
+
+    .eisenhower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1rem;
+      height: 500px;
+    }
+
+    .eisenhower-quadrant {
+      border: 2px solid;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .quadrant-header {
+      padding: 1rem;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .quadrant-header h4 {
+      margin: 0;
+      flex: 1;
+    }
+
+    .quadrant-count {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .quadrant-content {
+      flex: 1;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      overflow-y: auto;
+    }
+
+    .quadrant-description {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 1rem;
+    }
+
+    .quadrant-tasks {
+      min-height: 100px;
+      height: 100%;
+    }
+
+    .quadrant-task {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: move;
+      transition: all 0.3s ease;
+    }
+
+    .quadrant-task:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(4px);
+    }
+
+    .quadrant-task-title {
+      font-weight: 600;
+      color: white;
+      margin-bottom: 0.25rem;
+    }
+
+    .quadrant-task-meta {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .empty-quadrant {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255, 255, 255, 0.5);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    .eisenhower-legend {
+      display: flex;
+      justify-content: space-around;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    /* Time Block Cards */
+    .time-block-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      border-left: 4px solid #3498db;
+    }
+
+    .time-block-card.completed {
+      opacity: 0.7;
+      border-left-color: #4ade80;
+    }
+
+    .time-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-range {
+      font-weight: 600;
+      color: white;
+    }
+
+    .time-block-status {
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .time-block-status.completed {
+      background: #4ade80;
+      color: white;
+    }
+
+    .time-block-title {
+      font-weight: 600;
+      color: white;
+      margin-bottom: 0.75rem;
+    }
+
+    .time-block-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Existing Time Blocks List */
+    .existing-time-blocks {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .existing-time-blocks h4 {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .time-block-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-block-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .time-block-info strong {
+      color: white;
+    }
+
+    .time-block-info span {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     /* Modal Styles */
     .modal-overlay {
       position: fixed;
@@ -1628,6 +2355,11 @@ interface EditModalData {
       font-weight: 600;
     }
 
+    .time-block-summary {
+      color: #3498db;
+      font-weight: 600;
+    }
+
     .day-tasks-list {
       display: flex;
       flex-direction: column;
@@ -1699,6 +2431,14 @@ interface EditModalData {
     }
 
     .task-priority {
+      font-weight: 600;
+    }
+
+    .eisenhower-category {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.3rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
       font-weight: 600;
     }
 
@@ -1848,6 +2588,27 @@ interface EditModalData {
         margin-top: 0.5rem;
         justify-content: center;
       }
+
+      /* Productivity Features Responsive */
+      .productivity-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .eisenhower-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(4, 1fr);
+        height: 800px;
+      }
+      
+      .eisenhower-legend {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .task-quick-actions {
+        opacity: 1;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1901,6 +2662,7 @@ export class CalendarViewComponent implements OnInit {
   newTaskDueDate: string = '';
   newTaskPriority: number = 2;
   newTaskCategory: string = '';
+  newTaskEisenhowerCategory: string = 'urgent-important';
   newTaskTagInput: string = '';
   newTaskTags: string[] = [];
   newTaskIsRecurring: boolean = false;
@@ -1952,10 +2714,65 @@ export class CalendarViewComponent implements OnInit {
 
   updatingTaskIds = new Set<number>();
 
+  // Productivity Features Properties
+  eisenhowerMatrix: EisenhowerCategory[] = [
+    {
+      id: 'urgent-important',
+      name: 'Do First',
+      description: 'Urgent and important tasks',
+      color: '#e74c3c',
+      icon: '🚨'
+    },
+    {
+      id: 'urgent-not-important',
+      name: 'Schedule',
+      description: 'Urgent but not important tasks',
+      color: '#f39c12',
+      icon: '⏰'
+    },
+    {
+      id: 'not-urgent-important',
+      name: 'Delegate',
+      description: 'Not urgent but important tasks',
+      color: '#3498db',
+      icon: '👥'
+    },
+    {
+      id: 'not-urgent-not-important',
+      name: 'Eliminate',
+      description: 'Not urgent and not important tasks',
+      color: '#95a5a6',
+      icon: '🗑️'
+    }
+  ];
+
+  productivitySettings: ProductivitySettings = {
+    enableEatTheFrog: true,
+    defaultTimeBlockDuration: 60,
+    reminderNotifications: true,
+    reminderTime: 30,
+    workingHours: {
+      start: '09:00',
+      end: '17:00'
+    }
+  };
+
+  timeBlocks: TimeBlock[] = [];
+  showEisenhowerModal = false;
+  showTimeBlockModal = false;
+  selectedTaskForTimeBlock: Task | null = null;
+  
+  // Time Block Form
+  selectedTimeBlockTaskId: number | null = null;
+  newTimeBlockDate: string = '';
+  newTimeBlockStartTime: string = '09:00';
+  newTimeBlockDuration: number = 60;
+
   ngOnInit(): void {
     this.loadTasks();
     this.generateCalendar();
     this.generateWeekView();
+    this.initializeTimeBlocks();
   }
 
   loadTasks(): void {
@@ -1971,6 +2788,14 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
+  // Add this method to your component class
+getFormattedBlockDate(dateString: string): string {
+  if (!dateString) return 'No date';
+  const date = new Date(dateString);
+  return this.formatDate(date);
+}
+
+  // ORIGINAL METHODS
   get currentMonth(): string {
     return this.currentDate.toLocaleDateString('en-US', { month: 'long' });
   }
@@ -2031,12 +2856,14 @@ export class CalendarViewComponent implements OnInit {
       const isCurrentMonth = date.getMonth() === month;
       const isToday = date.toDateString() === today.toDateString();
       const tasks = this.getTasksForDate(date);
+      const timeBlocks = this.getTimeBlocksForDate(date);
       
       this.calendarDays.push({
         date,
         isCurrentMonth,
         isToday,
-        tasks
+        tasks,
+        timeBlocks
       });
       
       currentDate.setDate(currentDate.getDate() + 1);
@@ -2114,7 +2941,7 @@ export class CalendarViewComponent implements OnInit {
     }
   }
 
-    getTotalTasks(): number {
+  getTotalTasks(): number {
     return this.tasks.length;
   }
 
@@ -2162,12 +2989,10 @@ export class CalendarViewComponent implements OnInit {
     this.selectedDay = day;
   }
 
-  // Add this method to handle the disabled state
   isDaySelectable(day: CalendarDay): boolean {
     return day.tasks.length > 0;
   }
 
-  // Enhanced task creation methods
   onDayClick(day: CalendarDay, event: Event): void {
     event.stopPropagation();
     if (!day.isCurrentMonth) return;
@@ -2222,7 +3047,6 @@ export class CalendarViewComponent implements OnInit {
     this.closeMonthSelectionModal();
   }
 
-  // Initialize the task form with default values
   private initializeTaskForm(): void {
     if (this.selectedDateForNewTask) {
       this.newTaskDueDate = this.selectedDateForNewTask.toISOString().split('T')[0];
@@ -2239,17 +3063,14 @@ export class CalendarViewComponent implements OnInit {
     this.newTaskRecurrenceInterval = 1;
   }
 
-  // Get formatted due date for the date input
   getFormattedDueDate(): string {
     return this.newTaskDueDate;
   }
 
-  // Handle due date changes
   onDueDateChange(event: any): void {
     this.newTaskDueDate = event.target.value;
   }
 
-  // Tag management methods
   onTagInputKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ',') {
       event.preventDefault();
@@ -2269,52 +3090,6 @@ export class CalendarViewComponent implements OnInit {
     this.newTaskTags = this.newTaskTags.filter(tag => tag !== tagToRemove);
   }
 
-  // Create task with all the form data
-  createTaskFromModal(): void {
-    if (!this.newTaskTitle.trim()) {
-      return;
-    }
-
-    const newTask: CreateTaskRequest = {
-      title: this.newTaskTitle.trim(),
-      description: this.newTaskDescription,
-      dueDate: this.newTaskDueDate,
-      priority: this.newTaskPriority,
-      category: this.newTaskCategory || 'Other',
-      tags: this.newTaskTags,
-      isRecurring: this.newTaskIsRecurring,
-      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern as RecurrencePattern : 'none',
-      recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
-    };
-
-    this.taskService.createTask(newTask).subscribe({
-      next: (createdTask) => {
-        this.tasks.push(createdTask);
-        this.generateCalendar();
-        this.generateWeekView();
-        this.closeCreateTaskModal();
-      },
-      error: (error) => {
-        console.error('Error creating task:', error);
-      }
-    });
-  }
-
-  closeCreateTaskModal(): void {
-    this.showCreateTaskModal = false;
-    this.selectedDateForNewTask = null;
-    this.newTaskTitle = '';
-    this.newTaskDescription = '';
-    this.newTaskDueDate = '';
-    this.newTaskPriority = 2;
-    this.newTaskCategory = '';
-    this.newTaskTags = [];
-    this.newTaskTagInput = '';
-    this.newTaskIsRecurring = false;
-    this.newTaskRecurrencePattern = 'daily';
-    this.newTaskRecurrenceInterval = 1;
-  }
-
   formatDateForModal(date: Date): string {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -2324,7 +3099,6 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-  // Month selection methods
   generateMonthSelectionDays(): void {
     if (!this.selectedYearMonth) return;
     
@@ -2357,7 +3131,8 @@ export class CalendarViewComponent implements OnInit {
         date,
         isCurrentMonth,
         isToday,
-        tasks
+        tasks,
+        timeBlocks: []
       });
       
       currentDate.setDate(currentDate.getDate() + 1);
@@ -2378,7 +3153,6 @@ export class CalendarViewComponent implements OnInit {
     return day.getMonth() === this.currentDate.getMonth();
   }
 
-  // Drag & Drop Methods for Week View
   getAllDropLists(): string[] {
     return this.currentWeekDays.map((_, index) => `day-${index}`);
   }
@@ -2410,7 +3184,6 @@ export class CalendarViewComponent implements OnInit {
     }
   }
 
-  // Year View Methods
   getYearViewMonths(): { month: string, year: number, tasks: Task[] }[] {
     const currentYear = this.currentDate.getFullYear();
     
@@ -2430,7 +3203,6 @@ export class CalendarViewComponent implements OnInit {
     });
   }
 
-  // Common method to update task due date
   updateTaskDueDate(taskId: number, newDueDate: Date): void {
     const task = this.tasks.find(t => t.id === taskId);
     if (task) {
@@ -2457,81 +3229,71 @@ export class CalendarViewComponent implements OnInit {
     }
   }
 
- toggleTaskCompletion(taskId: number): void {
-  // Prevent multiple clicks
-  if (this.updatingTaskIds.has(taskId)) {
-    return;
-  }
-  
-  this.updatingTaskIds.add(taskId);
-  
-  this.taskService.toggleTaskCompletion(taskId).subscribe({
-    next: (updatedTask: Task) => {
-      const index = this.tasks.findIndex(t => t.id === taskId);
-      if (index !== -1) {
-        this.tasks[index] = updatedTask;
-        
-        // Force refresh all views
-        this.generateCalendar();
-        this.generateWeekView();
-        
-        // Update selectedDay with fresh data
-        if (this.selectedDay) {
-          this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
-        }
-        
-        // Force change detection
-        this.tasks = [...this.tasks];
-      }
-      this.updatingTaskIds.delete(taskId);
-    },
-    error: (error: any) => {
-      console.error('Error updating task:', error);
-      this.updatingTaskIds.delete(taskId);
+  toggleTaskCompletion(taskId: number): void {
+    if (this.updatingTaskIds.has(taskId)) {
+      return;
     }
-  });
-}
-  toggleTaskCompletionFromCalendar(taskId: number, event: Event): void {
-  event.preventDefault();
-  event.stopPropagation(); // Prevent triggering drag events
-  
-  // Prevent multiple clicks on the same task
-  if (this.updatingTaskIds.has(taskId)) {
-    return;
-  }
-  
-  this.updatingTaskIds.add(taskId);
-  
-  // Call the service to update the backend - NO IMMEDIATE VISUAL TOGGLE
-  this.taskService.toggleTaskCompletion(taskId).subscribe({
-    next: (updatedTask: Task) => {
-      // Update the task in the local array with the actual server response
-      const index = this.tasks.findIndex(t => t.id === taskId);
-      if (index !== -1) {
-        this.tasks[index] = updatedTask;
-        
-        // Force refresh all views
-        this.generateCalendar();
-        this.generateWeekView();
-        
-        // Update selectedDay if it exists
-        if (this.selectedDay) {
-          this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+    
+    this.updatingTaskIds.add(taskId);
+    
+    this.taskService.toggleTaskCompletion(taskId).subscribe({
+      next: (updatedTask: Task) => {
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+          
+          this.generateCalendar();
+          this.generateWeekView();
+          
+          if (this.selectedDay) {
+            this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+          }
+          
+          this.tasks = [...this.tasks];
         }
-        
-        // Force change detection
-        this.tasks = [...this.tasks];
+        this.updatingTaskIds.delete(taskId);
+      },
+      error: (error: any) => {
+        console.error('Error updating task:', error);
+        this.updatingTaskIds.delete(taskId);
       }
-      this.updatingTaskIds.delete(taskId);
-    },
-    error: (error: any) => {
-      console.error('Error updating task completion:', error);
-      this.updatingTaskIds.delete(taskId);
-    }
-  });
-}
+    });
+  }
 
-  // Add these new methods for the edit modal
+  toggleTaskCompletionFromCalendar(taskId: number, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (this.updatingTaskIds.has(taskId)) {
+      return;
+    }
+    
+    this.updatingTaskIds.add(taskId);
+    
+    this.taskService.toggleTaskCompletion(taskId).subscribe({
+      next: (updatedTask: Task) => {
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+          
+          this.generateCalendar();
+          this.generateWeekView();
+          
+          if (this.selectedDay) {
+            this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
+          }
+          
+          this.tasks = [...this.tasks];
+        }
+        this.updatingTaskIds.delete(taskId);
+      },
+      error: (error: any) => {
+        console.error('Error updating task completion:', error);
+        this.updatingTaskIds.delete(taskId);
+      }
+    });
+  }
+
   editTask(taskId: number): void {
     this.editModalData.taskId = taskId;
     this.editModalData.isOpen = true;
@@ -2587,7 +3349,6 @@ export class CalendarViewComponent implements OnInit {
 
     this.taskService.updateTask(this.editModalData.taskId, updateData).subscribe({
       next: (updatedTask: Task) => {
-        // Update the task in the local array
         const index = this.tasks.findIndex(t => t.id === this.editModalData.taskId);
         if (index !== -1) {
           this.tasks[index] = updatedTask;
@@ -2596,16 +3357,13 @@ export class CalendarViewComponent implements OnInit {
         this.isEditing = false;
         this.closeEditModal();
         
-        // Force refresh all views
         this.generateCalendar();
         this.generateWeekView();
         
-        // Also update selectedDay if it's open with fresh data
         if (this.selectedDay) {
           this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
         }
         
-        // Force change detection
         this.tasks = [...this.tasks];
       },
       error: (error: any) => {
@@ -2620,31 +3378,23 @@ export class CalendarViewComponent implements OnInit {
     if (confirm('Are you sure you want to delete this task?')) {
       this.taskService.deleteTask(this.editModalData.taskId).subscribe({
         next: () => {
-          // Remove the task from the local array
           this.tasks = this.tasks.filter(t => t.id !== this.editModalData.taskId);
           
-          // Close the edit modal first
           this.closeEditModal();
           
-          // Force refresh all calendar views
           this.generateCalendar();
           this.generateWeekView();
           
-          // Also update selectedDay if it's open - completely refresh it
           if (this.selectedDay) {
-            // Get fresh tasks for the selected day
             const freshTasks = this.getTasksForDate(this.selectedDay.date);
             
             if (freshTasks.length === 0) {
-              // If no tasks left, close the day details
               this.selectedDay = null;
             } else {
-              // Otherwise update the selectedDay with fresh data
               this.selectedDay.tasks = freshTasks;
             }
           }
           
-          // Force Angular change detection by creating new arrays
           this.tasks = [...this.tasks];
         },
         error: (error: any) => {
@@ -2680,5 +3430,375 @@ export class CalendarViewComponent implements OnInit {
       this.editFormData.recurrencePattern = 'daily';
       this.editFormData.recurrenceInterval = 1;
     }
+  }
+
+  createTaskFromModal(): void {
+    if (!this.newTaskTitle.trim()) {
+      return;
+    }
+
+    const newTask: CreateTaskRequest = {
+      title: this.newTaskTitle.trim(),
+      description: this.newTaskDescription,
+      dueDate: this.newTaskDueDate,
+      priority: this.newTaskPriority,
+      category: this.newTaskCategory || 'Other',
+      tags: this.newTaskTags,
+      isRecurring: this.newTaskIsRecurring,
+      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern as RecurrencePattern : 'none',
+      recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
+    };
+
+    this.taskService.createTask(newTask).subscribe({
+      next: (createdTask) => {
+        this.tasks.push(createdTask);
+        this.generateCalendar();
+        this.generateWeekView();
+        this.closeCreateTaskModal();
+      },
+      error: (error) => {
+        console.error('Error creating task:', error);
+      }
+    });
+  }
+
+  closeCreateTaskModal(): void {
+    this.showCreateTaskModal = false;
+    this.selectedDateForNewTask = null;
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskDueDate = '';
+    this.newTaskPriority = 2;
+    this.newTaskCategory = '';
+    this.newTaskTags = [];
+    this.newTaskTagInput = '';
+    this.newTaskIsRecurring = false;
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+  }
+
+  // PRODUCTIVITY FEATURES METHODS
+
+  // Eisenhower Matrix Methods
+  showEisenhowerMatrix(): void {
+    this.showEisenhowerModal = true;
+  }
+
+  getEisenhowerCategory(task: Task): EisenhowerCategory | undefined {
+    const isUrgent = task.priority === 3 || this.isTaskDueSoon(task);
+    const isImportant = task.priority >= 2;
+    
+    if (isUrgent && isImportant) {
+      return this.eisenhowerMatrix.find(c => c.id === 'urgent-important');
+    } else if (isUrgent && !isImportant) {
+      return this.eisenhowerMatrix.find(c => c.id === 'urgent-not-important');
+    } else if (!isUrgent && isImportant) {
+      return this.eisenhowerMatrix.find(c => c.id === 'not-urgent-important');
+    } else {
+      return this.eisenhowerMatrix.find(c => c.id === 'not-urgent-not-important');
+    }
+  }
+
+  isTaskDueSoon(task: Task): boolean {
+    if (!task.dueDate) return false;
+    
+    const dueDate = new Date(task.dueDate);
+    const today = new Date();
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays <= 2;
+  }
+
+  getTasksByEisenhowerCategory(categoryId: string): Task[] {
+    return this.tasks.filter(task => {
+      const taskCategory = this.getEisenhowerCategory(task);
+      return taskCategory?.id === categoryId;
+    });
+  }
+
+  onEisenhowerDrop(event: CdkDragDrop<any>): void {
+    const task: Task = event.item.data;
+    const newCategoryId = event.container.id;
+    
+    let newPriority = task.priority;
+    
+    switch (newCategoryId) {
+      case 'urgent-important':
+        newPriority = 3;
+        break;
+      case 'urgent-not-important':
+        newPriority = 2;
+        break;
+      case 'not-urgent-important':
+        newPriority = 2;
+        break;
+      case 'not-urgent-not-important':
+        newPriority = 1;
+        break;
+    }
+    
+    this.updateTaskPriority(task.id, newPriority);
+  }
+
+  updateTaskPriority(taskId: number, priority: number): void {
+    const task = this.tasks.find(t => t.id === taskId);
+    if (task) {
+      this.taskService.updateTask(taskId, {
+        ...task,
+        priority
+      }).subscribe({
+        next: (updatedTask) => {
+          const index = this.tasks.findIndex(t => t.id === taskId);
+          if (index !== -1) {
+            this.tasks[index] = updatedTask;
+            this.generateCalendar();
+            this.generateWeekView();
+          }
+        },
+        error: (error) => {
+          console.error('Error updating task priority:', error);
+        }
+      });
+    }
+  }
+
+  // Eat the Frog Methods
+  get eatTheFrogTask(): Task | null {
+    if (!this.productivitySettings.enableEatTheFrog) return null;
+    
+    const pendingTasks = this.tasks.filter(task => !task.completed);
+    if (pendingTasks.length === 0) return null;
+
+    return pendingTasks.reduce((mostImportant, task) => {
+      if (!mostImportant) return task;
+      
+      const currentScore = this.calculateTaskImportanceScore(task);
+      const mostImportantScore = this.calculateTaskImportanceScore(mostImportant);
+      
+      return currentScore > mostImportantScore ? task : mostImportant;
+    }, pendingTasks[0]);
+  }
+
+  calculateTaskImportanceScore(task: Task): number {
+    let score = 0;
+    
+    score += task.priority * 3;
+    
+    if (task.dueDate) {
+      const dueDate = new Date(task.dueDate);
+      const today = new Date();
+      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilDue <= 0) {
+        score += 10;
+      } else if (daysUntilDue <= 1) {
+        score += 8;
+      } else if (daysUntilDue <= 3) {
+        score += 5;
+      } else if (daysUntilDue <= 7) {
+        score += 2;
+      }
+    }
+    
+    const eisenhowerCategory = this.getEisenhowerCategory(task);
+    if (eisenhowerCategory?.id === 'urgent-important') {
+      score += 6;
+    } else if (eisenhowerCategory?.id === 'urgent-not-important') {
+      score += 4;
+    } else if (eisenhowerCategory?.id === 'not-urgent-important') {
+      score += 3;
+    }
+    
+    return score;
+  }
+
+  focusOnFrogTask(): void {
+    if (this.eatTheFrogTask) {
+      const frogTaskElement = document.querySelector(`[data-task-id="${this.eatTheFrogTask.id}"]`);
+      if (frogTaskElement) {
+        frogTaskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        frogTaskElement.classList.add('highlight-pulse');
+        setTimeout(() => {
+          frogTaskElement.classList.remove('highlight-pulse');
+        }, 2000);
+      }
+    }
+  }
+
+  startFrogTask(): void {
+    if (this.eatTheFrogTask) {
+      this.scheduleTimeBlock(this.eatTheFrogTask, new Date());
+    }
+  }
+
+  // Time Blocking Methods
+  showTimeBlocking(): void {
+    this.showTimeBlockModal = true;
+    this.initializeTimeBlockForm();
+  }
+
+  initializeTimeBlocks(): void {
+    const savedTimeBlocks = localStorage.getItem('timeBlocks');
+    if (savedTimeBlocks) {
+      this.timeBlocks = JSON.parse(savedTimeBlocks);
+    }
+  }
+
+  initializeTimeBlockForm(): void {
+    this.newTimeBlockDate = new Date().toISOString().split('T')[0];
+    this.newTimeBlockStartTime = this.productivitySettings.workingHours.start;
+    this.newTimeBlockDuration = this.productivitySettings.defaultTimeBlockDuration;
+    this.selectedTimeBlockTaskId = null;
+  }
+
+  getAvailableTimeSlots(): string[] {
+    const slots: string[] = [];
+    const startHour = parseInt(this.productivitySettings.workingHours.start.split(':')[0]);
+    const endHour = parseInt(this.productivitySettings.workingHours.end.split(':')[0]);
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(timeString);
+      }
+    }
+    
+    return slots;
+  }
+
+  calculateEndTime(): string {
+    if (!this.newTimeBlockStartTime) return '';
+    
+    const [hours, minutes] = this.newTimeBlockStartTime.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hours, minutes, 0, 0);
+    
+    const endDate = new Date(startDate.getTime() + this.newTimeBlockDuration * 60000);
+    return endDate.toTimeString().slice(0, 5);
+  }
+
+  scheduleTimeBlock(task: Task, date: Date, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    this.selectedTaskForTimeBlock = task;
+    this.selectedTimeBlockTaskId = task.id;
+    this.newTimeBlockDate = new Date(date).toISOString().split('T')[0];
+    this.showTimeBlockModal = true;
+  }
+
+  addTimeBlockToDay(day: CalendarDay): void {
+    this.selectedDateForNewTask = new Date(day.date);
+    this.showTimeBlockModal = true;
+    this.initializeTimeBlockForm();
+  }
+
+  saveTimeBlock(): void {
+    if (!this.selectedTimeBlockTaskId || !this.newTimeBlockDate || !this.newTimeBlockStartTime) {
+      return;
+    }
+
+    const endTime = this.calculateEndTime();
+    const task = this.tasks.find(t => t.id === this.selectedTimeBlockTaskId);
+
+    const newTimeBlock: TimeBlock = {
+      id: Date.now(),
+      taskId: this.selectedTimeBlockTaskId,
+      startTime: this.newTimeBlockStartTime,
+      endTime: endTime,
+      date: this.newTimeBlockDate,
+      duration: this.newTimeBlockDuration,
+      completed: false,
+      title: task?.title
+    };
+
+    this.timeBlocks.push(newTimeBlock);
+    this.saveTimeBlocksToStorage();
+    this.generateCalendar();
+    this.generateWeekView();
+    this.closeTimeBlockModal();
+  }
+
+  completeTimeBlock(blockId: number): void {
+    const block = this.timeBlocks.find(b => b.id === blockId);
+    if (block) {
+      block.completed = !block.completed;
+      this.saveTimeBlocksToStorage();
+      this.generateCalendar();
+      this.generateWeekView();
+    }
+  }
+
+  deleteTimeBlock(blockId: number): void {
+    this.timeBlocks = this.timeBlocks.filter(b => b.id !== blockId);
+    this.saveTimeBlocksToStorage();
+    this.generateCalendar();
+    this.generateWeekView();
+  }
+
+  getTimeBlocksForDate(date: Date): TimeBlock[] {
+    const targetDate = new Date(date).toISOString().split('T')[0];
+    return this.timeBlocks.filter(block => block.date === targetDate);
+  }
+
+  getTopTimeBlocks(blocks: TimeBlock[], limit: number): TimeBlock[] {
+    return blocks.slice(0, limit);
+  }
+
+  getTimeBlockColor(block: TimeBlock): string {
+    if (block.completed) return '#4ade80';
+    
+    const task = this.tasks.find(t => t.id === block.taskId);
+    return task ? this.getPriorityColor(task.priority) : '#3498db';
+  }
+
+  getTimeBlockTooltip(block: TimeBlock): string {
+    const task = this.tasks.find(t => t.id === block.taskId);
+    const status = block.completed ? 'Completed' : 'Scheduled';
+    return `${task?.title || 'Time Block'} - ${block.startTime} to ${block.endTime} - ${status}`;
+  }
+
+  saveTimeBlocksToStorage(): void {
+    localStorage.setItem('timeBlocks', JSON.stringify(this.timeBlocks));
+  }
+
+  closeTimeBlockModal(): void {
+    this.showTimeBlockModal = false;
+    this.selectedTaskForTimeBlock = null;
+    this.selectedTimeBlockTaskId = null;
+  }
+
+  // Helper Methods
+  getPendingTasks(): Task[] {
+    return this.tasks.filter(task => !task.completed);
+  }
+
+  getTaskTitle(taskId: number): string {
+    const task = this.tasks.find(t => t.id === taskId);
+    return task?.title || 'Unknown Task';
+  }
+
+  setTaskPriority(taskId: number, eisenhowerCategory: string, event: Event): void {
+    event.stopPropagation();
+    
+    let newPriority = 2;
+    switch (eisenhowerCategory) {
+      case 'urgent-important':
+        newPriority = 3;
+        break;
+      case 'urgent-not-important':
+        newPriority = 2;
+        break;
+      case 'not-urgent-important':
+        newPriority = 2;
+        break;
+      case 'not-urgent-not-important':
+        newPriority = 1;
+        break;
+    }
+    
+    this.updateTaskPriority(taskId, newPriority);
   }
 }

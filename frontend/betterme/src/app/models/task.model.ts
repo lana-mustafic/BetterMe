@@ -210,3 +210,38 @@ export interface TaskTemplate {
   recurrenceInterval?: number;
   subtasks?: Pick<Subtask, 'title'>[];
 }
+
+export interface EisenhowerCategory {
+  id: 'urgent-important' | 'urgent-not-important' | 'not-urgent-important' | 'not-urgent-not-important';
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+export interface TimeBlock {
+  id: number;
+  taskId: number;
+  startTime: string;
+  endTime: string;
+  date: string;
+  duration: number;
+  completed: boolean;
+  title?: string;
+}
+
+export interface ProductivitySettings {
+  enableEatTheFrog: boolean;
+  defaultTimeBlockDuration: number;
+  reminderNotifications: boolean;
+  reminderTime: number;
+  workingHours: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface TaskWithEisenhower extends Task {
+  eisenhowerCategory?: EisenhowerCategory;
+  importanceScore?: number;
+}
