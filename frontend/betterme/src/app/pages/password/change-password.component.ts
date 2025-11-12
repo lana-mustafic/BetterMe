@@ -723,17 +723,21 @@ export class ChangePasswordComponent {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  onSubmit(): void {
-    if (this.changePasswordForm.invalid) return;
+onSubmit(): void {
+  if (this.changePasswordForm.invalid) return;
 
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+  this.isLoading = true;
+  this.errorMessage = '';
+  this.successMessage = '';
 
-    const passwordData: ChangePasswordRequest = {
-      currentPassword: this.changePasswordForm.value.currentPassword,
-      newPassword: this.changePasswordForm.value.newPassword
-    };
+  // Use the form group to get values - this is the proper way
+  const formValue = this.changePasswordForm.value;
+  
+  const passwordData: ChangePasswordRequest = {
+    currentPassword: formValue.currentPassword || '',
+    newPassword: formValue.newPassword || '',
+    confirmPassword: formValue.confirmPassword || ''
+  };
 
     this.authService.changePassword(passwordData).subscribe({
       next: (res) => {

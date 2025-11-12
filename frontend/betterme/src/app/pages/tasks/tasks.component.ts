@@ -3,8 +3,16 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
-import { Task } from '../../models/task.model';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
+import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
+import { 
+  Task, 
+  CreateTaskRequest,  
+  UpdateTaskRequest,  
+  RecurrencePattern,  
+  TaskDifficulty      
+} from '../../models/task.model';
+
 
 interface TagWithCount {
   name: string;
@@ -34,6 +42,7 @@ interface Category {
   icon: string;
   custom?: boolean;
 }
+
 
 @Component({
   selector: 'app-tasks',
@@ -170,6 +179,32 @@ interface Category {
                       Close
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Bulk Operations -->
+          @if (selectedTaskIds.length > 0) {
+            <div class="bulk-operations glass-card">
+              <div class="bulk-header">
+                <h4>🛠️ Bulk Operations ({{ selectedTaskIds.length }} tasks selected)</h4>
+                <button class="btn-clear" (click)="selectedTaskIds = []">Clear</button>
+              </div>
+              
+              <div class="bulk-actions">
+                <div class="tag-input-container">
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    placeholder="Add tag to all selected tasks"
+                    [(ngModel)]="bulkTagInput"
+                    name="bulkTagInput"
+                    (keydown.enter)="bulkAddTag()"
+                  />
+                  <button class="btn btn-primary" (click)="bulkAddTag()" [disabled]="!bulkTagInput.trim()">
+                    Add Tag
+                  </button>
                 </div>
               </div>
             </div>
@@ -548,6 +583,52 @@ interface Category {
                     <option value="1">Low</option>
                   </select>
                 </div>
+
+                <!-- Smart Context Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Context</label>
+                  <select
+                    class="filter-select"
+                    [(ngModel)]="smartFilterContext"
+                    (change)="onFiltersChange()"
+                  >
+                    <option value="all">All Contexts</option>
+                    <option value="home">🏠 Home</option>
+                    <option value="work">💼 Work</option>
+                    <option value="errands">🛒 Errands</option>
+                    <option value="calls">📞 Calls</option>
+                    <option value="computer">💻 Computer</option>
+                    <option value="other">📦 Other</option>
+                  </select>
+                </div>
+
+                <!-- Smart Energy Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Energy Level</label>
+                  <select
+                    class="filter-select"
+                    [(ngModel)]="smartFilterEnergy"
+                    (change)="onFiltersChange()"
+                  >
+                    <option value="all">Any Energy</option>
+                    <option value="high-energy">🔥 High Energy</option>
+                    <option value="low-energy">😴 Low Energy</option>
+                  </select>
+                </div>
+
+                <!-- Smart Time Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Time Required</label>
+                  <select
+                    class="filter-select"
+                    [(ngModel)]="smartFilterTime"
+                    (change)="onFiltersChange()"
+                  >
+                    <option value="all">Any Time</option>
+                    <option value="quick">⚡ Quick (≤15min)</option>
+                    <option value="time-consuming">⏳ Time-consuming (>1hr)</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Active Filters Display -->
@@ -579,14 +660,32 @@ interface Category {
                         <button (click)="clearPriority()">×</button>
                       </span>
                     }
+                    @if (smartFilterContext !== 'all') {
+                      <span class="active-filter">
+                        Context: {{ smartFilterContext }}
+                        <button (click)="smartFilterContext = 'all'">×</button>
+                      </span>
+                    }
+                    @if (smartFilterEnergy !== 'all') {
+                      <span class="active-filter">
+                        Energy: {{ smartFilterEnergy === 'high-energy' ? 'High Energy' : 'Low Energy' }}
+                        <button (click)="smartFilterEnergy = 'all'">×</button>
+                      </span>
+                    }
+                    @if (smartFilterTime !== 'all') {
+                      <span class="active-filter">
+                        Time: {{ smartFilterTime === 'quick' ? 'Quick' : 'Time-consuming' }}
+                        <button (click)="smartFilterTime = 'all'">×</button>
+                      </span>
+                    }
                   </div>
                 </div>
               }
 
               <!-- Results Count -->
               <div class="results-info">
-                Showing {{ filteredTasks.length }} of {{ tasks.length }} tasks
-                @if (filteredTasks.length === 0 && tasks.length > 0) {
+                Showing {{ smartFilteredTasks.length }} of {{ tasks.length }} tasks
+                @if (smartFilteredTasks.length === 0 && tasks.length > 0) {
                   <span class="no-results">No tasks match your filters</span>
                 }
               </div>
@@ -597,6 +696,32 @@ interface Category {
           @if (showCreateForm && activeView === 'list') {
             <div class="create-task-form glass-card">
               <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
+              
+              <!-- Smart Suggestions -->
+              @if (suggestedCategory || suggestedTags.length > 0) {
+                <div class="smart-suggestions glass-card">
+                  <h4>💡 Smart Suggestions</h4>
+                  
+                  @if (suggestedCategory) {
+                    <div class="suggestion-item">
+                      <span>Category: {{ suggestedCategory.icon }} {{ suggestedCategory.name }}</span>
+                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
+                        Apply
+                      </button>
+                    </div>
+                  }
+                  
+                  @if (suggestedTags.length > 0) {
+                    <div class="suggestion-item">
+                      <span>Tags: {{ suggestedTags.join(', ') }}</span>
+                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
+                        Apply All
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
               <form (ngSubmit)="onCreateTask()">
                 <div class="form-group">
                   <input 
@@ -605,6 +730,7 @@ interface Category {
                     placeholder="Task title"
                     [(ngModel)]="newTaskTitle"
                     name="title"
+                    (input)="onSmartInputChange()"
                     required
                   />
                 </div>
@@ -614,6 +740,7 @@ interface Category {
                     placeholder="Task description"
                     [(ngModel)]="newTaskDescription"
                     name="description"
+                    (input)="onSmartInputChange()"
                     rows="3"
                   ></textarea>
                 </div>
@@ -627,7 +754,7 @@ interface Category {
                     name="category"
                   >
                     <option value="">Select Category</option>
-                    @for (category of categories; track category.name) {
+                    @for (category of enhancedCategories; track category.name) {
                       <option [value]="category.name">
                         {{ category.icon }} {{ category.name }}
                       </option>
@@ -709,12 +836,18 @@ interface Category {
           <!-- Tasks List (only show in list view) -->
           @if (activeView === 'list') {
             <div class="task-list">
-              @for (task of filteredTasks; track task.id) {
+              @for (task of smartFilteredTasks; track task.id) {
                 <div class="task-item glass-card" [class.completed]="task.completed">
                   <div class="task-content">
                     <div class="task-header">
                       <h3 class="task-title">{{ task.title }}</h3>
                       <div class="task-actions">
+                        <input 
+                          type="checkbox" 
+                          [checked]="isTaskSelected(task.id)"
+                          (change)="toggleTaskSelection(task.id)"
+                          class="task-checkbox"
+                        />
                         <button 
                           class="btn-status" 
                           (click)="onToggleComplete(task.id)"
@@ -1938,6 +2071,97 @@ interface Category {
       font-size: 1.1rem;
     }
 
+    /* NEW: Smart Suggestions Styles */
+    .smart-suggestions {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .smart-suggestions h4 {
+      color: white;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .suggestion-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .suggestion-item span {
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn-suggestion {
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-suggestion:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+    }
+
+    /* NEW: Bulk Operations Styles */
+    .bulk-operations {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .bulk-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .bulk-header h4 {
+      color: white;
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .btn-clear {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+      background: rgba(239, 68, 68, 0.5);
+    }
+
+    .bulk-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    /* NEW: Task Checkbox */
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
     /* Responsive Design */
     @media (max-width: 1200px) {
       .charts-section {
@@ -2000,6 +2224,10 @@ interface Category {
 
       .task-actions-bottom {
         flex-wrap: wrap;
+      }
+
+      .bulk-actions {
+        flex-direction: column;
       }
     }
 
@@ -2261,7 +2489,7 @@ export class TasksComponent implements OnInit {
   showTagManager: boolean = false;
   activeView: 'list' | 'stats' | 'calendar' = 'list';
   editingTaskId: number | null = null;
-availableTags: string[] = [];
+  availableTags: string[] = [];
 
   // Form fields
   newTaskTitle: string = '';
@@ -2286,6 +2514,25 @@ availableTags: string[] = [];
   filteredTags: string[] = [];
   selectedTagNames: string[] = [];
 
+  // NEW: Smart Organization Properties
+  smartCategories: TaskCategory[] = [];
+  tagGroups: TagGroup[] = [];
+  recurrenceTemplates: RecurrenceTemplate[] = [];
+  
+  // Smart suggestions
+  suggestedCategory: TaskCategory | null = null;
+  suggestedTags: string[] = [];
+  
+  // Bulk operations
+  selectedTaskIds: number[] = [];
+  bulkTagInput: string = '';
+  isBulkEditing: boolean = false;
+
+  // Smart filters
+  smartFilterContext: string = 'all';
+  smartFilterEnergy: string = 'all';
+  smartFilterTime: string = 'all';
+
   // Enhanced Categories System
   categories: Category[] = [
     { name: 'Personal', color: '#667eea', icon: '🏠' },
@@ -2297,6 +2544,15 @@ availableTags: string[] = [];
     { name: 'Travel', color: '#30cfd0', icon: '✈️' },
     { name: 'Other', color: '#a8edea', icon: '📦' }
   ];
+
+  // Enhanced categories with smart features
+  get enhancedCategories(): Category[] {
+    return this.smartCategories.map(cat => ({
+      name: cat.name,
+      color: cat.color,
+      icon: cat.icon
+    }));
+  }
 
   // Statistics computed properties
   get totalTasks(): number {
@@ -2506,6 +2762,7 @@ availableTags: string[] = [];
     return this.tagsWithCount.filter(tag => tag.selected);
   }
 
+  // UPDATED: Use smart filtered tasks
   get filteredTasks(): Task[] {
     return this.tasks.filter(task => {
       // Search filter
@@ -2539,20 +2796,67 @@ availableTags: string[] = [];
     });
   }
 
+  // NEW: Smart filtering
+  get smartFilteredTasks(): Task[] {
+    let tasks = this.filteredTasks;
+
+    // Context filter
+    if (this.smartFilterContext !== 'all') {
+      tasks = tasks.filter(task => {
+        const context = this.taskService.organizeTasksByContext([task])[0]?.context;
+        return context === this.smartFilterContext;
+      });
+    }
+
+    // Energy filter
+    if (this.smartFilterEnergy !== 'all') {
+      tasks = tasks.filter(task => {
+        if (this.smartFilterEnergy === 'high-energy') {
+          return task.tags?.includes('high-energy') || task.priority === 3;
+        } else if (this.smartFilterEnergy === 'low-energy') {
+          return task.tags?.includes('low-energy') || task.priority === 1;
+        }
+        return true;
+      });
+    }
+
+    // Time filter
+    if (this.smartFilterTime !== 'all') {
+      tasks = tasks.filter(task => {
+        if (this.smartFilterTime === 'quick') {
+          return task.tags?.includes('quick') || (task.estimatedDuration && task.estimatedDuration <= 15);
+        } else if (this.smartFilterTime === 'time-consuming') {
+          return task.tags?.includes('time-consuming') || (task.estimatedDuration && task.estimatedDuration > 60);
+        }
+        return true;
+      });
+    }
+
+    return tasks;
+  }
+
   get hasActiveFilters(): boolean {
     return this.searchTerm !== '' ||
            this.selectedCategory !== '' ||
            this.selectedStatus !== 'all' ||
-           this.selectedPriority !== 'all';
+           this.selectedPriority !== 'all' ||
+           this.smartFilterContext !== 'all' ||
+           this.smartFilterEnergy !== 'all' ||
+           this.smartFilterTime !== 'all';
   }
 
-   ngOnInit(): void {
+  ngOnInit(): void {
     this.loadTasks();
-    // Initialize available tags from existing tasks
-    this.availableTags = [...new Set(this.tasks.flatMap(task => task.tags || []))];
+    this.initializeSmartFeatures();
   }
 
-  // UPDATED: Load tasks without mock data
+  // NEW: Initialize smart features
+  initializeSmartFeatures(): void {
+    this.smartCategories = this.taskService.getSmartCategories();
+    this.tagGroups = this.taskService.getTagGroups();
+    this.recurrenceTemplates = this.taskService.getRecurrenceTemplates();
+  }
+
   // UPDATED: Load tasks without mock data
   loadTasks(): void {
     this.isLoading = true;
@@ -2660,6 +2964,7 @@ availableTags: string[] = [];
     this.activeView = 'list';
     this.selectedStatus = 'completed';
   }
+
   showAllCategories(): void {
     this.activeView = 'list';
     this.selectedCategory = '';
@@ -2727,6 +3032,9 @@ availableTags: string[] = [];
     this.selectedPriority = 'all';
     this.filteredTags = [];
     this.tagSearchTerm = '';
+    this.smartFilterContext = 'all';
+    this.smartFilterEnergy = 'all';
+    this.smartFilterTime = 'all';
   }
   
   clearSearch(): void { this.searchTerm = ''; }
@@ -2790,59 +3098,151 @@ availableTags: string[] = [];
   removeTag(tagToRemove: string): void {
     this.newTaskTags = this.newTaskTags.filter(tag => tag !== tagToRemove);
   }
-  
-  onCreateTask(): void {
-    if (!this.newTaskTitle.trim()) {
-      this.errorMessage = 'Task title is required';
-      return;
-    }
 
-    const taskData = {
-      title: this.newTaskTitle,
-      description: this.newTaskDescription,
-      dueDate: this.newTaskDueDate || null,
-      priority: this.newTaskPriority,
-      category: this.newTaskCategory || 'Other',
-      tags: this.newTaskTags,
-      isRecurring: this.newTaskIsRecurring,
-      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
-      recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
-    };
-
-    if (this.editingTaskId) {
-      // Update existing task
-      this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
-        next: (updatedTask: Task) => {
-          const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
-          if (index !== -1) {
-            this.tasks[index] = updatedTask;
-          }
-          this.resetForm();
-          this.showCreateForm = false;
-          this.editingTaskId = null;
-          this.errorMessage = '';
-        },
-        error: (error: any) => {
-          this.errorMessage = 'Failed to update task. Please try again.';
-          console.error('Error updating task:', error);
-        }
+  // NEW: Smart input handlers
+  onSmartInputChange(): void {
+    if (this.newTaskTitle.trim()) {
+      // Get smart suggestions
+      this.suggestedCategory = this.taskService.suggestCategory({
+        title: this.newTaskTitle,
+        description: this.newTaskDescription
       });
+      
+      this.suggestedTags = this.taskService.suggestTags({
+        title: this.newTaskTitle,
+        description: this.newTaskDescription,
+        category: this.newTaskCategory
+      });
+      
+      // Auto-set category if suggested
+      if (this.suggestedCategory && !this.newTaskCategory) {
+        this.newTaskCategory = this.suggestedCategory.name;
+      }
+      
+      // Auto-set due date if not set
+      if (!this.newTaskDueDate) {
+        this.newTaskDueDate = this.taskService.suggestDueDate(
+          this.newTaskPriority,
+          this.newTaskCategory
+        );
+      }
+    }
+  }
+
+  // NEW: Apply smart suggestions
+  applySmartSuggestions(): void {
+    if (this.suggestedCategory) {
+      this.newTaskCategory = this.suggestedCategory.name;
+    }
+    
+    // Add suggested tags that aren't already included
+    this.suggestedTags.forEach(tag => {
+      if (!this.newTaskTags.includes(tag)) {
+        this.newTaskTags.push(tag);
+      }
+    });
+    
+    this.suggestedTags = [];
+  }
+
+  // NEW: Bulk operations
+  toggleTaskSelection(taskId: number): void {
+    const index = this.selectedTaskIds.indexOf(taskId);
+    if (index > -1) {
+      this.selectedTaskIds.splice(index, 1);
     } else {
-      // Create new task
-      this.taskService.createTask(taskData).subscribe({
-        next: (newTask: Task) => {
-          this.tasks.unshift(newTask);
-          this.resetForm();
-          this.showCreateForm = false;
-          this.errorMessage = '';
+      this.selectedTaskIds.push(taskId);
+    }
+  }
+
+  isTaskSelected(taskId: number): boolean {
+    return this.selectedTaskIds.includes(taskId);
+  }
+
+  bulkAddTag(): void {
+    if (this.bulkTagInput.trim() && this.selectedTaskIds.length > 0) {
+      this.taskService.bulkAddTag(this.selectedTaskIds, this.bulkTagInput.trim()).subscribe({
+        next: (updatedTasks) => {
+          // Update local tasks
+          updatedTasks.forEach(updatedTask => {
+            const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+            if (index > -1) {
+              this.tasks[index] = updatedTask;
+            }
+          });
+          
+          this.bulkTagInput = '';
+          this.selectedTaskIds = [];
+          this.isBulkEditing = false;
         },
-        error: (error: any) => {
-          this.errorMessage = 'Failed to create task. Please try again.';
-          console.error('Error creating task:', error);
+        error: (error) => {
+          this.errorMessage = 'Failed to add tags to selected tasks';
+          console.error('Error in bulk add tag:', error);
         }
       });
     }
   }
+
+  // NEW: Smart task organization view
+  get organizedTasks(): { context: string; tasks: Task[] }[] {
+    return this.taskService.organizeTasksByContext(this.filteredTasks);
+  }
+  
+  onCreateTask(): void {
+  if (!this.newTaskTitle.trim()) {
+    this.errorMessage = 'Task title is required';
+    return;
+  }
+
+  // Create the task data object
+  const taskData = {
+    title: this.newTaskTitle,
+    description: this.newTaskDescription,
+    dueDate: this.newTaskDueDate || null,
+    priority: this.newTaskPriority,
+    category: this.newTaskCategory || 'Other',
+    tags: this.newTaskTags,
+    isRecurring: this.newTaskIsRecurring,
+    recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
+    recurrenceInterval: this.newTaskRecurrenceInterval
+    // Remove estimatedDuration and difficulty since they don't exist in your taskData
+  };
+
+  if (this.editingTaskId) {
+    // For update, you can use taskData directly since it matches UpdateTaskRequest
+    this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
+      next: (updatedTask: Task) => {
+        const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+        this.resetForm();
+        this.showCreateForm = false;
+        this.editingTaskId = null;
+        this.errorMessage = '';
+      },
+      error: (error: any) => {
+        this.errorMessage = 'Failed to update task. Please try again.';
+        console.error('Error updating task:', error);
+      }
+    });
+  } else {
+    // For create, use taskData directly
+    this.taskService.createTask(taskData).subscribe({
+      next: (newTask: Task) => {
+        this.tasks.unshift(newTask);
+        this.resetForm();
+        this.showCreateForm = false;
+        this.errorMessage = '';
+      },
+      error: (error: any) => {
+        this.errorMessage = 'Failed to create task. Please try again.';
+        console.error('Error creating task:', error);
+      }
+    });
+  }
+}
+    
   
   // FIXED: Added missing onToggleComplete method
   onToggleComplete(taskId: number): void {
@@ -2920,5 +3320,7 @@ availableTags: string[] = [];
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
     this.editingTaskId = null;
+    this.suggestedCategory = null;
+    this.suggestedTags = [];
   }
 }

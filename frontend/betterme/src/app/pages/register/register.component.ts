@@ -130,6 +130,36 @@ import { AuthService } from '../../services/auth';
                 }
               </div>
 
+              <!-- Confirm Password Field -->
+              <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <div class="password-input-container">
+                  <input 
+                    [type]="showPassword ? 'text' : 'password'"
+                    class="form-control password-input"
+                    [class.error]="confirmPasswordError"
+                    placeholder="Re-enter your password"
+                    [(ngModel)]="confirmPassword"
+                    name="confirmPassword"
+                    required
+                    (input)="validatePasswordMatch()"
+                  />
+                  <button 
+                    type="button" 
+                    class="password-toggle"
+                    (click)="togglePasswordVisibility()"
+                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                  >
+                    <span class="password-toggle-icon">
+                      {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+                    </span>
+                  </button>
+                </div>
+                @if (confirmPasswordError) {
+                  <div class="field-error">{{ confirmPasswordError }}</div>
+                }
+              </div>
+
               <!-- Error Message -->
               @if (errorMessage) {
                 <div class="error-card">
@@ -218,7 +248,7 @@ import { AuthService } from '../../services/auth';
     </div>
   `,
   styles: [`
-   /* Password Instructions */
+    /* Password Instructions */
     .password-instructions {
       margin: 15px 0;
       padding: 15px;
@@ -779,6 +809,7 @@ export class RegisterComponent implements OnDestroy {
   displayName = '';
   email = '';
   password = '';
+  confirmPassword = '';
   isLoading = false;
   errorMessage = '';
   showPassword = false;
@@ -793,6 +824,15 @@ export class RegisterComponent implements OnDestroy {
   // Field errors
   displayNameError = '';
   emailError = '';
+  confirmPasswordError = '';
+
+  validatePasswordMatch(): void {
+    this.confirmPasswordError = '';
+    
+    if (this.confirmPassword && this.password !== this.confirmPassword) {
+      this.confirmPasswordError = '⚠️ Passwords do not match';
+    }
+  }
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
@@ -824,6 +864,9 @@ export class RegisterComponent implements OnDestroy {
     if (!this.hasSymbols) {
       this.passwordErrors.push('Password must contain symbols');
     }
+
+    // Also validate password match when password changes
+    this.validatePasswordMatch();
   }
 
   getStrengthClass(): string {
@@ -880,18 +923,31 @@ export class RegisterComponent implements OnDestroy {
       isValid = false;
     }
 
+    // Validate password match
+    this.validatePasswordMatch();
+    if (this.confirmPasswordError) {
+      isValid = false;
+    }
+
     return isValid;
   }
 
   isFormValid(): boolean {
     return this.displayName.trim().length >= 2 &&
            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email) &&
-           this.hasMinLength && this.hasLetters && this.hasNumbers && this.hasSymbols;
+           this.hasMinLength && this.hasLetters && this.hasNumbers && this.hasSymbols &&
+           this.password === this.confirmPassword;
   }
 
   onRegister(): void {
     if (!this.validateForm()) {
       this.errorMessage = 'Please fix the errors above before submitting.';
+      return;
+    }
+
+    // Explicit password match check
+    if (this.password !== this.confirmPassword) {
+      this.errorMessage = 'Passwords do not match. Please check and try again.';
       return;
     }
 
@@ -901,10 +957,9 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register({
       displayName: this.displayName,
       email: this.email,
-      password: this.password
-    }).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
+      password: this.password,
+      confirmPassword: this.confirmPassword
+    }).subscribe({
       next: (response) => {
         this.isLoading = false;
         

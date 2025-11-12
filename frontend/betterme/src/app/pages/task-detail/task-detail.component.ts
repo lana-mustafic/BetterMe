@@ -40,7 +40,7 @@ import { Task } from '../../models/task.model';
               </span>
             </div>
             
-            <!-- NEW: Category Display -->
+            <!-- Category Display -->
             @if (task.category) {
               <div class="task-category">
                 <strong>Category:</strong> 
@@ -50,7 +50,7 @@ import { Task } from '../../models/task.model';
             
             <p class="task-description">{{ task.description || 'No description provided' }}</p>
             
-            <!-- NEW: Tags Display -->
+            <!-- Tags Display -->
             @if (task.tags && task.tags.length > 0) {
               <div class="task-tags">
                 <strong>Tags:</strong>
@@ -62,17 +62,17 @@ import { Task } from '../../models/task.model';
               </div>
             }
             
-           <div class="task-meta">
-  <div class="meta-item">
-    <strong>Priority:</strong> 
-    @if (+task.priority === 3) {
-      <span class="priority-high">High 🔥</span>
-    } @else if (+task.priority === 2) {
-      <span class="priority-medium">Medium ⚡</span>
-    } @else {
-      <span class="priority-low">Low</span>
-    }
-  </div>
+            <div class="task-meta">
+              <div class="meta-item">
+                <strong>Priority:</strong> 
+                @if (+task.priority === 3) {
+                  <span class="priority-high">High 🔥</span>
+                } @else if (+task.priority === 2) {
+                  <span class="priority-medium">Medium ⚡</span>
+                } @else {
+                  <span class="priority-low">Low</span>
+                }
+              </div>
               
               <div class="meta-item">
                 <strong>Created:</strong> {{ formatDate(task.createdAt) }}
@@ -99,6 +99,56 @@ import { Task } from '../../models/task.model';
               @if (task.completedAt) {
                 <div class="meta-item">
                   <strong>Completed:</strong> {{ formatDate(task.completedAt) }}
+                </div>
+              }
+            </div>
+
+            <!-- Smart Features Section -->
+            <div class="smart-features-section">
+              <!-- Recurring Task Info -->
+              @if (task.isRecurring) {
+                <div class="feature-item">
+                  <strong>🔄 Recurring:</strong> 
+                  <span>{{ formatRecurrencePattern(task.recurrencePattern) }} every {{ task.recurrenceInterval }} {{ task.recurrencePattern }}(s)</span>
+                  @if (task.streakCount && task.streakCount > 0) {
+                    <span class="streak-badge">🔥 {{ task.streakCount }} day streak</span>
+                  }
+                </div>
+              }
+              
+              <!-- Estimated Duration -->
+              @if (task.estimatedDuration) {
+                <div class="feature-item">
+                  <strong>⏱️ Estimated Duration:</strong> {{ task.estimatedDuration }} minutes
+                </div>
+              }
+              
+              <!-- Difficulty -->
+              <div class="feature-item">
+                <strong>📊 Difficulty:</strong> 
+                <span [class]="'difficulty-' + task.difficulty">
+                  {{ formatDifficulty(task.difficulty) }}
+                </span>
+              </div>
+              
+              <!-- Next Occurrence -->
+              @if (task.nextOccurrence && task.isRecurring) {
+                <div class="feature-item">
+                  <strong>📅 Next Occurrence:</strong> {{ formatDate(task.nextOccurrence) }}
+                </div>
+              }
+
+              <!-- Last Completed Date -->
+              @if (task.lastCompletedDate) {
+                <div class="feature-item">
+                  <strong>✅ Last Completed:</strong> {{ formatDate(task.lastCompletedDate) }}
+                </div>
+              }
+
+              <!-- Completion Count -->
+              @if (task.completionCount && task.completionCount > 0) {
+                <div class="feature-item">
+                  <strong>📈 Completed:</strong> {{ task.completionCount }} times
                 </div>
               }
             </div>
@@ -203,7 +253,7 @@ import { Task } from '../../models/task.model';
       color: #856404;
     }
 
-    /* NEW STYLES FOR CATEGORY AND TAGS */
+    /* Category and Tags Styles */
     .task-category {
       margin-bottom: 1rem;
     }
@@ -293,6 +343,71 @@ import { Task } from '../../models/task.model';
       margin-left: 8px;
     }
 
+    /* Smart Features Section */
+    .smart-features-section {
+      background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #e2e8ff;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .feature-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .feature-item strong {
+      color: #2d3748;
+      font-weight: 600;
+      min-width: 160px;
+    }
+
+    .streak-badge {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    /* Difficulty Styles */
+    .difficulty-easy {
+      color: #27ae60;
+      font-weight: 600;
+      background: #d5f4e6;
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+    }
+
+    .difficulty-medium {
+      color: #f39c12;
+      font-weight: 600;
+      background: #fef5e7;
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+    }
+
+    .difficulty-hard {
+      color: #e74c3c;
+      font-weight: 600;
+      background: #fde8e6;
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+    }
+
     .task-actions {
       display: flex;
       gap: 1rem;
@@ -327,6 +442,11 @@ import { Task } from '../../models/task.model';
     .btn-danger {
       background: #e74c3c;
       color: white;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .loading {
@@ -377,6 +497,12 @@ import { Task } from '../../models/task.model';
       color: #666;
     }
 
+    .btn-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     @media (max-width: 768px) {
       .task-header {
         flex-direction: column;
@@ -389,6 +515,21 @@ import { Task } from '../../models/task.model';
       
       .btn {
         width: 100%;
+      }
+
+      .feature-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .feature-item strong {
+        min-width: auto;
+      }
+
+      .streak-badge {
+        margin-left: 0;
+        align-self: flex-start;
       }
     }
   `]
@@ -477,20 +618,35 @@ export class TaskDetailComponent implements OnInit {
     this.router.navigate(['/tasks']);
   }
 
- formatDate(date: string | Date): string {
-  if (!date) return '';
-  
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  if (isNaN(dateObj.getTime())) return '';
-  
-  // Your date formatting logic here
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
+  formatDate(date: string | Date): string {
+    if (!date) return '';
+    
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    if (isNaN(dateObj.getTime())) return '';
+    
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  formatRecurrencePattern(pattern: string): string {
+    const patternMap: { [key: string]: string } = {
+      'daily': 'Daily',
+      'weekly': 'Weekly',
+      'monthly': 'Monthly',
+      'yearly': 'Yearly',
+      'none': 'Not recurring'
+    };
+    
+    return patternMap[pattern] || pattern;
+  }
+
+  formatDifficulty(difficulty: string): string {
+    return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  }
 
   isOverdue(dueDate: string | null | undefined): boolean {
     if (!dueDate) return false;

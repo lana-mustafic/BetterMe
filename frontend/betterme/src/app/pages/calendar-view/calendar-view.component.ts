@@ -2,9 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
-import { Task, CreateTaskRequest, UpdateTaskRequest } from '../../models/task.model';
+import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern } from '../../models/task.model';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, CdkDragPlaceholder, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-
 interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
@@ -2284,7 +2283,7 @@ export class CalendarViewComponent implements OnInit {
       category: this.newTaskCategory || 'Other',
       tags: this.newTaskTags,
       isRecurring: this.newTaskIsRecurring,
-      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern : 'none',
+      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern as RecurrencePattern : 'none',
       recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
     };
 
