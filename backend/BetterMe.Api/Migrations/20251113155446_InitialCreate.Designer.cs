@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BetterMe.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113152154_AddHabitTables")]
-    partial class AddHabitTables
+    [Migration("20251113155446_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
