@@ -17,6 +17,7 @@ import { CommonModule } from '@angular/common';
         <div class="nav-links">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a>
           <a routerLink="/tasks" routerLinkActive="active" class="nav-link">Tasks</a>
+          <a routerLink="/habits" routerLinkActive="active" class="nav-link">Habits</a> 
 
           <!-- ✅ Use async pipe to read current user -->
           <ng-container *ngIf="authService.currentUser$ | async as user; else guestLinks">
