@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using BetterMe.Models;
 using BetterMe.Api.Services.Interfaces;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace BetterMe.Api.Controllers
 {
@@ -83,10 +84,35 @@ namespace BetterMe.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse<Habit>>> CreateHabit(CreateHabitRequest request)
+        public async Task<ActionResult<ApiResponse<Habit>>> CreateHabit([FromBody] CreateHabitRequest request)
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    
+                    return BadRequest(new ApiResponse<Habit>
+                    {
+                        Success = false,
+                        Message = $"Invalid request data: {string.Join(", ", errors)}",
+                        Data = null
+                    });
+                }
+
+                if (request == null)
+                {
+                    return BadRequest(new ApiResponse<Habit>
+                    {
+                        Success = false,
+                        Message = "Request body cannot be null",
+                        Data = null
+                    });
+                }
+
                 var userId = GetUserId();
                 var habit = await _habitService.CreateHabitAsync(request, userId);
 
@@ -97,6 +123,14 @@ namespace BetterMe.Api.Controllers
                         Message = "Habit created successfully",
                         Data = habit
                     });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return BadRequest(new ApiResponse<Habit>
+                {
+                    Success = false,
+                    Message = $"Database error: {dbEx.InnerException?.Message ?? dbEx.Message}"
+                });
             }
             catch (Exception ex)
             {
