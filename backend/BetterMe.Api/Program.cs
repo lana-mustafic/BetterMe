@@ -102,7 +102,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    // context.Database.Migrate();  // Temporarily disabled for deployment
     SeedData.Initialize(context);
 }
 
