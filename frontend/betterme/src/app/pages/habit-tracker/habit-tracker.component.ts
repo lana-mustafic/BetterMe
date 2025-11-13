@@ -947,7 +947,9 @@ interface MonthMarker {
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
-      padding: 0.25rem;
+      padding: 0.5rem 0.25rem;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .calendar-day.empty {
@@ -975,22 +977,29 @@ interface MonthMarker {
       color: rgba(255, 255, 255, 0.9);
       font-size: 0.85rem;
       font-weight: 600;
+      line-height: 1;
+      text-align: center;
+      width: 100%;
+      padding: 0 0.25rem;
+      box-sizing: border-box;
     }
 
     .activity-indicator {
       position: absolute;
-      top: 2px;
-      right: 2px;
+      top: 3px;
+      right: 3px;
       background: rgba(74, 222, 128, 0.9);
       border-radius: 50%;
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 700;
       color: white;
+      flex-shrink: 0;
+      z-index: 1;
     }
 
     .activity-count {
