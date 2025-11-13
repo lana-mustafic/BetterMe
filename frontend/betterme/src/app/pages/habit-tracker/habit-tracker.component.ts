@@ -187,6 +187,91 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
             </div>
           </div>
 
+          <!-- All Habits View -->
+          <div *ngIf="activeView === 'all'" class="all-habits-view">
+            <div class="habits-list">
+              <div *ngFor="let habit of habits" class="habit-card glass-card" 
+                   [class.completed]="isHabitCompletedToday(habit)">
+                <div class="habit-header">
+                  <div class="habit-info">
+                    <span class="habit-icon">{{ habit.icon }}</span>
+                    <div class="habit-details">
+                      <h3 class="habit-name">{{ habit.name }}</h3>
+                      <div class="habit-meta">
+                        <span class="habit-category" [style.background]="habit.color + '20'" [style.color]="habit.color">
+                          {{ habit.category }}
+                        </span>
+                        <span class="habit-frequency">{{ habit.frequency }}</span>
+                        <span class="habit-difficulty" [class]="'difficulty-' + habit.difficulty">
+                          {{ habit.difficulty }}
+                        </span>
+                        <span class="habit-status" [class.active]="habit.isActive" [class.inactive]="!habit.isActive">
+                          {{ habit.isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="habit-points">
+                    +{{ habit.points }} XP
+                  </div>
+                </div>
+
+                <div class="habit-progress">
+                  <div class="progress-info">
+                    <span class="streak-count">
+                      🔥 {{ habit.streak }} day streak
+                    </span>
+                    <span class="best-streak">
+                      Best: {{ habit.bestStreak }}
+                    </span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getHabitCompletionRate(habit)"></div>
+                  </div>
+                  <div class="progress-text">
+                    {{ habit.currentCount }}/{{ habit.targetCount }} this {{ habit.frequency }}
+                  </div>
+                </div>
+
+                <div class="habit-actions">
+                  <button 
+                    *ngIf="!isHabitCompletedToday(habit) && habit.isActive"
+                    class="btn btn-primary complete-btn" 
+                    (click)="completeHabit(habit.id)"
+                  >
+                    <span class="btn-icon">✓</span>
+                    Mark Complete
+                  </button>
+                  <button 
+                    *ngIf="isHabitCompletedToday(habit) && habit.isActive"
+                    class="btn btn-outline undo-btn" 
+                    (click)="uncompleteHabit(habit.id)"
+                  >
+                    <span class="btn-icon">↶</span>
+                    Undo
+                  </button>
+                  <button class="btn-icon" (click)="editHabit(habit)">
+                    <span class="btn-icon">✏️</span>
+                  </button>
+                  <button class="btn-icon" (click)="toggleHabitActive(habit)">
+                    <span class="btn-icon">{{ habit.isActive ? '⏸️' : '▶️' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="habits.length === 0" class="empty-state glass-card">
+                <div class="empty-content">
+                  <span class="empty-icon">📝</span>
+                  <h3>No habits yet!</h3>
+                  <p>Start building your routine by creating your first habit.</p>
+                  <button class="btn btn-gradient" (click)="showCreateForm = true">
+                    Create Your First Habit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Statistics View -->
           <div *ngIf="activeView === 'stats' && habitStats" class="stats-view">
             <div class="stats-grid">
@@ -274,9 +359,9 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
               </div>
               
               <div class="modal-body">
-                <form (ngSubmit)="onSaveHabit()">
+                <form (ngSubmit)="onSaveHabit()" #habitForm="ngForm">
                   <div class="form-group">
-                    <label class="form-label">Habit Name</label>
+                    <label class="form-label">Habit Name *</label>
                     <input 
                       type="text" 
                       class="form-control"
@@ -284,7 +369,11 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                       [(ngModel)]="newHabit.name"
                       name="name"
                       required
+                      #name="ngModel"
                     />
+                    <div *ngIf="name.invalid && (name.dirty || name.touched)" class="error-message">
+                      Habit name is required
+                    </div>
                   </div>
 
                   <div class="form-group">
@@ -300,11 +389,13 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
 
                   <div class="form-row">
                     <div class="form-group">
-                      <label class="form-label">Frequency</label>
+                      <label class="form-label">Frequency *</label>
                       <select 
                         class="form-control"
                         [(ngModel)]="newHabit.frequency"
                         name="frequency"
+                        required
+                        #frequency="ngModel"
                       >
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
@@ -313,7 +404,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">Target</label>
+                      <label class="form-label">Target Count *</label>
                       <input 
                         type="number" 
                         class="form-control"
@@ -322,17 +413,23 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                         min="1"
                         max="100"
                         required
+                        #targetCount="ngModel"
                       />
+                      <div *ngIf="targetCount.invalid && (targetCount.dirty || targetCount.touched)" class="error-message">
+                        Target count must be between 1 and 100
+                      </div>
                     </div>
                   </div>
 
                   <div class="form-row">
                     <div class="form-group">
-                      <label class="form-label">Category</label>
+                      <label class="form-label">Category *</label>
                       <select 
                         class="form-control"
                         [(ngModel)]="newHabit.category"
                         name="category"
+                        required
+                        #category="ngModel"
                       >
                         <option *ngFor="let category of categories" [value]="category.name">
                           {{ category.icon }} {{ category.name }}
@@ -341,11 +438,13 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">Difficulty</label>
+                      <label class="form-label">Difficulty *</label>
                       <select 
                         class="form-control"
                         [(ngModel)]="newHabit.difficulty"
                         name="difficulty"
+                        required
+                        #difficulty="ngModel"
                       >
                         <option value="easy">😊 Easy</option>
                         <option value="medium">😐 Medium</option>
@@ -369,17 +468,36 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
 
                     <div class="form-group">
                       <label class="form-label">Color</label>
-                      <input 
-                        type="color" 
-                        class="form-control color-picker"
-                        [(ngModel)]="newHabit.color"
-                        name="color"
-                      />
+                      <div class="color-input-container">
+                        <input 
+                          type="color" 
+                          class="form-control color-picker"
+                          [(ngModel)]="newHabit.color"
+                          name="color"
+                        />
+                        <span class="color-value">{{ newHabit.color }}</span>
+                      </div>
                     </div>
                   </div>
 
+                  <div class="form-group">
+                    <label class="form-label">Points per Completion</label>
+                    <input 
+                      type="number" 
+                      class="form-control"
+                      [(ngModel)]="newHabit.points"
+                      name="points"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+
                   <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      [disabled]="!habitForm.form.valid"
+                    >
                       {{ editingHabit ? 'Update Habit' : 'Create Habit' }}
                     </button>
                     <button type="button" class="btn btn-secondary" (click)="closeModal()">
@@ -500,6 +618,12 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .btn-icon {
@@ -686,7 +810,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
       flex-wrap: wrap;
     }
 
-    .habit-category, .habit-frequency, .habit-difficulty {
+    .habit-category, .habit-frequency, .habit-difficulty, .habit-status {
       padding: 0.3rem 0.75rem;
       border-radius: 12px;
       font-size: 0.8rem;
@@ -711,6 +835,16 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
     .habit-difficulty.hard {
       background: rgba(239, 68, 68, 0.3);
       color: #fecaca;
+    }
+
+    .habit-status.active {
+      background: rgba(34, 197, 94, 0.3);
+      color: #bbf7d0;
+    }
+
+    .habit-status.inactive {
+      background: rgba(100, 116, 139, 0.3);
+      color: #cbd5e1;
     }
 
     .habit-points {
@@ -956,9 +1090,21 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
       gap: 1rem;
     }
 
+    .color-input-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
     .color-picker {
       height: 48px;
       padding: 0.5rem;
+      flex: 0 0 60px;
+    }
+
+    .color-value {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
     }
 
     .form-actions {
@@ -978,6 +1124,12 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.3);
       flex: 1;
+    }
+
+    .error-message {
+      color: #f87171;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
     }
 
     /* Empty State */
@@ -1056,6 +1208,10 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
         flex-direction: column;
         align-items: flex-start;
       }
+
+      .habit-actions {
+        flex-wrap: wrap;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1097,6 +1253,11 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
         width: 100%;
         height: 100%;
       }
+
+      .color-input-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   `]
 })
@@ -1113,19 +1274,29 @@ export class HabitTrackerComponent implements OnInit {
   showCreateForm = false;
   editingHabit: Habit | null = null;
 
-  newHabit = {
-  name: '',
-  description: '', 
-  frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
-  targetCount: 1,
-  category: 'Health & Fitness',
-  difficulty: 'easy' as 'easy' | 'medium' | 'hard',
-  icon: '✅',
-  color: '#4ade80',
-  points: 10,
-  isActive: true,
-  tags: [] as string[]
-};
+  // Use Partial<Habit> to make all properties optional, then we'll ensure required ones are set
+  newHabit: Partial<Habit> & {
+    name: string;
+    frequency: 'daily' | 'weekly' | 'monthly';
+    targetCount: number;
+    category: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    points: number;
+    isActive: boolean;
+  } = {
+    name: '',
+    description: '',
+    frequency: 'daily',
+    targetCount: 1,
+    category: 'Health & Fitness',
+    difficulty: 'easy',
+    points: 10,
+    isActive: true,
+    icon: '✅',
+    color: '#4ade80',
+    tags: [],
+    reminderTime: undefined
+  };
 
   ngOnInit(): void {
     this.loadHabits();
@@ -1158,15 +1329,40 @@ export class HabitTrackerComponent implements OnInit {
   }
 
   completeHabit(habitId: string): void {
-    this.habitService.completeHabit(habitId).subscribe(() => {
-      this.loadHabits(); // Reload to get updated data
+    this.habitService.completeHabit(habitId).subscribe({
+      next: () => {
+        this.loadHabits();
+      },
+      error: (error) => {
+        console.error('Error completing habit:', error);
+        alert('Error completing habit. Please try again.');
+      }
     });
   }
 
   uncompleteHabit(habitId: string): void {
     const today = new Date().toISOString().split('T')[0];
-    this.habitService.uncompleteHabit(habitId, today).subscribe(() => {
-      this.loadHabits(); // Reload to get updated data
+    this.habitService.uncompleteHabit(habitId, today).subscribe({
+      next: () => {
+        this.loadHabits();
+      },
+      error: (error) => {
+        console.error('Error uncompleting habit:', error);
+        alert('Error uncompleting habit. Please try again.');
+      }
+    });
+  }
+
+  toggleHabitActive(habit: Habit): void {
+    const updates = { isActive: !habit.isActive };
+    this.habitService.updateHabit(habit.id, updates).subscribe({
+      next: () => {
+        this.loadHabits();
+      },
+      error: (error) => {
+        console.error('Error toggling habit:', error);
+        alert('Error updating habit. Please try again.');
+      }
     });
   }
 
@@ -1194,25 +1390,97 @@ export class HabitTrackerComponent implements OnInit {
       .reduce((sum, habit) => sum + habit.points, 0);
   }
 
- editHabit(habit: Habit): void {
-  this.editingHabit = habit;
-  this.newHabit = { 
-    ...habit,
-    description: habit.description || '' 
-  };
-  this.showCreateForm = true;
-}
+   editHabit(habit: Habit): void {
+    this.editingHabit = habit;
+    // Create a complete newHabit object with all required fields
+    this.newHabit = {
+      id: habit.id,
+      name: habit.name,
+      description: habit.description || '',
+      frequency: habit.frequency,
+      streak: habit.streak,
+      bestStreak: habit.bestStreak,
+      completedDates: [...habit.completedDates],
+      targetCount: habit.targetCount,
+      currentCount: habit.currentCount,
+      category: habit.category,
+      color: habit.color,
+      icon: habit.icon,
+      difficulty: habit.difficulty,
+      points: habit.points,
+      isActive: habit.isActive,
+      createdAt: habit.createdAt,
+      updatedAt: habit.updatedAt,
+      tags: [...habit.tags],
+      reminderTime: habit.reminderTime
+    };
+    this.showCreateForm = true;
+  }
 
   onSaveHabit(): void {
+    console.log('Saving habit data:', this.newHabit);
+    
     if (this.editingHabit) {
-      this.habitService.updateHabit(this.editingHabit.id, this.newHabit).subscribe(() => {
-        this.closeModal();
-        this.loadHabits();
+      // For update, send only the fields that can be edited
+      const updateData: Partial<Habit> = {
+        name: this.newHabit.name!,
+        description: this.newHabit.description,
+        frequency: this.newHabit.frequency!,
+        targetCount: this.newHabit.targetCount!,
+        category: this.newHabit.category!,
+        difficulty: this.newHabit.difficulty!,
+        icon: this.newHabit.icon,
+        color: this.newHabit.color,
+        points: this.newHabit.points!,
+        tags: this.newHabit.tags,
+        reminderTime: this.newHabit.reminderTime,
+        updatedAt: new Date().toISOString()
+      };
+      
+      this.habitService.updateHabit(this.editingHabit.id, updateData).subscribe({
+        next: () => {
+          console.log('Habit updated successfully');
+          this.closeModal();
+          this.loadHabits();
+        },
+        error: (error) => {
+          console.error('Error updating habit:', error);
+          alert('Error updating habit. Please try again.');
+        }
       });
     } else {
-      this.habitService.createHabit(this.newHabit).subscribe(() => {
-        this.closeModal();
-        this.loadHabits();
+      // For create, ensure we have a complete habit object
+      const habitToCreate: Omit<Habit, 'id'> & { id?: string } = {
+        name: this.newHabit.name!,
+        description: this.newHabit.description || '',
+        frequency: this.newHabit.frequency!,
+        streak: 0,
+        bestStreak: 0,
+        completedDates: [],
+        targetCount: this.newHabit.targetCount!,
+        currentCount: 0,
+        category: this.newHabit.category!,
+        color: this.newHabit.color || '#4ade80',
+        icon: this.newHabit.icon || '✅',
+        difficulty: this.newHabit.difficulty!,
+        points: this.newHabit.points!,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tags: this.newHabit.tags || [],
+        reminderTime: this.newHabit.reminderTime
+      };
+      
+      this.habitService.createHabit(habitToCreate).subscribe({
+        next: (habit) => {
+          console.log('Habit created successfully:', habit);
+          this.closeModal();
+          this.loadHabits();
+        },
+        error: (error) => {
+          console.error('Error creating habit:', error);
+          alert('Error creating habit. Please try again.');
+        }
       });
     }
   }
@@ -1224,20 +1492,21 @@ export class HabitTrackerComponent implements OnInit {
   }
 
   resetNewHabitForm(): void {
-  this.newHabit = {
-    name: '',
-    description: '', // Ensure this is empty string
-    frequency: 'daily',
-    targetCount: 1,
-    category: 'Health & Fitness',
-    difficulty: 'easy',
-    icon: '✅',
-    color: '#4ade80',
-    points: 10,
-    isActive: true,
-    tags: []
-  };
-}
+    this.newHabit = {
+      name: '',
+      description: '',
+      frequency: 'daily',
+      targetCount: 1,
+      category: 'Health & Fitness',
+      difficulty: 'easy',
+      points: 10,
+      isActive: true,
+      icon: '✅',
+      color: '#4ade80',
+      tags: [],
+      reminderTime: undefined
+    };
+  }
 
   // Statistics view helpers
   getMaxCompletions(): number {

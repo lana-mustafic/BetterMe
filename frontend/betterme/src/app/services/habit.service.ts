@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, map, tap } from 'rxjs';
+import { Observable, BehaviorSubject, map, tap, catchError, of } from 'rxjs';
 import { Habit, HabitCompletion, HabitStats, HabitCategory, LevelSystem } from '../models/habit.model';
 import { AuthService } from './auth';
 import { environment } from '../../environments/environment';
@@ -61,6 +61,78 @@ export class HabitService {
     }
   ];
 
+  // Demo data for testing (remove when you have a real backend)
+  private demoHabits: Habit[] = [
+    {
+      id: 'habit_1',
+      name: 'Morning Meditation',
+      description: '10 minutes of meditation every morning',
+      frequency: 'daily',
+      streak: 5,
+      bestStreak: 7,
+      completedDates: this.getRecentDates(5),
+      targetCount: 1,
+      currentCount: 1,
+      category: 'Mindfulness',
+      color: '#8b5cf6',
+      icon: '🧘',
+      difficulty: 'easy',
+      points: 10,
+      isActive: true,
+      createdAt: '2024-01-10T00:00:00.000Z',
+      updatedAt: new Date().toISOString(),
+      tags: ['meditation', 'mindfulness'],
+      reminderTime: '08:00'
+    },
+    {
+      id: 'habit_2',
+      name: 'Evening Workout',
+      description: '30 minutes of exercise',
+      frequency: 'daily',
+      streak: 3,
+      bestStreak: 10,
+      completedDates: this.getRecentDates(3),
+      targetCount: 1,
+      currentCount: 1,
+      category: 'Health & Fitness',
+      color: '#4ade80',
+      icon: '💪',
+      difficulty: 'medium',
+      points: 15,
+      isActive: true,
+      createdAt: '2024-01-08T00:00:00.000Z',
+      updatedAt: new Date().toISOString(),
+      tags: ['exercise', 'fitness'],
+      reminderTime: '18:00'
+    },
+    {
+      id: 'habit_3',
+      name: 'Read 20 Pages',
+      description: 'Read at least 20 pages of a book',
+      frequency: 'daily',
+      streak: 7,
+      bestStreak: 7,
+      completedDates: this.getRecentDates(7),
+      targetCount: 1,
+      currentCount: 1,
+      category: 'Learning',
+      color: '#f59e0b',
+      icon: '📚',
+      difficulty: 'easy',
+      points: 10,
+      isActive: true,
+      createdAt: '2024-01-05T00:00:00.000Z',
+      updatedAt: new Date().toISOString(),
+      tags: ['reading', 'learning'],
+      reminderTime: '21:00'
+    }
+  ];
+
+  constructor() {
+    // Initialize with demo data
+    this.habitsSubject.next([...this.demoHabits]);
+  }
+
   private authHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders(token ? { 
@@ -71,60 +143,166 @@ export class HabitService {
 
   // CRUD Operations
   getHabits(): Observable<Habit[]> {
-    return this.http.get<Habit[]>(this.apiUrl, { headers: this.authHeaders() }).pipe(
-      tap(habits => this.habitsSubject.next(habits))
+    // Demo implementation - replace with real API call when backend is ready
+    console.log('Fetching habits from demo data');
+    return of([...this.demoHabits]).pipe(
+      tap(habits => this.habitsSubject.next(habits)),
+      catchError(error => {
+        console.error('Error fetching habits:', error);
+        // Fallback to demo data
+        this.habitsSubject.next([...this.demoHabits]);
+        return of([...this.demoHabits]);
+      })
     );
+
+    // Real implementation (uncomment when backend is ready):
+    /*
+    return this.http.get<Habit[]>(this.apiUrl, { headers: this.authHeaders() }).pipe(
+      tap(habits => {
+        console.log('Habits fetched from API:', habits);
+        this.habitsSubject.next(habits);
+      }),
+      catchError(error => {
+        console.error('Error fetching habits from API:', error);
+        // Fallback to demo data
+        this.habitsSubject.next([...this.demoHabits]);
+        return of([...this.demoHabits]);
+      })
+    );
+    */
   }
 
   getHabitById(id: string): Observable<Habit> {
-    return this.http.get<Habit>(`${this.apiUrl}/${id}`, { headers: this.authHeaders() });
+    // Demo implementation
+    const habit = this.demoHabits.find(h => h.id === id);
+    if (habit) {
+      return of({ ...habit });
+    }
+    return of(this.createEmptyHabit());
+
+    // Real implementation:
+    // return this.http.get<Habit>(`${this.apiUrl}/${id}`, { headers: this.authHeaders() });
   }
 
-  createHabit(habitData: Omit<Habit, 'id' | 'createdAt' | 'updatedAt' | 'streak' | 'bestStreak' | 'completedDates' | 'currentCount'>): Observable<Habit> {
-    const newHabit = {
-      ...habitData,
+  createHabit(habitData: any): Observable<Habit> {
+    console.log('Creating habit with data:', habitData);
+    
+    const newHabit: Habit = {
       id: this.generateId(),
+      name: habitData.name || 'New Habit',
+      description: habitData.description || '',
+      frequency: habitData.frequency || 'daily',
       streak: 0,
       bestStreak: 0,
       completedDates: [],
+      targetCount: habitData.targetCount || 1,
       currentCount: 0,
+      category: habitData.category || 'Health & Fitness',
+      color: habitData.color || '#4ade80',
+      icon: habitData.icon || '✅',
+      difficulty: habitData.difficulty || 'easy',
+      points: habitData.points || 10,
+      isActive: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      tags: habitData.tags || [],
+      reminderTime: habitData.reminderTime
     };
 
+    // Demo implementation
+    this.demoHabits.push(newHabit);
+    this.habitsSubject.next([...this.demoHabits]);
+    
+    console.log('Habit created successfully:', newHabit);
+    return of({ ...newHabit });
+
+    // Real implementation:
+    /*
     return this.http.post<Habit>(this.apiUrl, newHabit, { headers: this.authHeaders() }).pipe(
       tap(habit => {
+        console.log('Habit created via API:', habit);
         const currentHabits = this.habitsSubject.value;
         this.habitsSubject.next([...currentHabits, habit]);
+      }),
+      catchError(error => {
+        console.error('Error creating habit via API:', error);
+        throw error;
       })
     );
+    */
   }
 
   updateHabit(id: string, updates: Partial<Habit>): Observable<Habit> {
+    console.log('Updating habit:', id, 'with data:', updates);
+    
+    // Demo implementation
+    const index = this.demoHabits.findIndex(h => h.id === id);
+    if (index !== -1) {
+      const updatedHabit = { 
+        ...this.demoHabits[index], 
+        ...updates, 
+        updatedAt: new Date().toISOString() 
+      };
+      this.demoHabits[index] = updatedHabit;
+      this.habitsSubject.next([...this.demoHabits]);
+      console.log('Habit updated successfully:', updatedHabit);
+      return of({ ...updatedHabit });
+    }
+    
+    console.error('Habit not found for update:', id);
+    return of(this.createEmptyHabit());
+
+    // Real implementation:
+    /*
     return this.http.put<Habit>(`${this.apiUrl}/${id}`, updates, { headers: this.authHeaders() }).pipe(
       tap(updatedHabit => {
+        console.log('Habit updated via API:', updatedHabit);
         const currentHabits = this.habitsSubject.value;
         const updatedHabits = currentHabits.map(habit => 
           habit.id === id ? { ...habit, ...updates, updatedAt: new Date().toISOString() } : habit
         );
         this.habitsSubject.next(updatedHabits);
+      }),
+      catchError(error => {
+        console.error('Error updating habit via API:', error);
+        throw error;
       })
     );
+    */
   }
 
   deleteHabit(id: string): Observable<void> {
+    console.log('Deleting habit:', id);
+    
+    // Demo implementation
+    this.demoHabits = this.demoHabits.filter(habit => habit.id !== id);
+    this.habitsSubject.next([...this.demoHabits]);
+    console.log('Habit deleted successfully:', id);
+    return of(void 0);
+
+    // Real implementation:
+    /*
     return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.authHeaders() }).pipe(
       tap(() => {
+        console.log('Habit deleted via API:', id);
         const currentHabits = this.habitsSubject.value;
         const updatedHabits = currentHabits.filter(habit => habit.id !== id);
         this.habitsSubject.next(updatedHabits);
+      }),
+      catchError(error => {
+        console.error('Error deleting habit via API:', error);
+        throw error;
       })
     );
+    */
   }
 
   // Habit Completion & Gamification
   completeHabit(habitId: string, notes?: string, mood?: string): Observable<HabitCompletion> {
-    const completion: Omit<HabitCompletion, 'id'> = {
+    console.log('Completing habit:', habitId, 'Notes:', notes, 'Mood:', mood);
+    
+    const completion: HabitCompletion = {
+      id: this.generateId(),
       habitId,
       completedAt: new Date().toISOString(),
       notes,
@@ -132,47 +310,119 @@ export class HabitService {
       pointsEarned: this.calculatePoints(habitId)
     };
 
+    // Update the habit's streak and completed dates
+    this.updateHabitStreak(habitId, true);
+    
+    console.log('Habit completed successfully:', completion);
+    return of(completion);
+
+    // Real implementation:
+    /*
     return this.http.post<HabitCompletion>(`${this.apiUrl}/${habitId}/complete`, completion, { headers: this.authHeaders() }).pipe(
       tap(() => {
-        // Update local state
+        console.log('Habit completed via API:', completion);
         this.updateHabitStreak(habitId, true);
+      }),
+      catchError(error => {
+        console.error('Error completing habit via API:', error);
+        throw error;
       })
     );
+    */
   }
 
   uncompleteHabit(habitId: string, date: string): Observable<void> {
+    console.log('Uncompleting habit:', habitId, 'for date:', date);
+    
+    this.updateHabitStreak(habitId, false);
+    console.log('Habit uncompleted successfully');
+    return of(void 0);
+
+    // Real implementation:
+    /*
     return this.http.delete<void>(`${this.apiUrl}/${habitId}/completions/${date}`, { headers: this.authHeaders() }).pipe(
       tap(() => {
-        // Update local state
+        console.log('Habit uncompleted via API');
         this.updateHabitStreak(habitId, false);
+      }),
+      catchError(error => {
+        console.error('Error uncompleting habit via API:', error);
+        throw error;
       })
     );
+    */
   }
 
   // Analytics & Statistics
   getHabitStats(): Observable<HabitStats> {
     return this.habits$.pipe(
-      map(habits => this.calculateHabitStats(habits))
+      map(habits => {
+        const stats = this.calculateHabitStats(habits);
+        console.log('Calculated habit stats:', stats);
+        return stats;
+      }),
+      catchError(error => {
+        console.error('Error calculating habit stats:', error);
+        return of(this.createEmptyStats());
+      })
     );
   }
 
   getLevelSystem(): Observable<LevelSystem> {
     return this.getHabitStats().pipe(
-      map(stats => this.calculateLevelSystem(stats.totalPoints))
+      map(stats => {
+        const levelSystem = this.calculateLevelSystem(stats.totalPoints);
+        console.log('Calculated level system:', levelSystem);
+        return levelSystem;
+      }),
+      catchError(error => {
+        console.error('Error calculating level system:', error);
+        return of(this.createEmptyLevelSystem());
+      })
     );
   }
 
   getTodayHabits(): Observable<Habit[]> {
     return this.habits$.pipe(
-      map(habits => habits.filter(habit => this.isHabitDueToday(habit)))
+      map(habits => {
+        const todayHabits = habits.filter(habit => this.isHabitDueToday(habit));
+        console.log('Today\'s habits:', todayHabits);
+        return todayHabits;
+      }),
+      catchError(error => {
+        console.error('Error getting today\'s habits:', error);
+        return of([]);
+      })
     );
   }
 
   getHabitCompletions(habitId: string, startDate: string, endDate: string): Observable<HabitCompletion[]> {
+    console.log('Getting completions for habit:', habitId, 'from', startDate, 'to', endDate);
+    
+    // Demo implementation
+    const habit = this.demoHabits.find(h => h.id === habitId);
+    const completions: HabitCompletion[] = habit ? 
+      habit.completedDates.map(date => ({
+        id: this.generateId(),
+        habitId,
+        completedAt: date + 'T12:00:00.000Z',
+        pointsEarned: this.calculatePoints(habitId)
+      })) : [];
+    
+    return of(completions);
+
+    // Real implementation:
+    /*
     return this.http.get<HabitCompletion[]>(
       `${this.apiUrl}/${habitId}/completions?start=${startDate}&end=${endDate}`,
       { headers: this.authHeaders() }
+    ).pipe(
+      catchError(error => {
+        console.error('Error fetching habit completions:', error);
+        return of([]);
+      })
     );
+    */
   }
 
   // Utility Methods
@@ -181,9 +431,12 @@ export class HabitService {
   }
 
   isHabitDueToday(habit: Habit): boolean {
+    if (!habit.isActive) return false;
+
     const today = new Date().toISOString().split('T')[0];
     const lastCompleted = habit.completedDates[habit.completedDates.length - 1];
     
+    // If never completed, it's due
     if (!lastCompleted) return true;
 
     const lastCompletedDate = new Date(lastCompleted);
@@ -208,7 +461,8 @@ export class HabitService {
       new Date(date) >= periodStart
     ).length;
 
-    return (completionsInPeriod / habit.targetCount) * 100;
+    const rate = (completionsInPeriod / habit.targetCount) * 100;
+    return Math.min(rate, 100); // Cap at 100%
   }
 
   // Private Methods
@@ -296,15 +550,25 @@ export class HabitService {
   private calculateHabitStats(habits: Habit[]): HabitStats {
     const activeHabits = habits.filter(h => h.isActive);
     const totalCompletions = activeHabits.reduce((sum, habit) => sum + habit.completedDates.length, 0);
-    const currentStreak = Math.max(...activeHabits.map(h => h.streak));
-    const longestStreak = Math.max(...activeHabits.map(h => h.bestStreak));
+    const currentStreak = activeHabits.length > 0 ? Math.max(...activeHabits.map(h => h.streak)) : 0;
+    const longestStreak = activeHabits.length > 0 ? Math.max(...activeHabits.map(h => h.bestStreak)) : 0;
     const totalPoints = activeHabits.reduce((sum, habit) => 
-      sum + (habit.completedDates.length * this.POINTS_PER_COMPLETION), 0
+      sum + (habit.completedDates.length * habit.points), 0
     );
 
     // Calculate success rate (completions vs targets for current period)
-    const totalTarget = activeHabits.reduce((sum, habit) => sum + habit.targetCount, 0);
-    const totalCurrentCompletions = activeHabits.reduce((sum, habit) => sum + habit.currentCount, 0);
+    let totalTarget = 0;
+    let totalCurrentCompletions = 0;
+
+    activeHabits.forEach(habit => {
+      const periodStart = this.getCurrentPeriodStart(habit.frequency);
+      const completionsInPeriod = habit.completedDates.filter(date => 
+        new Date(date) >= periodStart
+      ).length;
+      totalTarget += habit.targetCount;
+      totalCurrentCompletions += Math.min(completionsInPeriod, habit.targetCount);
+    });
+
     const successRate = totalTarget > 0 ? (totalCurrentCompletions / totalTarget) * 100 : 0;
 
     // Generate weekly progress (last 7 days)
@@ -313,10 +577,18 @@ export class HabitService {
     // Category breakdown
     const categoryBreakdown = this.defaultCategories.map(category => {
       const categoryHabits = activeHabits.filter(h => h.category === category.name);
+      const completed = categoryHabits.reduce((sum, habit) => {
+        const periodStart = this.getCurrentPeriodStart(habit.frequency);
+        const completionsInPeriod = habit.completedDates.filter(date => 
+          new Date(date) >= periodStart
+        ).length;
+        return sum + Math.min(completionsInPeriod, habit.targetCount);
+      }, 0);
+      
       return {
         category: category.name,
         count: categoryHabits.length,
-        completed: categoryHabits.reduce((sum, habit) => sum + habit.currentCount, 0)
+        completed
       };
     });
 
@@ -338,15 +610,16 @@ export class HabitService {
     const level = this.calculateLevel(totalPoints);
     const nextLevelThreshold = this.LEVEL_THRESHOLDS[level] || this.LEVEL_THRESHOLDS[this.LEVEL_THRESHOLDS.length - 1] * 2;
     const currentLevelThreshold = level > 0 ? this.LEVEL_THRESHOLDS[level - 1] : 0;
-    const progress = ((totalPoints - currentLevelThreshold) / (nextLevelThreshold - currentLevelThreshold)) * 100;
+    const progress = totalPoints >= nextLevelThreshold ? 100 : 
+                   ((totalPoints - currentLevelThreshold) / (nextLevelThreshold - currentLevelThreshold)) * 100;
 
     const rewards = this.getLevelRewards(level);
 
     return {
       level,
       points: totalPoints,
-      pointsToNextLevel: nextLevelThreshold - totalPoints,
-      progress,
+      pointsToNextLevel: Math.max(0, nextLevelThreshold - totalPoints),
+      progress: Math.min(progress, 100),
       rewards
     };
   }
@@ -414,5 +687,68 @@ export class HabitService {
       default:
         return now;
     }
+  }
+
+  // Helper methods for demo data
+  private getRecentDates(count: number): string[] {
+    const dates = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+    return dates;
+  }
+
+  private createEmptyHabit(): Habit {
+    return {
+      id: '',
+      name: '',
+      description: '',
+      frequency: 'daily',
+      streak: 0,
+      bestStreak: 0,
+      completedDates: [],
+      targetCount: 1,
+      currentCount: 0,
+      category: 'Health & Fitness',
+      color: '#4ade80',
+      icon: '✅',
+      difficulty: 'easy',
+      points: 10,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: []
+    };
+  }
+
+  private createEmptyStats(): HabitStats {
+    return {
+      totalHabits: 0,
+      activeHabits: 0,
+      totalCompletions: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      successRate: 0,
+      totalPoints: 0,
+      level: 1,
+      weeklyProgress: this.generateWeeklyProgress([]),
+      categoryBreakdown: this.defaultCategories.map(category => ({
+        category: category.name,
+        count: 0,
+        completed: 0
+      }))
+    };
+  }
+
+  private createEmptyLevelSystem(): LevelSystem {
+    return {
+      level: 1,
+      points: 0,
+      pointsToNextLevel: 100,
+      progress: 0,
+      rewards: []
+    };
   }
 }
