@@ -1,8 +1,16 @@
+// habit-tracker.component.ts
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HabitService } from '../../services/habit.service';
-import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habit.model';
+import { Habit, HabitStats, HabitCategory, LevelSystem, CreateHabitRequest, UpdateHabitRequest } from '../../models/habit.model';
+
+interface ActivityDay {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4; // 0: no activity, 4: max activity
+  habits: Habit[];
+}
 
 @Component({
   selector: 'app-habit-tracker',
@@ -22,13 +30,13 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
           <!-- Header Section -->
           <div class="habit-header glass-card">
             <div class="header-content">
-              <h1 class="gradient-text">Habit Tracker</h1>
-              <p class="subtitle">Build better habits, one day at a time 🚀</p>
+              <h1 class="gradient-text">Activity Tracker</h1>
+              <p class="subtitle">Build consistency, one day at a time 🚀</p>
             </div>
             <div class="header-actions">
               <button class="btn btn-gradient" (click)="showCreateForm = true">
                 <span class="btn-icon">+</span>
-                New Habit
+                New Activity
               </button>
               <button class="btn btn-outline" (click)="activeView = 'stats'">
                 <span class="btn-icon">📊</span>
@@ -62,10 +70,18 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
             <div class="view-toggle">
               <button 
                 class="toggle-btn" 
+                [class.active]="activeView === 'activity'"
+                (click)="activeView = 'activity'"
+              >
+                <span class="toggle-icon">📅</span>
+                <span class="toggle-text">Activity Grid</span>
+              </button>
+              <button 
+                class="toggle-btn" 
                 [class.active]="activeView === 'today'"
                 (click)="activeView = 'today'"
               >
-                <span class="toggle-icon">📅</span>
+                <span class="toggle-icon">🎯</span>
                 <span class="toggle-text">Today</span>
               </button>
               <button 
@@ -74,7 +90,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                 (click)="activeView = 'all'"
               >
                 <span class="toggle-icon">📋</span>
-                <span class="toggle-text">All Habits</span>
+                <span class="toggle-text">All Activities</span>
               </button>
               <button 
                 class="toggle-btn" 
@@ -87,7 +103,77 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
             </div>
           </div>
 
-          <!-- Today's Habits View -->
+          <!-- Activity Grid View (GitHub-like) -->
+          <div *ngIf="activeView === 'activity'" class="activity-view">
+            <div class="activity-grid-section glass-card">
+              <h3>Activity Overview</h3>
+              <p class="activity-subtitle">Your consistency over the past year</p>
+              
+              <div class="activity-grid">
+                <div class="months-row">
+                  <span *ngFor="let month of months" class="month-label">{{ month }}</span>
+                </div>
+                <div class="grid-container">
+                  <div class="days-column">
+                    <span *ngFor="let day of days" class="day-label">{{ day }}</span>
+                  </div>
+                  <div class="squares-container">
+                    <div 
+                      *ngFor="let day of activityGrid" 
+                      class="activity-square"
+                      [class]="'level-' + day.level"
+                      [title]="getActivityTooltip(day)"
+                      (click)="selectActivityDay(day)"
+                    >
+                      <div class="square-inner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="activity-legend">
+                <span>Less</span>
+                <div class="legend-squares">
+                  <div class="activity-square level-0" title="No activity">
+                    <div class="square-inner"></div>
+                  </div>
+                  <div class="activity-square level-1" title="Low activity">
+                    <div class="square-inner"></div>
+                  </div>
+                  <div class="activity-square level-2" title="Medium activity">
+                    <div class="square-inner"></div>
+                  </div>
+                  <div class="activity-square level-3" title="High activity">
+                    <div class="square-inner"></div>
+                  </div>
+                  <div class="activity-square level-4" title="Very high activity">
+                    <div class="square-inner"></div>
+                  </div>
+                </div>
+                <span>More</span>
+              </div>
+            </div>
+
+            <!-- Selected Day Details -->
+            <div *ngIf="selectedActivityDay" class="selected-day-details glass-card">
+              <h4>Activity on {{ formatSelectedDate(selectedActivityDay.date) }}</h4>
+              <div *ngIf="selectedActivityDay.count > 0; else noActivity">
+                <p><strong>{{ selectedActivityDay.count }}</strong> activity completed</p>
+                <div class="completed-habits">
+                  <div *ngFor="let habit of selectedActivityDay.habits" class="completed-habit">
+                    <span class="habit-icon">{{ habit.icon }}</span>
+                    <span class="habit-name">{{ habit.name }}</span>
+                    <span class="habit-points">+{{ habit.points }} XP</span>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noActivity>
+                <p>No activities completed on this day</p>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Today's Activities View -->
           <div *ngIf="activeView === 'today'" class="today-view">
             <!-- Daily Stats -->
             <div class="daily-stats glass-card">
@@ -109,7 +195,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
               </div>
             </div>
 
-            <!-- Today's Habits List -->
+            <!-- Today's Activities List -->
             <div class="habits-list">
               <div *ngFor="let habit of todayHabits" class="habit-card glass-card" 
                    [class.completed]="isHabitCompletedToday(habit)">
@@ -177,17 +263,17 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
               <div *ngIf="todayHabits.length === 0" class="empty-state glass-card">
                 <div class="empty-content">
                   <span class="empty-icon">🎉</span>
-                  <h3>No habits due today!</h3>
-                  <p>Take a break or add new habits to track.</p>
+                  <h3>No activities due today!</h3>
+                  <p>Take a break or add new activities to track.</p>
                   <button class="btn btn-gradient" (click)="showCreateForm = true">
-                    Create New Habit
+                    Create New Activity
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- All Habits View -->
+          <!-- All Activities View -->
           <div *ngIf="activeView === 'all'" class="all-habits-view">
             <div class="habits-list">
               <div *ngFor="let habit of habits" class="habit-card glass-card" 
@@ -262,10 +348,10 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
               <div *ngIf="habits.length === 0" class="empty-state glass-card">
                 <div class="empty-content">
                   <span class="empty-icon">📝</span>
-                  <h3>No habits yet!</h3>
-                  <p>Start building your routine by creating your first habit.</p>
+                  <h3>No activities yet!</h3>
+                  <p>Start building your routine by creating your first activity.</p>
                   <button class="btn btn-gradient" (click)="showCreateForm = true">
-                    Create Your First Habit
+                    Create Your First Activity
                   </button>
                 </div>
               </div>
@@ -280,7 +366,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                   <span class="stat-icon">📊</span>
                   <div class="stat-data">
                     <div class="stat-number">{{ habitStats.totalHabits }}</div>
-                    <div class="stat-label">Total Habits</div>
+                    <div class="stat-label">Total Activities</div>
                   </div>
                 </div>
               </div>
@@ -332,7 +418,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
 
             <!-- Category Breakdown -->
             <div class="category-section glass-card">
-              <h3>Habits by Category</h3>
+              <h3>Activities by Category</h3>
               <div class="category-list">
                 <div *ngFor="let category of habitStats.categoryBreakdown" class="category-item">
                   <div class="category-header">
@@ -350,18 +436,18 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
             </div>
           </div>
 
-          <!-- Create/Edit Habit Modal -->
+          <!-- Create/Edit Activity Modal -->
           <div *ngIf="showCreateForm" class="modal-overlay" (click)="closeModal()">
             <div class="modal-content glass-card" (click)="$event.stopPropagation()">
               <div class="modal-header">
-                <h3>{{ editingHabit ? 'Edit Habit' : 'Create New Habit' }}</h3>
+                <h3>{{ editingHabit ? 'Edit Activity' : 'Create New Activity' }}</h3>
                 <button class="close-btn" (click)="closeModal()">×</button>
               </div>
               
               <div class="modal-body">
                 <form (ngSubmit)="onSaveHabit()" #habitForm="ngForm">
                   <div class="form-group">
-                    <label class="form-label">Habit Name *</label>
+                    <label class="form-label">Activity Name *</label>
                     <input 
                       type="text" 
                       class="form-control"
@@ -372,7 +458,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                       #name="ngModel"
                     />
                     <div *ngIf="name.invalid && (name.dirty || name.touched)" class="error-message">
-                      Habit name is required
+                      Activity name is required
                     </div>
                   </div>
 
@@ -380,7 +466,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                     <label class="form-label">Description</label>
                     <textarea 
                       class="form-control"
-                      placeholder="Describe your habit..."
+                      placeholder="Describe your activity..."
                       [(ngModel)]="newHabit.description"
                       name="description"
                       rows="2"
@@ -498,7 +584,7 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
                       class="btn btn-primary"
                       [disabled]="!habitForm.form.valid"
                     >
-                      {{ editingHabit ? 'Update Habit' : 'Create Habit' }}
+                      {{ editingHabit ? 'Update Activity' : 'Create Activity' }}
                     </button>
                     <button type="button" class="btn btn-secondary" (click)="closeModal()">
                       Cancel
@@ -724,6 +810,184 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
       background: rgba(255, 255, 255, 0.15);
       color: white;
       box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Activity Grid Styles (GitHub-like) */
+    .activity-view {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .activity-grid-section {
+      padding: 2rem;
+    }
+
+    .activity-grid-section h3 {
+      color: white;
+      margin-bottom: 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    .activity-subtitle {
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 2rem;
+    }
+
+    .activity-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .months-row {
+      display: flex;
+      justify-content: space-between;
+      margin-left: 40px; /* Match days column width */
+    }
+
+    .month-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8rem;
+      font-weight: 500;
+      flex: 1;
+      text-align: center;
+    }
+
+    .grid-container {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .days-column {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      width: 40px;
+    }
+
+    .day-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.7rem;
+      height: 12px;
+      text-align: center;
+      line-height: 12px;
+    }
+
+    .squares-container {
+      display: grid;
+      grid-template-columns: repeat(53, 12px);
+      grid-template-rows: repeat(7, 12px);
+      gap: 3px;
+      flex: 1;
+    }
+
+    .activity-square {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .activity-square:hover {
+      transform: scale(1.2);
+      z-index: 10;
+    }
+
+    .square-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    /* Activity levels (GitHub-like colors) */
+    .activity-square.level-0 {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .activity-square.level-0 .square-inner {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .activity-square.level-1 {
+      background: rgba(14, 110, 0, 0.3);
+    }
+    .activity-square.level-1 .square-inner {
+      background: #0e6e00;
+    }
+
+    .activity-square.level-2 {
+      background: rgba(38, 166, 0, 0.4);
+    }
+    .activity-square.level-2 .square-inner {
+      background: #26a600;
+    }
+
+    .activity-square.level-3 {
+      background: rgba(58, 211, 0, 0.5);
+    }
+    .activity-square.level-3 .square-inner {
+      background: #3ad300;
+    }
+
+    .activity-square.level-4 {
+      background: rgba(76, 255, 0, 0.6);
+    }
+    .activity-square.level-4 .square-inner {
+      background: #4cff00;
+    }
+
+    .activity-legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8rem;
+    }
+
+    .legend-squares {
+      display: flex;
+      gap: 3px;
+    }
+
+    .selected-day-details {
+      padding: 1.5rem;
+    }
+
+    .selected-day-details h4 {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .completed-habits {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .completed-habit {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .completed-habit .habit-name {
+      color: white;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .completed-habit .habit-points {
+      color: #4ade80;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
 
     /* Today's Habits */
@@ -1212,6 +1476,23 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
       .habit-actions {
         flex-wrap: wrap;
       }
+
+      /* Mobile adjustments for activity grid */
+      .squares-container {
+        grid-template-columns: repeat(26, 12px);
+        overflow-x: auto;
+      }
+
+      .months-row {
+        margin-left: 0;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .month-label {
+        flex: none;
+        width: auto;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1258,6 +1539,10 @@ import { Habit, HabitStats, HabitCategory, LevelSystem } from '../../models/habi
         flex-direction: column;
         align-items: flex-start;
       }
+
+      .squares-container {
+        grid-template-columns: repeat(13, 12px);
+      }
     }
   `]
 })
@@ -1270,55 +1555,131 @@ export class HabitTrackerComponent implements OnInit {
   levelSystem: LevelSystem | null = null;
   categories: HabitCategory[] = [];
 
-  activeView: 'today' | 'all' | 'stats' = 'today';
+  // Activity Grid
+  activityGrid: ActivityDay[] = [];
+  selectedActivityDay: ActivityDay | null = null;
+  months: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  days: string[] = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
+
+  activeView: 'activity' | 'today' | 'all' | 'stats' = 'activity';
   showCreateForm = false;
   editingHabit: Habit | null = null;
 
-  // Use Partial<Habit> to make all properties optional, then we'll ensure required ones are set
-  newHabit: Partial<Habit> & {
-    name: string;
-    frequency: 'daily' | 'weekly' | 'monthly';
-    targetCount: number;
-    category: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    points: number;
-    isActive: boolean;
-  } = {
+  newHabit: CreateHabitRequest = {
     name: '',
     description: '',
     frequency: 'daily',
     targetCount: 1,
     category: 'Health & Fitness',
+    color: '#4ade80',
+    icon: '✅',
     difficulty: 'easy',
     points: 10,
-    isActive: true,
-    icon: '✅',
-    color: '#4ade80',
-    tags: [],
-    reminderTime: undefined
+    tags: []
   };
 
   ngOnInit(): void {
     this.loadHabits();
     this.categories = this.habitService.getCategories();
+    this.generateActivityGrid();
   }
 
   loadHabits(): void {
-    this.habitService.getHabits().subscribe(habits => {
-      this.habits = habits;
-      this.updateTodayHabits();
+    this.habitService.getHabits().subscribe({
+      next: (habits) => {
+        this.habits = habits;
+        this.updateTodayHabits();
+        this.generateActivityGrid();
+      },
+      error: (error) => {
+        console.error('Error loading habits:', error);
+        alert('Error loading activities. Please try again.');
+      }
     });
 
-    this.habitService.getHabitStats().subscribe(stats => {
-      this.habitStats = stats;
+    this.habitService.getHabitStats().subscribe({
+      next: (stats) => {
+        this.habitStats = stats;
+      },
+      error: (error) => {
+        console.error('Error loading stats:', error);
+      }
     });
 
-    this.habitService.getLevelSystem().subscribe(levelSystem => {
-      this.levelSystem = levelSystem;
+    this.habitService.getLevelSystem().subscribe({
+      next: (levelSystem) => {
+        this.levelSystem = levelSystem;
+      },
+      error: (error) => {
+        console.error('Error loading level system:', error);
+      }
     });
 
-    this.habitService.getTodayHabits().subscribe(habits => {
-      this.todayHabits = habits;
+    this.habitService.getTodayHabits().subscribe({
+      next: (habits) => {
+        this.todayHabits = habits;
+      },
+      error: (error) => {
+        console.error('Error loading today\'s habits:', error);
+      }
+    });
+  }
+
+  generateActivityGrid(): void {
+    const grid: ActivityDay[] = [];
+    const today = new Date();
+    const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+
+    // Generate dates for the past year
+    for (let date = new Date(oneYearAgo); date <= today; date.setDate(date.getDate() + 1)) {
+      const dateString = date.toISOString().split('T')[0];
+      
+      // Count completions for this date
+      const completions = this.habits.reduce((count, habit) => {
+        return count + (habit.completedDates.includes(dateString) ? 1 : 0);
+      }, 0);
+
+      // Get habits completed on this date
+      const completedHabits = this.habits.filter(habit => 
+        habit.completedDates.includes(dateString)
+      );
+
+      // Determine activity level (GitHub-like)
+      let level: 0 | 1 | 2 | 3 | 4 = 0;
+      if (completions > 0) level = 1;
+      if (completions > 2) level = 2;
+      if (completions > 4) level = 3;
+      if (completions > 6) level = 4;
+
+      grid.push({
+        date: dateString,
+        count: completions,
+        level: level,
+        habits: completedHabits
+      });
+    }
+
+    this.activityGrid = grid;
+  }
+
+  getActivityTooltip(day: ActivityDay): string {
+    if (day.count === 0) {
+      return `No activity on ${this.formatSelectedDate(day.date)}`;
+    }
+    return `${day.count} ${day.count === 1 ? 'activity' : 'activities'} completed on ${this.formatSelectedDate(day.date)}`;
+  }
+
+  selectActivityDay(day: ActivityDay): void {
+    this.selectedActivityDay = day;
+  }
+
+  formatSelectedDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
     });
   }
 
@@ -1335,7 +1696,7 @@ export class HabitTrackerComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error completing habit:', error);
-        alert('Error completing habit. Please try again.');
+        alert('Error completing activity. Please try again.');
       }
     });
   }
@@ -1348,20 +1709,20 @@ export class HabitTrackerComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error uncompleting habit:', error);
-        alert('Error uncompleting habit. Please try again.');
+        alert('Error uncompleting activity. Please try again.');
       }
     });
   }
 
   toggleHabitActive(habit: Habit): void {
-    const updates = { isActive: !habit.isActive };
+    const updates: UpdateHabitRequest = { isActive: !habit.isActive };
     this.habitService.updateHabit(habit.id, updates).subscribe({
       next: () => {
         this.loadHabits();
       },
       error: (error) => {
         console.error('Error toggling habit:', error);
-        alert('Error updating habit. Please try again.');
+        alert('Error updating activity. Please try again.');
       }
     });
   }
@@ -1390,96 +1751,63 @@ export class HabitTrackerComponent implements OnInit {
       .reduce((sum, habit) => sum + habit.points, 0);
   }
 
-   editHabit(habit: Habit): void {
+  editHabit(habit: Habit): void {
     this.editingHabit = habit;
-    // Create a complete newHabit object with all required fields
     this.newHabit = {
-      id: habit.id,
       name: habit.name,
       description: habit.description || '',
       frequency: habit.frequency,
-      streak: habit.streak,
-      bestStreak: habit.bestStreak,
-      completedDates: [...habit.completedDates],
       targetCount: habit.targetCount,
-      currentCount: habit.currentCount,
       category: habit.category,
       color: habit.color,
       icon: habit.icon,
       difficulty: habit.difficulty,
       points: habit.points,
-      isActive: habit.isActive,
-      createdAt: habit.createdAt,
-      updatedAt: habit.updatedAt,
-      tags: [...habit.tags],
-      reminderTime: habit.reminderTime
+      reminderTime: habit.reminderTime,
+      tags: [...habit.tags]
     };
     this.showCreateForm = true;
   }
 
   onSaveHabit(): void {
-    console.log('Saving habit data:', this.newHabit);
-    
     if (this.editingHabit) {
-      // For update, send only the fields that can be edited
-      const updateData: Partial<Habit> = {
-        name: this.newHabit.name!,
+      // Update existing habit
+      const updateData: UpdateHabitRequest = {
+        name: this.newHabit.name,
         description: this.newHabit.description,
-        frequency: this.newHabit.frequency!,
-        targetCount: this.newHabit.targetCount!,
-        category: this.newHabit.category!,
-        difficulty: this.newHabit.difficulty!,
-        icon: this.newHabit.icon,
+        frequency: this.newHabit.frequency,
+        targetCount: this.newHabit.targetCount,
+        category: this.newHabit.category,
         color: this.newHabit.color,
-        points: this.newHabit.points!,
-        tags: this.newHabit.tags,
+        icon: this.newHabit.icon,
+        difficulty: this.newHabit.difficulty,
+        points: this.newHabit.points,
         reminderTime: this.newHabit.reminderTime,
-        updatedAt: new Date().toISOString()
+        tags: this.newHabit.tags
       };
       
       this.habitService.updateHabit(this.editingHabit.id, updateData).subscribe({
         next: () => {
-          console.log('Habit updated successfully');
+          console.log('Activity updated successfully');
           this.closeModal();
           this.loadHabits();
         },
         error: (error) => {
-          console.error('Error updating habit:', error);
-          alert('Error updating habit. Please try again.');
+          console.error('Error updating activity:', error);
+          alert('Error updating activity. Please try again.');
         }
       });
     } else {
-      // For create, ensure we have a complete habit object
-      const habitToCreate: Omit<Habit, 'id'> & { id?: string } = {
-        name: this.newHabit.name!,
-        description: this.newHabit.description || '',
-        frequency: this.newHabit.frequency!,
-        streak: 0,
-        bestStreak: 0,
-        completedDates: [],
-        targetCount: this.newHabit.targetCount!,
-        currentCount: 0,
-        category: this.newHabit.category!,
-        color: this.newHabit.color || '#4ade80',
-        icon: this.newHabit.icon || '✅',
-        difficulty: this.newHabit.difficulty!,
-        points: this.newHabit.points!,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tags: this.newHabit.tags || [],
-        reminderTime: this.newHabit.reminderTime
-      };
-      
-      this.habitService.createHabit(habitToCreate).subscribe({
+      // Create new habit
+      this.habitService.createHabit(this.newHabit).subscribe({
         next: (habit) => {
-          console.log('Habit created successfully:', habit);
+          console.log('Activity created successfully:', habit);
           this.closeModal();
           this.loadHabits();
         },
         error: (error) => {
-          console.error('Error creating habit:', error);
-          alert('Error creating habit. Please try again.');
+          console.error('Error creating activity:', error);
+          alert('Error creating activity. Please try again.');
         }
       });
     }
@@ -1498,13 +1826,11 @@ export class HabitTrackerComponent implements OnInit {
       frequency: 'daily',
       targetCount: 1,
       category: 'Health & Fitness',
+      color: '#4ade80',
+      icon: '✅',
       difficulty: 'easy',
       points: 10,
-      isActive: true,
-      icon: '✅',
-      color: '#4ade80',
-      tags: [],
-      reminderTime: undefined
+      tags: []
     };
   }
 

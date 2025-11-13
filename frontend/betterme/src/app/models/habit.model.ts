@@ -1,28 +1,31 @@
+// habit.model.ts
 export interface Habit {
   id: string;
+  userId: number;
   name: string;
   description?: string;
   frequency: 'daily' | 'weekly' | 'monthly';
   streak: number;
   bestStreak: number;
-  completedDates: string[]; // Store as ISO string dates
-  targetCount: number; // How many times per period (e.g., 3 times per week)
-  currentCount: number; // Current period count
+  completedDates: string[]; // ISO string dates
+  targetCount: number;
+  currentCount: number;
   category: string;
   color: string;
   icon: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  points: number; // Points earned per completion
+  points: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  reminderTime?: string; // Optional reminder time
+  reminderTime?: string;
   tags: string[];
 }
 
 export interface HabitCompletion {
   id: string;
   habitId: string;
+  userId: number;
   completedAt: string;
   notes?: string;
   mood?: 'terrible' | 'bad' | 'neutral' | 'good' | 'excellent';
@@ -55,4 +58,38 @@ export interface LevelSystem {
   pointsToNextLevel: number;
   progress: number;
   rewards: string[];
+}
+
+export interface CreateHabitRequest {
+  name: string;
+  description?: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  targetCount: number;
+  category: string;
+  color: string;
+  icon: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  points: number;
+  reminderTime?: string;
+  tags: string[];
+}
+
+export interface UpdateHabitRequest {
+  name?: string;
+  description?: string;
+  frequency?: 'daily' | 'weekly' | 'monthly';
+  targetCount?: number;
+  category?: string;
+  color?: string;
+  icon?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  points?: number;
+  isActive?: boolean;
+  reminderTime?: string;
+  tags?: string[];
+}
+
+export interface CompleteHabitRequest {
+  notes?: string;
+  mood?: string;
 }
