@@ -9,7 +9,8 @@ import { EditTaskComponent } from './pages/edit-task/edit-task.component';
 import { EditProfileComponent } from './pages/edit-profile/edit-profile.component';
 import { ChangePasswordComponent } from './pages/password/change-password.component';
 import { authGuard } from './guards/auth.guard';
-import { HabitTrackerComponent } from './pages/habit-tracker/habit-tracker.component'; 
+import { HabitTrackerComponent } from './pages/habit-tracker/habit-tracker.component';
+
 export const routes: Routes = [
   { 
     path: '', 
@@ -74,6 +75,17 @@ export const routes: Routes = [
     }
   },
 
+  // Habits Route - MOVED BEFORE WILDCARD
+  { 
+    path: 'habits', 
+    component: HabitTrackerComponent,
+    canActivate: [authGuard],
+    data: { 
+      title: 'Habit Tracker - TaskFlow',
+      breadcrumb: 'Habit Tracker'
+    }
+  },
+
   // Profile Routes
   { 
     path: 'profile', 
@@ -103,20 +115,10 @@ export const routes: Routes = [
     }
   },
 
-  // Redirect all unknown routes to home
+  // Redirect all unknown routes to home - THIS SHOULD BE LAST
   { 
     path: '**', 
     redirectTo: '',
     pathMatch: 'full'
-  },
-
-  { 
-  path: 'habits', 
-  component: HabitTrackerComponent,
-  canActivate: [authGuard],
-  data: { 
-    title: 'Habit Tracker - TaskFlow',
-    breadcrumb: 'Habit Tracker'
   }
-}
 ];
