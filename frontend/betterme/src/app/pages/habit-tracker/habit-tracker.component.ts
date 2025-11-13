@@ -10,6 +10,8 @@ interface ActivityDay {
   count: number;
   level: 0 | 1 | 2 | 3 | 4; // 0: no activity, 4: max activity
   habits: Habit[];
+  dayOfWeek?: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  weekIndex?: number; // Week number (0-52)
 }
 
 @Component({
@@ -821,6 +823,7 @@ interface ActivityDay {
 
     .activity-grid-section {
       padding: 2rem;
+      overflow-x: auto;
     }
 
     .activity-grid-section h3 {
@@ -858,6 +861,7 @@ interface ActivityDay {
       display: flex;
       gap: 1rem;
       overflow-x: auto; /* Allow horizontal scrolling on mobile */
+      width: 100%;
     }
 
     .days-column {
@@ -881,6 +885,7 @@ interface ActivityDay {
       grid-template-rows: repeat(7, 12px); /* 7 rows for days of week */
       gap: 3px;
       flex: 1;
+      min-width: 792px; /* 53 columns * 12px + 52 gaps * 3px = 636px + 156px = 792px */
     }
 
     .activity-square {
@@ -1639,12 +1644,30 @@ export class HabitTrackerComponent implements OnInit {
     today.setHours(0, 0, 0, 0);
     oneYearAgo.setHours(0, 0, 0, 0);
 
-    // Generate exactly 365 days (52 weeks + 1 day)
+    // Get the day of week for the first day (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = oneYearAgo.getDay();
+    
+    // Create a 2D array: 7 rows (days of week) x 53 columns (weeks)
+    // Initialize with null values
+    const gridArray: (ActivityDay | null)[][] = [];
+    for (let row = 0; row < 7; row++) {
+      gridArray[row] = new Array(53).fill(null);
+    }
+
+    // Generate exactly 365 days and place them in the correct grid position
     for (let i = 0; i < 365; i++) {
       const currentDate = new Date(oneYearAgo);
       currentDate.setDate(oneYearAgo.getDate() + i);
       
       const dateString = currentDate.toISOString().split('T')[0];
+      
+      // Calculate day of week (0 = Sunday, 1 = Monday, etc.)
+      const dayOfWeek = currentDate.getDay();
+      
+      // Calculate week index (which week column this day belongs to)
+      // The first day might not start on Sunday, so we need to account for that
+      const daysSinceStart = i;
+      const weekIndex = Math.floor((daysSinceStart + firstDayOfWeek) / 7);
       
       // Count completions for this date
       const completions = this.habits.reduce((count, habit) => {
@@ -1663,15 +1686,62 @@ export class HabitTrackerComponent implements OnInit {
       if (completions > 4) level = 3;
       if (completions > 6) level = 4;
 
-      grid.push({
+      const activityDay: ActivityDay = {
         date: dateString,
         count: completions,
         level: level,
-        habits: completedHabits
-      });
+        habits: completedHabits,
+        dayOfWeek: dayOfWeek,
+        weekIndex: weekIndex
+      };
+
+      // Place in grid if within bounds
+      if (weekIndex < 53 && dayOfWeek < 7) {
+        gridArray[dayOfWeek][weekIndex] = activityDay;
+      }
+      
+      grid.push(activityDay);
     }
 
-    this.activityGrid = grid;
+    // Flatten the 2D array into a single array for display
+    // CSS grid auto-places items row by row, so we iterate row by row (days of week), then column by column (weeks)
+    const flattenedGrid: ActivityDay[] = [];
+    for (let day = 0; day < 7; day++) {
+      for (let week = 0; week < 53; week++) {
+        const cell = gridArray[day][week];
+        if (cell) {
+          flattenedGrid.push(cell);
+        } else {
+          // Create empty placeholder for proper grid layout
+          const emptyDate = new Date(oneYearAgo);
+          const daysToAdd = week * 7 + day - firstDayOfWeek;
+          if (daysToAdd >= 0 && daysToAdd < 365) {
+            emptyDate.setDate(oneYearAgo.getDate() + daysToAdd);
+            const dateString = emptyDate.toISOString().split('T')[0];
+            flattenedGrid.push({
+              date: dateString,
+              count: 0,
+              level: 0,
+              habits: [],
+              dayOfWeek: day,
+              weekIndex: week
+            });
+          } else {
+            // Add empty cell outside our date range for proper grid structure
+            flattenedGrid.push({
+              date: '',
+              count: 0,
+              level: 0,
+              habits: [],
+              dayOfWeek: day,
+              weekIndex: week
+            });
+          }
+        }
+      }
+    }
+
+    this.activityGrid = flattenedGrid;
   }
 
   checkGridCompleteness(): void {
