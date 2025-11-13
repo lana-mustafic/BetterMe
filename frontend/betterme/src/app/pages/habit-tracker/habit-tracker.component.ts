@@ -12,6 +12,12 @@ interface ActivityDay {
   habits: Habit[];
   dayOfWeek?: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   weekIndex?: number; // Week number (0-52)
+  isWithinRange: boolean; // True if the day falls within the past 365 days
+}
+
+interface MonthMarker {
+  label: string;
+  weeks: number;
 }
 
 @Component({
@@ -105,54 +111,79 @@ interface ActivityDay {
             </div>
           </div>
 
-          <!-- Activity Grid View (GitHub-like) -->
+          <!-- Activity Calendar View -->
           <div *ngIf="activeView === 'activity'" class="activity-view">
-            <div class="activity-grid-section glass-card">
-              <h3>Activity Overview</h3>
-              <p class="activity-subtitle">Your consistency over the past year</p>
+            <div class="activity-calendar-section glass-card">
+              <div class="calendar-header">
+                <h3>Activity Calendar</h3>
+                <p class="activity-subtitle">Your consistency over the past year</p>
+              </div>
               
-              <div class="activity-grid">
-                <div class="months-row">
-                  <span *ngFor="let month of months" class="month-label">{{ month }}</span>
-                </div>
-                <div class="grid-container">
-                  <div class="days-column">
-                    <span *ngFor="let day of days" class="day-label">{{ day }}</span>
+              <div class="calendar-months">
+                <div *ngFor="let month of calendarMonths" class="calendar-month">
+                  <div class="month-header">
+                    <h4 class="month-name">{{ month.name }} {{ month.year }}</h4>
+                    <span class="month-stats">{{ month.totalActivities }} activities</span>
                   </div>
-                  <div class="squares-container">
-                    <div 
-                      *ngFor="let day of activityGrid" 
-                      class="activity-square"
-                      [class]="'level-' + day.level"
-                      [title]="getActivityTooltip(day)"
-                      (click)="selectActivityDay(day)"
-                    >
-                      <div class="square-inner"></div>
+                  
+                  <div class="calendar-grid">
+                    <!-- Day headers -->
+                    <div class="calendar-weekdays">
+                      <div *ngFor="let dayName of weekDayNames" class="weekday-header">{{ dayName }}</div>
+                    </div>
+                    
+                    <!-- Calendar days -->
+                    <div class="calendar-days">
+                      <!-- Empty cells for days before month starts -->
+                      <div 
+                        *ngFor="let empty of getEmptyDays(month.firstDayOfWeek)" 
+                        class="calendar-day empty"
+                      ></div>
+                      
+                      <!-- Actual days -->
+                      <div 
+                        *ngFor="let day of month.days" 
+                        class="calendar-day"
+                        [class.today]="isToday(day.date)"
+                        [class.has-activity]="day.count > 0"
+                        [class]="'activity-level-' + day.level"
+                        [title]="getActivityTooltip(day)"
+                        (click)="selectActivityDay(day)"
+                      >
+                        <span class="day-number">{{ getDayNumber(day.date) }}</span>
+                        <div *ngIf="day.count > 0" class="activity-indicator">
+                          <span class="activity-count">{{ day.count }}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="activity-legend">
-                <span>Less</span>
-                <div class="legend-squares">
-                  <div class="activity-square level-0" title="No activity">
-                    <div class="square-inner"></div>
+                <div class="legend-title">Activity Levels</div>
+                <div class="legend-items">
+                  <div class="legend-item">
+                    <div class="legend-color level-0"></div>
+                    <span>No activity</span>
                   </div>
-                  <div class="activity-square level-1" title="Low activity">
-                    <div class="square-inner"></div>
+                  <div class="legend-item">
+                    <div class="legend-color level-1"></div>
+                    <span>1-2 activities</span>
                   </div>
-                  <div class="activity-square level-2" title="Medium activity">
-                    <div class="square-inner"></div>
+                  <div class="legend-item">
+                    <div class="legend-color level-2"></div>
+                    <span>3-4 activities</span>
                   </div>
-                  <div class="activity-square level-3" title="High activity">
-                    <div class="square-inner"></div>
+                  <div class="legend-item">
+                    <div class="legend-color level-3"></div>
+                    <span>5-6 activities</span>
                   </div>
-                  <div class="activity-square level-4" title="Very high activity">
-                    <div class="square-inner"></div>
+                  <div class="legend-item">
+                    <div class="legend-color level-4"></div>
+                    <span>7+ activities</span>
                   </div>
                 </div>
-                <span>More</span>
               </div>
             </div>
 
@@ -814,19 +845,22 @@ interface ActivityDay {
       box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
     }
 
-    /* Activity Grid Styles (GitHub-like) */
+    /* Activity Calendar Styles */
     .activity-view {
       display: flex;
       flex-direction: column;
       gap: 2rem;
     }
 
-    .activity-grid-section {
+    .activity-calendar-section {
       padding: 2rem;
-      overflow-x: auto;
     }
 
-    .activity-grid-section h3 {
+    .calendar-header {
+      margin-bottom: 2rem;
+    }
+
+    .calendar-header h3 {
       color: white;
       margin-bottom: 0.5rem;
       font-size: 1.5rem;
@@ -834,129 +868,218 @@ interface ActivityDay {
 
     .activity-subtitle {
       color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0;
+    }
+
+    .calendar-months {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
       margin-bottom: 2rem;
     }
 
-    .activity-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    .calendar-month {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .months-row {
+    .month-header {
       display: flex;
       justify-content: space-between;
-      margin-left: 40px; /* Match days column width */
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .month-label {
+    .month-name {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .month-stats {
       color: rgba(255, 255, 255, 0.7);
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 500;
-      flex: 1;
-      text-align: center;
     }
 
-    .grid-container {
-      display: flex;
-      gap: 1rem;
-      overflow-x: auto; /* Allow horizontal scrolling on mobile */
-      width: 100%;
-    }
-
-    .days-column {
+    .calendar-grid {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      width: 40px;
+      gap: 0.5rem;
     }
 
-    .day-label {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.7rem;
-      height: 12px;
-      text-align: center;
-      line-height: 12px;
-    }
-
-    .squares-container {
+    .calendar-weekdays {
       display: grid;
-      grid-template-columns: repeat(53, 12px); /* 53 columns for 365 days (52 weeks + 1 day) */
-      grid-template-rows: repeat(7, 12px); /* 7 rows for days of week */
-      gap: 3px;
-      flex: 1;
-      min-width: 792px; /* 53 columns * 12px + 52 gaps * 3px = 636px + 156px = 792px */
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
-    .activity-square {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
+    .weekday-header {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0.5rem 0;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      min-height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
+      padding: 0.25rem;
     }
 
-    .activity-square:hover {
-      transform: scale(1.2);
-      z-index: 10;
+    .calendar-day.empty {
+      background: transparent;
+      border: none;
+      cursor: default;
     }
 
-    .square-inner {
-      width: 100%;
-      height: 100%;
-      border-radius: 2px;
+    .calendar-day:hover:not(.empty) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
-    /* Activity levels (GitHub-like colors) */
-    .activity-square.level-0 {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .activity-square.level-0 .square-inner {
-      background: rgba(255, 255, 255, 0.05);
+    .calendar-day.today {
+      border-color: #4ade80;
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
     }
 
-    .activity-square.level-1 {
-      background: rgba(14, 110, 0, 0.3);
-    }
-    .activity-square.level-1 .square-inner {
-      background: #0e6e00;
+    .calendar-day.has-activity {
+      border-width: 2px;
     }
 
-    .activity-square.level-2 {
-      background: rgba(38, 166, 0, 0.4);
-    }
-    .activity-square.level-2 .square-inner {
-      background: #26a600;
-    }
-
-    .activity-square.level-3 {
-      background: rgba(58, 211, 0, 0.5);
-    }
-    .activity-square.level-3 .square-inner {
-      background: #3ad300;
+    .day-number {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      font-weight: 600;
     }
 
-    .activity-square.level-4 {
-      background: rgba(76, 255, 0, 0.6);
-    }
-    .activity-square.level-4 .square-inner {
-      background: #4cff00;
-    }
-
-    .activity-legend {
+    .activity-indicator {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(74, 222, 128, 0.9);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      margin-top: 2rem;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.8rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: white;
     }
 
-    .legend-squares {
+    .activity-count {
+      line-height: 1;
+    }
+
+    /* Activity level colors */
+    .calendar-day.activity-level-0 {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .calendar-day.activity-level-1 {
+      background: rgba(14, 110, 0, 0.2);
+      border-color: rgba(14, 110, 0, 0.4);
+    }
+
+    .calendar-day.activity-level-2 {
+      background: rgba(38, 166, 0, 0.3);
+      border-color: rgba(38, 166, 0, 0.5);
+    }
+
+    .calendar-day.activity-level-3 {
+      background: rgba(58, 211, 0, 0.4);
+      border-color: rgba(58, 211, 0, 0.6);
+    }
+
+    .calendar-day.activity-level-4 {
+      background: rgba(76, 255, 0, 0.5);
+      border-color: rgba(76, 255, 0, 0.7);
+    }
+
+    .activity-legend {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .legend-title {
+      color: white;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .legend-items {
       display: flex;
-      gap: 3px;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.85rem;
+    }
+
+    .legend-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .legend-color.level-0 {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .legend-color.level-1 {
+      background: rgba(14, 110, 0, 0.2);
+      border-color: rgba(14, 110, 0, 0.4);
+    }
+
+    .legend-color.level-2 {
+      background: rgba(38, 166, 0, 0.3);
+      border-color: rgba(38, 166, 0, 0.5);
+    }
+
+    .legend-color.level-3 {
+      background: rgba(58, 211, 0, 0.4);
+      border-color: rgba(58, 211, 0, 0.6);
+    }
+
+    .legend-color.level-4 {
+      background: rgba(76, 255, 0, 0.5);
+      border-color: rgba(76, 255, 0, 0.7);
     }
 
     .selected-day-details {
@@ -1483,21 +1606,42 @@ interface ActivityDay {
         flex-wrap: wrap;
       }
 
-      /* Mobile adjustments for activity grid */
-      .squares-container {
-        grid-template-columns: repeat(26, 12px);
-        overflow-x: auto;
+      /* Mobile adjustments for calendar */
+      .calendar-months {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
       }
 
+      .calendar-month {
+        padding: 1rem;
+      }
+
+      .calendar-day {
+        min-height: 35px;
+        font-size: 0.75rem;
+      }
+
+      .day-number {
+        font-size: 0.75rem;
+      }
+
+      .activity-indicator {
+        width: 16px;
+        height: 16px;
+        font-size: 0.6rem;
+      }
+
+      .legend-items {
+        gap: 1rem;
+      }
+
+      /* Mobile adjustments for activity grid */
       .months-row {
         margin-left: 0;
-        flex-wrap: wrap;
-        gap: 0.5rem;
       }
 
-      .month-label {
-        flex: none;
-        width: auto;
+      .month-marker {
+        font-size: 0.7rem;
       }
     }
 
@@ -1546,9 +1690,23 @@ interface ActivityDay {
         align-items: flex-start;
       }
 
-      .squares-container {
-        grid-template-columns: repeat(13, 12px);
+      .calendar-day {
+        min-height: 30px;
       }
+
+      .calendar-month {
+        padding: 0.75rem;
+      }
+
+      .month-name {
+        font-size: 1rem;
+      }
+
+      .weekday-header {
+        font-size: 0.7rem;
+        padding: 0.25rem 0;
+      }
+
     }
   `]
 })
@@ -1562,10 +1720,34 @@ export class HabitTrackerComponent implements OnInit {
   categories: HabitCategory[] = [];
 
   // Activity Grid
-  activityGrid: ActivityDay[] = [];
+  activityWeeks: ActivityDay[][] = [];
+  monthMarkers: MonthMarker[] = [];
+  readonly squareSize = 12;
+  readonly squareGap = 3;
   selectedActivityDay: ActivityDay | null = null;
-  months: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   days: string[] = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
+  calendarMonths: any[] = [];
+  weekDayNames: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  get weekColumnWidth(): number {
+    return this.squareSize + this.squareGap;
+  }
+
+  getGridWidth(): number {
+    const columns = this.activityWeeks.length;
+    if (!columns) {
+      return 0;
+    }
+    return columns * this.squareSize + Math.max(0, columns - 1) * this.squareGap;
+  }
+
+  getMonthMarkerWidth(weeks: number): number {
+    if (weeks <= 0) {
+      return 0;
+    }
+    return weeks * this.squareSize + Math.max(0, weeks - 1) * this.squareGap;
+  }
 
   activeView: 'activity' | 'today' | 'all' | 'stats' = 'activity';
   showCreateForm = false;
@@ -1633,53 +1815,43 @@ export class HabitTrackerComponent implements OnInit {
   }
 
   generateActivityGrid(): void {
-    const grid: ActivityDay[] = [];
     const today = new Date();
-    
-    // Set to start from exactly 365 days ago (covers leap years)
-    const oneYearAgo = new Date(today);
-    oneYearAgo.setDate(today.getDate() - 364); // 364 days = 52 weeks exactly
-    
-    // Clear any time components
     today.setHours(0, 0, 0, 0);
-    oneYearAgo.setHours(0, 0, 0, 0);
 
-    // Get the day of week for the first day (0 = Sunday, 1 = Monday, etc.)
-    const firstDayOfWeek = oneYearAgo.getDay();
-    
-    // Create a 2D array: 7 rows (days of week) x 53 columns (weeks)
-    // Initialize with null values
-    const gridArray: (ActivityDay | null)[][] = [];
-    for (let row = 0; row < 7; row++) {
-      gridArray[row] = new Array(53).fill(null);
+    const endDate = new Date(today);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 364);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Align the grid to start on Monday and end on Sunday for complete weeks
+    const gridStart = new Date(startDate);
+    while (gridStart.getDay() !== 1) {
+      gridStart.setDate(gridStart.getDate() - 1);
     }
 
-    // Generate exactly 365 days and place them in the correct grid position
-    for (let i = 0; i < 365; i++) {
-      const currentDate = new Date(oneYearAgo);
-      currentDate.setDate(oneYearAgo.getDate() + i);
-      
+    const gridEnd = new Date(endDate);
+    while (gridEnd.getDay() !== 0) {
+      gridEnd.setDate(gridEnd.getDate() + 1);
+    }
+
+    const weeks: ActivityDay[][] = [];
+    const weekMonthNames: (string | null)[] = [];
+
+    let currentDate = new Date(gridStart);
+    let currentWeek: ActivityDay[] = [];
+
+    while (currentDate <= gridEnd) {
       const dateString = currentDate.toISOString().split('T')[0];
-      
-      // Calculate day of week (0 = Sunday, 1 = Monday, etc.)
-      const dayOfWeek = currentDate.getDay();
-      
-      // Calculate week index (which week column this day belongs to)
-      // The first day might not start on Sunday, so we need to account for that
-      const daysSinceStart = i;
-      const weekIndex = Math.floor((daysSinceStart + firstDayOfWeek) / 7);
-      
-      // Count completions for this date
-      const completions = this.habits.reduce((count, habit) => {
-        return count + (habit.completedDates.includes(dateString) ? 1 : 0);
-      }, 0);
+      const isWithinRange = currentDate >= startDate && currentDate <= endDate;
 
-      // Get habits completed on this date
-      const completedHabits = this.habits.filter(habit => 
-        habit.completedDates.includes(dateString)
-      );
+      const completions = isWithinRange
+        ? this.habits.reduce((count, habit) => count + (habit.completedDates.includes(dateString) ? 1 : 0), 0)
+        : 0;
 
-      // Determine activity level (GitHub-like)
+      const completedHabits = isWithinRange
+        ? this.habits.filter(habit => habit.completedDates.includes(dateString))
+        : [];
+
       let level: 0 | 1 | 2 | 3 | 4 = 0;
       if (completions > 0) level = 1;
       if (completions > 2) level = 2;
@@ -1689,69 +1861,150 @@ export class HabitTrackerComponent implements OnInit {
       const activityDay: ActivityDay = {
         date: dateString,
         count: completions,
-        level: level,
+        level,
         habits: completedHabits,
-        dayOfWeek: dayOfWeek,
-        weekIndex: weekIndex
+        dayOfWeek: currentDate.getDay(),
+        weekIndex: weeks.length,
+        isWithinRange
       };
 
-      // Place in grid if within bounds
-      if (weekIndex < 53 && dayOfWeek < 7) {
-        gridArray[dayOfWeek][weekIndex] = activityDay;
-      }
-      
-      grid.push(activityDay);
-    }
+      currentWeek.push(activityDay);
 
-    // Flatten the 2D array into a single array for display
-    // CSS grid auto-places items row by row, so we iterate row by row (days of week), then column by column (weeks)
-    const flattenedGrid: ActivityDay[] = [];
-    for (let day = 0; day < 7; day++) {
-      for (let week = 0; week < 53; week++) {
-        const cell = gridArray[day][week];
-        if (cell) {
-          flattenedGrid.push(cell);
+      if (currentWeek.length === 7) {
+        weeks.push(currentWeek);
+
+        const firstValidDay = currentWeek.find(day => day.isWithinRange);
+        if (firstValidDay) {
+          const monthIndex = new Date(firstValidDay.date).getMonth();
+          weekMonthNames.push(this.months[monthIndex]);
         } else {
-          // Create empty placeholder for proper grid layout
-          const emptyDate = new Date(oneYearAgo);
-          const daysToAdd = week * 7 + day - firstDayOfWeek;
-          if (daysToAdd >= 0 && daysToAdd < 365) {
-            emptyDate.setDate(oneYearAgo.getDate() + daysToAdd);
-            const dateString = emptyDate.toISOString().split('T')[0];
-            flattenedGrid.push({
-              date: dateString,
-              count: 0,
-              level: 0,
-              habits: [],
-              dayOfWeek: day,
-              weekIndex: week
-            });
-          } else {
-            // Add empty cell outside our date range for proper grid structure
-            flattenedGrid.push({
-              date: '',
-              count: 0,
-              level: 0,
-              habits: [],
-              dayOfWeek: day,
-              weekIndex: week
-            });
-          }
+          weekMonthNames.push(null);
         }
+
+        currentWeek = [];
       }
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    this.activityGrid = flattenedGrid;
+    this.activityWeeks = weeks;
+
+    // Build month markers for header
+    const markers: MonthMarker[] = [];
+    let currentLabel: string | null = null;
+    let span = 0;
+
+    weekMonthNames.forEach(label => {
+      const normalized = label ?? '';
+      if (currentLabel === null) {
+        currentLabel = normalized;
+        span = 1;
+        return;
+      }
+
+      if (normalized !== currentLabel) {
+        markers.push({ label: currentLabel, weeks: span });
+        currentLabel = normalized;
+        span = 1;
+      } else {
+        span += 1;
+      }
+    });
+
+    if (currentLabel !== null) {
+      markers.push({ label: currentLabel, weeks: span });
+    }
+
+    this.monthMarkers = markers;
+
+    // Generate calendar months for the new calendar view
+    this.generateCalendarMonths(startDate, endDate);
+  }
+
+  generateCalendarMonths(startDate: Date, endDate: Date): void {
+    const months: any[] = [];
+    const monthMap = new Map<string, ActivityDay[]>();
+
+    // Get all days from activityWeeks
+    const allDays: ActivityDay[] = [];
+    this.activityWeeks.forEach(week => {
+      week.forEach(day => {
+        if (day.isWithinRange) {
+          allDays.push(day);
+        }
+      });
+    });
+
+    // Group days by month
+    allDays.forEach(day => {
+      const date = new Date(day.date);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, []);
+      }
+      monthMap.get(monthKey)!.push(day);
+    });
+
+    // Create month objects
+    monthMap.forEach((monthDays, monthKey) => {
+      const [year, monthIndex] = monthKey.split('-').map(Number);
+      const firstDay = monthDays[0];
+      const firstDate = new Date(firstDay.date);
+      const firstDayOfWeek = firstDate.getDay();
+
+      const totalActivities = monthDays.reduce((sum, day) => sum + day.count, 0);
+
+      months.push({
+        name: this.months[monthIndex],
+        year: year,
+        days: monthDays,
+        firstDayOfWeek: firstDayOfWeek,
+        totalActivities: totalActivities
+      });
+    });
+
+    // Sort months by date
+    months.sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return this.months.indexOf(a.name) - this.months.indexOf(b.name);
+    });
+
+    this.calendarMonths = months;
+  }
+
+  getEmptyDays(firstDayOfWeek: number): number[] {
+    return Array(firstDayOfWeek).fill(0);
+  }
+
+  getDayNumber(dateString: string): number {
+    return new Date(dateString).getDate();
+  }
+
+  isToday(dateString: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateString);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime() === today.getTime();
   }
 
   checkGridCompleteness(): void {
-    console.log('Total days in grid:', this.activityGrid.length);
-    console.log('First date:', this.activityGrid[0]?.date);
-    console.log('Last date:', this.activityGrid[this.activityGrid.length - 1]?.date);
-    
-    // Check if we have exactly 365 days
-    if (this.activityGrid.length !== 365) {
-      console.warn(`Grid has ${this.activityGrid.length} days, expected 365`);
+    const totalTrackedDays = this.activityWeeks.reduce(
+      (sum, week) => sum + week.filter(day => day.isWithinRange).length,
+      0
+    );
+
+    const allDays = this.activityWeeks.flat().filter(day => day.isWithinRange);
+    const firstDate = allDays[0]?.date ?? 'N/A';
+    const lastDate = allDays[allDays.length - 1]?.date ?? 'N/A';
+
+    console.log('Total tracked days in grid:', totalTrackedDays);
+    console.log('First tracked date:', firstDate);
+    console.log('Last tracked date:', lastDate);
+
+    if (totalTrackedDays !== 365) {
+      console.warn(`Grid has ${totalTrackedDays} days within range, expected 365`);
     }
   }
 
