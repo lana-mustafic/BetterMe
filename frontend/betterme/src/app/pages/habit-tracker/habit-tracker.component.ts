@@ -857,6 +857,7 @@ interface ActivityDay {
     .grid-container {
       display: flex;
       gap: 1rem;
+      overflow-x: auto; /* Allow horizontal scrolling on mobile */
     }
 
     .days-column {
@@ -876,8 +877,8 @@ interface ActivityDay {
 
     .squares-container {
       display: grid;
-      grid-template-columns: repeat(53, 12px);
-      grid-template-rows: repeat(7, 12px);
+      grid-template-columns: repeat(53, 12px); /* 53 columns for 365 days (52 weeks + 1 day) */
+      grid-template-rows: repeat(7, 12px); /* 7 rows for days of week */
       gap: 3px;
       flex: 1;
     }
@@ -1590,6 +1591,7 @@ export class HabitTrackerComponent implements OnInit {
         this.habits = habits;
         this.updateTodayHabits();
         this.generateActivityGrid();
+        this.checkGridCompleteness(); // Debug check
       },
       error: (error) => {
         console.error('Error loading habits:', error);
@@ -1628,11 +1630,21 @@ export class HabitTrackerComponent implements OnInit {
   generateActivityGrid(): void {
     const grid: ActivityDay[] = [];
     const today = new Date();
-    const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+    
+    // Set to start from exactly 365 days ago (covers leap years)
+    const oneYearAgo = new Date(today);
+    oneYearAgo.setDate(today.getDate() - 364); // 364 days = 52 weeks exactly
+    
+    // Clear any time components
+    today.setHours(0, 0, 0, 0);
+    oneYearAgo.setHours(0, 0, 0, 0);
 
-    // Generate dates for the past year
-    for (let date = new Date(oneYearAgo); date <= today; date.setDate(date.getDate() + 1)) {
-      const dateString = date.toISOString().split('T')[0];
+    // Generate exactly 365 days (52 weeks + 1 day)
+    for (let i = 0; i < 365; i++) {
+      const currentDate = new Date(oneYearAgo);
+      currentDate.setDate(oneYearAgo.getDate() + i);
+      
+      const dateString = currentDate.toISOString().split('T')[0];
       
       // Count completions for this date
       const completions = this.habits.reduce((count, habit) => {
@@ -1660,6 +1672,17 @@ export class HabitTrackerComponent implements OnInit {
     }
 
     this.activityGrid = grid;
+  }
+
+  checkGridCompleteness(): void {
+    console.log('Total days in grid:', this.activityGrid.length);
+    console.log('First date:', this.activityGrid[0]?.date);
+    console.log('Last date:', this.activityGrid[this.activityGrid.length - 1]?.date);
+    
+    // Check if we have exactly 365 days
+    if (this.activityGrid.length !== 365) {
+      console.warn(`Grid has ${this.activityGrid.length} days, expected 365`);
+    }
   }
 
   getActivityTooltip(day: ActivityDay): string {
