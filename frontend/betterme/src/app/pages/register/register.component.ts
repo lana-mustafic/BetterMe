@@ -76,7 +76,7 @@ import { AuthService } from '../../services/auth';
                     [(ngModel)]="password"
                     name="password"
                     required
-                    (input)="validatePassword()"
+                    (input)="validatePassword(); validatePasswordMatch()"
                   />
                   <button 
                     type="button" 
@@ -137,7 +137,8 @@ import { AuthService } from '../../services/auth';
                   <input 
                     [type]="showPassword ? 'text' : 'password'"
                     class="form-control password-input"
-                    [class.error]="confirmPasswordError"
+                    [class.error]="confirmPasswordError && confirmPassword.length > 0"
+                    [class.success]="!confirmPasswordError && confirmPassword.length > 0 && password === confirmPassword"
                     placeholder="Re-enter your password"
                     [(ngModel)]="confirmPassword"
                     name="confirmPassword"
@@ -155,8 +156,10 @@ import { AuthService } from '../../services/auth';
                     </span>
                   </button>
                 </div>
-                @if (confirmPasswordError) {
+                @if (confirmPasswordError && confirmPassword.length > 0) {
                   <div class="field-error">{{ confirmPasswordError }}</div>
+                } @else if (!confirmPasswordError && confirmPassword.length > 0 && password === confirmPassword) {
+                  <div class="field-success">✅ Passwords match!</div>
                 }
               </div>
 
@@ -362,6 +365,21 @@ import { AuthService } from '../../services/auth';
     .form-control.error {
       border-color: #ef4444 !important;
       background: rgba(239, 68, 68, 0.1) !important;
+    }
+
+    .form-control.success {
+      border-color: #4ade80 !important;
+      background: rgba(74, 222, 128, 0.1) !important;
+    }
+
+    .field-success {
+      color: #4ade80;
+      font-size: 0.8rem;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
     }
 
     /* Enhanced Button */
@@ -829,8 +847,11 @@ export class RegisterComponent implements OnDestroy {
   validatePasswordMatch(): void {
     this.confirmPasswordError = '';
     
-    if (this.confirmPassword && this.password !== this.confirmPassword) {
-      this.confirmPasswordError = '⚠️ Passwords do not match';
+    // Only show error if confirm password has been entered
+    if (this.confirmPassword.length > 0) {
+      if (this.password !== this.confirmPassword) {
+        this.confirmPasswordError = '⚠️ Passwords do not match';
+      }
     }
   }
 
@@ -865,8 +886,8 @@ export class RegisterComponent implements OnDestroy {
       this.passwordErrors.push('Password must contain symbols');
     }
 
-    // Also validate password match when password changes
-    this.validatePasswordMatch();
+    // Password match validation is handled separately via validatePasswordMatch()
+    // which is called on both password and confirmPassword input events
   }
 
   getStrengthClass(): string {
