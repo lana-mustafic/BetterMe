@@ -10,6 +10,7 @@ using BetterMe.Api.Services.Interfaces;
 using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Repositories.Concrete;
 using AutoMapper;
+using BetterMe.Api.Services.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,7 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IHabitService, HabitService>();
 
 var app = builder.Build();
 
