@@ -146,6 +146,7 @@ interface MonthMarker {
                         class="calendar-day"
                         [class.today]="isToday(day.date)"
                         [class.has-activity]="day.count > 0"
+                        [class.future-day]="isFutureDay(day.date)"
                         [class]="'activity-level-' + day.level"
                         [title]="getActivityTooltip(day)"
                         (click)="selectActivityDay(day)"
@@ -971,6 +972,20 @@ interface MonthMarker {
 
     .calendar-day.has-activity {
       border-width: 2px;
+    }
+
+    .calendar-day.future-day {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .calendar-day.future-day .day-number {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .calendar-day.future-day:hover {
+      transform: none;
+      box-shadow: none;
     }
 
     .day-number {
@@ -1932,37 +1947,75 @@ export class HabitTrackerComponent implements OnInit {
 
   generateCalendarMonths(startDate: Date, endDate: Date): void {
     const months: any[] = [];
-    const monthMap = new Map<string, ActivityDay[]>();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Get all days from activityWeeks
-    const allDays: ActivityDay[] = [];
+    // Create a map of existing activity days
+    const activityDayMap = new Map<string, ActivityDay>();
     this.activityWeeks.forEach(week => {
       week.forEach(day => {
         if (day.isWithinRange) {
-          allDays.push(day);
+          activityDayMap.set(day.date, day);
         }
       });
     });
 
-    // Group days by month
-    allDays.forEach(day => {
-      const date = new Date(day.date);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-      
-      if (!monthMap.has(monthKey)) {
-        monthMap.set(monthKey, []);
+    // Get all months that should be displayed (from startDate to endDate, but show complete months)
+    const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const endMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0); // Last day of endDate's month
+
+    let currentMonth = new Date(startMonth);
+
+    while (currentMonth <= endMonth) {
+      const year = currentMonth.getFullYear();
+      const monthIndex = currentMonth.getMonth();
+      const monthKey = `${year}-${monthIndex}`;
+
+      // Get first and last day of this month
+      const firstDayOfMonth = new Date(year, monthIndex, 1);
+      const lastDayOfMonth = new Date(year, monthIndex + 1, 0);
+      const firstDayOfWeek = firstDayOfMonth.getDay();
+
+      // Generate all days for this complete month
+      const monthDays: ActivityDay[] = [];
+      let currentDay = new Date(firstDayOfMonth);
+
+      while (currentDay <= lastDayOfMonth) {
+        const dateString = currentDay.toISOString().split('T')[0];
+        const isPastOrToday = currentDay <= today;
+        const isInRange = currentDay >= startDate && currentDay <= endDate;
+
+        // Use existing activity data if available, otherwise create empty day
+        let activityDay: ActivityDay;
+        if (activityDayMap.has(dateString)) {
+          activityDay = activityDayMap.get(dateString)!;
+        } else {
+          // Create empty day for dates outside the tracked range or future dates
+          activityDay = {
+            date: dateString,
+            count: 0,
+            level: 0,
+            habits: [],
+            dayOfWeek: currentDay.getDay(),
+            weekIndex: 0,
+            isWithinRange: isInRange
+          };
+        }
+
+        // Mark future days (but still show them in the calendar)
+        if (!isPastOrToday) {
+          activityDay.count = 0;
+          activityDay.level = 0;
+          activityDay.habits = [];
+        }
+
+        monthDays.push(activityDay);
+        currentDay.setDate(currentDay.getDate() + 1);
       }
-      monthMap.get(monthKey)!.push(day);
-    });
 
-    // Create month objects
-    monthMap.forEach((monthDays, monthKey) => {
-      const [year, monthIndex] = monthKey.split('-').map(Number);
-      const firstDay = monthDays[0];
-      const firstDate = new Date(firstDay.date);
-      const firstDayOfWeek = firstDate.getDay();
-
-      const totalActivities = monthDays.reduce((sum, day) => sum + day.count, 0);
+      const totalActivities = monthDays
+        .filter(day => day.isWithinRange && new Date(day.date) <= today)
+        .reduce((sum, day) => sum + day.count, 0);
 
       months.push({
         name: this.months[monthIndex],
@@ -1971,7 +2024,10 @@ export class HabitTrackerComponent implements OnInit {
         firstDayOfWeek: firstDayOfWeek,
         totalActivities: totalActivities
       });
-    });
+
+      // Move to next month
+      currentMonth = new Date(year, monthIndex + 1, 1);
+    }
 
     // Sort months by date
     months.sort((a, b) => {
@@ -1996,6 +2052,14 @@ export class HabitTrackerComponent implements OnInit {
     const date = new Date(dateString);
     date.setHours(0, 0, 0, 0);
     return date.getTime() === today.getTime();
+  }
+
+  isFutureDay(dateString: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(dateString);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime() > today.getTime();
   }
 
   checkGridCompleteness(): void {
