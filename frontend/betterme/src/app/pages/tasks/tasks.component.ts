@@ -531,8 +531,10 @@ interface Category {
           @if (activeView === 'list') {
             <!-- Quick Filter Presets -->
             <div class="quick-filters glass-card">
-              <h4>Quick Filters</h4>
-              <div class="quick-filters-grid">
+              <div class="quick-filters-header">
+                <h4>Quick Filters</h4>
+              </div>
+              <div class="quick-filters-container">
                 <button 
                   class="quick-filter-btn" 
                   [class.active]="quickFilter === 'overdue'"
@@ -2661,6 +2663,68 @@ interface Category {
       font-size: 1.1rem;
       font-weight: 700;
       color: white;
+    }
+
+    /* Quick Filters */
+    .quick-filters {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .quick-filters-header {
+      margin-bottom: 1rem;
+    }
+
+    .quick-filters-header h4 {
+      color: white;
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .quick-filters-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .quick-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+    }
+
+    .quick-filter-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+      color: white;
+    }
+
+    .quick-filter-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .quick-filter-icon {
+      font-size: 1rem;
+    }
+
+    .quick-filter-text {
+      font-weight: 500;
     }
 
     /* Filters Section */
