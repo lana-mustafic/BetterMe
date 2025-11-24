@@ -57,7 +57,7 @@ export interface PomodoroSettings {
 })
 export class FocusService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/focussession`;
+  private apiUrl = `${environment.apiUrl}/focussession`;
 
   private activeSessionSubject = new BehaviorSubject<FocusSession | null>(null);
   public activeSession$ = this.activeSessionSubject.asObservable();
