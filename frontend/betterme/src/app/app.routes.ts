@@ -10,6 +10,7 @@ import { EditProfileComponent } from './pages/edit-profile/edit-profile.componen
 import { ChangePasswordComponent } from './pages/password/change-password.component';
 import { authGuard } from './guards/auth.guard';
 import { HabitTrackerComponent } from './pages/habit-tracker/habit-tracker.component';
+import { FocusModeComponent } from './pages/focus-mode/focus-mode.component';
 
 export const routes: Routes = [
   { 
@@ -83,6 +84,17 @@ export const routes: Routes = [
     data: { 
       title: 'Habit Tracker - TaskFlow',
       breadcrumb: 'Habit Tracker'
+    }
+  },
+
+  // Focus Mode Route
+  { 
+    path: 'focus', 
+    component: FocusModeComponent,
+    canActivate: [authGuard],
+    data: { 
+      title: 'Focus Mode - TaskFlow',
+      breadcrumb: 'Focus Mode'
     }
   },
 

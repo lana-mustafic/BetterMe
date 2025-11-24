@@ -116,74 +116,60 @@ interface MonthMarker {
             <div class="activity-calendar-section glass-card">
               <div class="calendar-header">
                 <h3>Activity Calendar</h3>
-                <p class="activity-subtitle">Your consistency over the past year</p>
+                <p class="activity-subtitle">Your consistency from January to December</p>
               </div>
               
-              <div class="calendar-months">
-                <div *ngFor="let month of calendarMonths" class="calendar-month">
-                  <div class="month-header">
-                    <h4 class="month-name">{{ month.name }} {{ month.year }}</h4>
-                    <span class="month-stats">{{ month.totalActivities }} activities</span>
-                  </div>
-                  
-                  <div class="calendar-grid">
-                    <!-- Day headers -->
-                    <div class="calendar-weekdays">
-                      <div *ngFor="let dayName of weekDayNames" class="weekday-header">{{ dayName }}</div>
+              <!-- GitHub-style Contribution Graph -->
+              <div class="contribution-graph">
+                <!-- Month labels row -->
+                <div class="graph-months">
+                  <div class="day-labels-column"></div>
+                  <div class="months-row">
+                    <div 
+                      *ngFor="let marker of monthMarkers" 
+                      class="month-marker"
+                      [style.width.px]="getMonthMarkerWidth(marker.weeks)"
+                    >
+                      {{ marker.label }}
                     </div>
-                    
-                    <!-- Calendar days -->
-                    <div class="calendar-days">
-                      <!-- Empty cells for days before month starts -->
+                  </div>
+                </div>
+
+                <!-- Main grid -->
+                <div class="graph-container">
+                  <!-- Day labels column -->
+                  <div class="day-labels-column">
+                    <div class="day-label" *ngFor="let dayLabel of dayLabels">{{ dayLabel }}</div>
+                  </div>
+
+                  <!-- Weeks grid -->
+                  <div class="weeks-grid">
+                    <div *ngFor="let week of activityWeeks; let weekIndex = index" class="week-column">
                       <div 
-                        *ngFor="let empty of getEmptyDays(month.firstDayOfWeek)" 
-                        class="calendar-day empty"
-                      ></div>
-                      
-                      <!-- Actual days -->
-                      <div 
-                        *ngFor="let day of month.days" 
-                        class="calendar-day"
-                        [class.today]="isToday(day.date)"
-                        [class.has-activity]="day.count > 0"
-                        [class.future-day]="isFutureDay(day.date)"
+                        *ngFor="let day of week; let dayIndex = index" 
+                        class="contribution-day"
                         [class]="'activity-level-' + day.level"
+                        [class.today]="isToday(day.date)"
+                        [class.future-day]="isFutureDay(day.date)"
                         [title]="getActivityTooltip(day)"
                         (click)="selectActivityDay(day)"
-                      >
-                        <span class="day-number">{{ getDayNumber(day.date) }}</span>
-                        <div *ngIf="day.count > 0" class="activity-indicator">
-                          <span class="activity-count">{{ day.count }}</span>
-                        </div>
-                      </div>
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="activity-legend">
-                <div class="legend-title">Activity Levels</div>
-                <div class="legend-items">
-                  <div class="legend-item">
-                    <div class="legend-color level-0"></div>
-                    <span>No activity</span>
+                <div class="legend-text">
+                  <span class="legend-label">Less</span>
+                  <div class="legend-squares">
+                    <div class="legend-square level-0"></div>
+                    <div class="legend-square level-1"></div>
+                    <div class="legend-square level-2"></div>
+                    <div class="legend-square level-3"></div>
+                    <div class="legend-square level-4"></div>
                   </div>
-                  <div class="legend-item">
-                    <div class="legend-color level-1"></div>
-                    <span>1-2 activities</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-color level-2"></div>
-                    <span>3-4 activities</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-color level-3"></div>
-                    <span>5-6 activities</span>
-                  </div>
-                  <div class="legend-item">
-                    <div class="legend-color level-4"></div>
-                    <span>7+ activities</span>
-                  </div>
+                  <span class="legend-label">More</span>
                 </div>
               </div>
             </div>
@@ -872,238 +858,179 @@ interface MonthMarker {
       margin-bottom: 0;
     }
 
-    .calendar-months {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-bottom: 2rem;
+    /* GitHub-style Contribution Graph */
+    .contribution-graph {
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
     }
 
-    .calendar-month {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 16px;
-      padding: 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .month-header {
+    .graph-months {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 4px;
+      padding-left: 27px;
     }
 
-    .month-name {
-      color: white;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .month-stats {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .calendar-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .calendar-weekdays {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .weekday-header {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-align: center;
-      padding: 0.5rem 0;
-    }
-
-    .calendar-days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.5rem;
-    }
-
-    .calendar-day {
-      aspect-ratio: 1;
-      min-height: 40px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      padding: 0.5rem 0.25rem;
-      overflow: hidden;
-      box-sizing: border-box;
-    }
-
-    .calendar-day.empty {
-      background: transparent;
-      border: none;
-      cursor: default;
-    }
-
-    .calendar-day:hover:not(.empty) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .calendar-day.today {
-      border-color: #4ade80;
-      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3);
-    }
-
-    .calendar-day.has-activity {
-      border-width: 2px;
-    }
-
-    .calendar-day.future-day {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .calendar-day.future-day .day-number {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .calendar-day.future-day:hover {
-      transform: none;
-      box-shadow: none;
-    }
-
-    .day-number {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 0.85rem;
-      font-weight: 600;
-      line-height: 1;
-      text-align: center;
-      width: 100%;
-      padding: 0 0.25rem;
-      box-sizing: border-box;
-    }
-
-    .activity-indicator {
-      position: absolute;
-      top: 3px;
-      right: 3px;
-      background: rgba(74, 222, 128, 0.9);
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.6rem;
-      font-weight: 700;
-      color: white;
+    .day-labels-column {
+      width: 27px;
       flex-shrink: 0;
-      z-index: 1;
     }
 
-    .activity-count {
+    .months-row {
+      display: flex;
+      flex: 1;
+    }
+
+    .month-marker {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-align: left;
+      padding-left: 2px;
+      box-sizing: border-box;
       line-height: 1;
     }
 
-    /* Activity level colors */
-    .calendar-day.activity-level-0 {
-      background: rgba(255, 255, 255, 0.05);
+    .graph-container {
+      display: flex;
+      gap: 0;
     }
 
-    .calendar-day.activity-level-1 {
-      background: rgba(14, 110, 0, 0.2);
-      border-color: rgba(14, 110, 0, 0.4);
+    .day-labels-column {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      width: 27px;
+      flex-shrink: 0;
+      padding-top: 2px;
     }
 
-    .calendar-day.activity-level-2 {
-      background: rgba(38, 166, 0, 0.3);
-      border-color: rgba(38, 166, 0, 0.5);
+    .day-label {
+      height: 10px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.7rem;
+      font-weight: 400;
+      text-align: right;
+      padding-right: 8px;
+      line-height: 10px;
     }
 
-    .calendar-day.activity-level-3 {
-      background: rgba(58, 211, 0, 0.4);
-      border-color: rgba(58, 211, 0, 0.6);
+    .weeks-grid {
+      display: flex;
+      gap: 3px;
+      flex: 1;
     }
 
-    .calendar-day.activity-level-4 {
-      background: rgba(76, 255, 0, 0.5);
-      border-color: rgba(76, 255, 0, 0.7);
+    .week-column {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .contribution-day {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      outline: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .contribution-day:hover:not(.future-day) {
+      outline: 1.5px solid rgba(255, 255, 255, 0.8);
+      outline-offset: -1.5px;
+      z-index: 10;
+    }
+
+    .contribution-day.today {
+      outline: 2px solid #4ade80;
+      outline-offset: -2px;
+    }
+
+    .contribution-day.future-day {
+      opacity: 0.2;
+      cursor: default;
+    }
+
+    .contribution-day.future-day:hover {
+      outline: 1px solid rgba(255, 255, 255, 0.05);
+      outline-offset: -1px;
+    }
+
+    /* Activity level colors - GitHub green scheme */
+    .contribution-day.activity-level-0 {
+      background: #161b22;
+      outline-color: #30363d;
+    }
+
+    .contribution-day.activity-level-1 {
+      background: #0e4429;
+    }
+
+    .contribution-day.activity-level-2 {
+      background: #006d32;
+    }
+
+    .contribution-day.activity-level-3 {
+      background: #26a641;
+    }
+
+    .contribution-day.activity-level-4 {
+      background: #39d353;
     }
 
     .activity-legend {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .legend-title {
-      color: white;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    .legend-items {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1.5rem;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 1rem;
+      padding: 0 0.5rem;
     }
 
-    .legend-item {
+    .legend-text {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.85rem;
+      gap: 4px;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.7rem;
     }
 
-    .legend-color {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
+    .legend-label {
+      font-weight: 400;
     }
 
-    .legend-color.level-0 {
-      background: rgba(255, 255, 255, 0.05);
+    .legend-squares {
+      display: flex;
+      gap: 3px;
+      align-items: center;
     }
 
-    .legend-color.level-1 {
-      background: rgba(14, 110, 0, 0.2);
-      border-color: rgba(14, 110, 0, 0.4);
+    .legend-square {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      outline: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .legend-color.level-2 {
-      background: rgba(38, 166, 0, 0.3);
-      border-color: rgba(38, 166, 0, 0.5);
+    .legend-square.level-0 {
+      background: #161b22;
+      outline-color: #30363d;
     }
 
-    .legend-color.level-3 {
-      background: rgba(58, 211, 0, 0.4);
-      border-color: rgba(58, 211, 0, 0.6);
+    .legend-square.level-1 {
+      background: #0e4429;
     }
 
-    .legend-color.level-4 {
-      background: rgba(76, 255, 0, 0.5);
-      border-color: rgba(76, 255, 0, 0.7);
+    .legend-square.level-2 {
+      background: #006d32;
+    }
+
+    .legend-square.level-3 {
+      background: #26a641;
+    }
+
+    .legend-square.level-4 {
+      background: #39d353;
     }
 
     .selected-day-details {
@@ -1630,42 +1557,36 @@ interface MonthMarker {
         flex-wrap: wrap;
       }
 
-      /* Mobile adjustments for calendar */
-      .calendar-months {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
+      /* Mobile adjustments for contribution graph */
+      .contribution-graph {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
-      .calendar-month {
-        padding: 1rem;
+      .graph-months {
+        padding-left: 25px;
       }
 
-      .calendar-day {
-        min-height: 35px;
-        font-size: 0.75rem;
+      .day-labels-column {
+        width: 25px;
       }
 
-      .day-number {
-        font-size: 0.75rem;
+      .day-label {
+        font-size: 0.65rem;
+        padding-right: 4px;
       }
 
-      .activity-indicator {
-        width: 16px;
-        height: 16px;
-        font-size: 0.6rem;
-      }
-
-      .legend-items {
-        gap: 1rem;
-      }
-
-      /* Mobile adjustments for activity grid */
-      .months-row {
-        margin-left: 0;
+      .contribution-day {
+        width: 10px;
+        height: 10px;
       }
 
       .month-marker {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
+      }
+
+      .activity-legend {
+        justify-content: center;
       }
     }
 
@@ -1714,21 +1635,26 @@ interface MonthMarker {
         align-items: flex-start;
       }
 
-      .calendar-day {
-        min-height: 30px;
+      .contribution-day {
+        width: 8px;
+        height: 8px;
       }
 
-      .calendar-month {
-        padding: 0.75rem;
+      .legend-square {
+        width: 8px;
+        height: 8px;
       }
 
-      .month-name {
-        font-size: 1rem;
+      .day-labels-column {
+        width: 20px;
       }
 
-      .weekday-header {
-        font-size: 0.7rem;
-        padding: 0.25rem 0;
+      .day-label {
+        font-size: 0.6rem;
+      }
+
+      .month-marker {
+        font-size: 0.6rem;
       }
 
     }
@@ -1746,13 +1672,14 @@ export class HabitTrackerComponent implements OnInit {
   // Activity Grid
   activityWeeks: ActivityDay[][] = [];
   monthMarkers: MonthMarker[] = [];
-  readonly squareSize = 12;
+  readonly squareSize = 10;
   readonly squareGap = 3;
   selectedActivityDay: ActivityDay | null = null;
-  months: string[] = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  months: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   days: string[] = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'];
   calendarMonths: any[] = [];
   weekDayNames: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  dayLabels: string[] = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 
   get weekColumnWidth(): number {
     return this.squareSize + this.squareGap;
@@ -1770,7 +1697,8 @@ export class HabitTrackerComponent implements OnInit {
     if (weeks <= 0) {
       return 0;
     }
-    return weeks * this.squareSize + Math.max(0, weeks - 1) * this.squareGap;
+    // Each week column is squareSize + squareGap, but the last week doesn't have a gap after it
+    return weeks * (this.squareSize + this.squareGap) - this.squareGap;
   }
 
   activeView: 'activity' | 'today' | 'all' | 'stats' = 'activity';
@@ -1842,19 +1770,21 @@ export class HabitTrackerComponent implements OnInit {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const endDate = new Date(today);
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 364);
+    // Generate grid for current year: January 1 to December 31
+    const currentYear = today.getFullYear();
+    const startDate = new Date(currentYear, 0, 1); // January 1
+    const endDate = new Date(currentYear, 11, 31); // December 31
     startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
 
-    // Align the grid to start on Monday and end on Sunday for complete weeks
+    // Align the grid to start on Sunday (GitHub style) and end on Saturday for complete weeks
     const gridStart = new Date(startDate);
-    while (gridStart.getDay() !== 1) {
+    while (gridStart.getDay() !== 0) {
       gridStart.setDate(gridStart.getDate() - 1);
     }
 
     const gridEnd = new Date(endDate);
-    while (gridEnd.getDay() !== 0) {
+    while (gridEnd.getDay() !== 6) {
       gridEnd.setDate(gridEnd.getDate() + 1);
     }
 
@@ -1897,12 +1827,19 @@ export class HabitTrackerComponent implements OnInit {
       if (currentWeek.length === 7) {
         weeks.push(currentWeek);
 
+        // Get the first day of the week that's within the year range for month label
         const firstValidDay = currentWeek.find(day => day.isWithinRange);
         if (firstValidDay) {
           const monthIndex = new Date(firstValidDay.date).getMonth();
           weekMonthNames.push(this.months[monthIndex]);
         } else {
-          weekMonthNames.push(null);
+          // Check if week is before January or after December
+          const firstDayDate = new Date(currentWeek[0].date);
+          if (firstDayDate < startDate) {
+            weekMonthNames.push(null); // Before January
+          } else {
+            weekMonthNames.push(null); // After December
+          }
         }
 
         currentWeek = [];
@@ -1927,7 +1864,9 @@ export class HabitTrackerComponent implements OnInit {
       }
 
       if (normalized !== currentLabel) {
-        markers.push({ label: currentLabel, weeks: span });
+        if (currentLabel !== '') {
+          markers.push({ label: currentLabel, weeks: span });
+        }
         currentLabel = normalized;
         span = 1;
       } else {
@@ -1935,111 +1874,11 @@ export class HabitTrackerComponent implements OnInit {
       }
     });
 
-    if (currentLabel !== null) {
+    if (currentLabel !== null && currentLabel !== '') {
       markers.push({ label: currentLabel, weeks: span });
     }
 
     this.monthMarkers = markers;
-
-    // Generate calendar months for the new calendar view
-    this.generateCalendarMonths(startDate, endDate);
-  }
-
-  generateCalendarMonths(startDate: Date, endDate: Date): void {
-    const months: any[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Create a map of existing activity days
-    const activityDayMap = new Map<string, ActivityDay>();
-    this.activityWeeks.forEach(week => {
-      week.forEach(day => {
-        if (day.isWithinRange) {
-          activityDayMap.set(day.date, day);
-        }
-      });
-    });
-
-    // Get all months that should be displayed (from startDate to endDate, but show complete months)
-    const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const endMonth = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0); // Last day of endDate's month
-
-    let currentMonth = new Date(startMonth);
-
-    while (currentMonth <= endMonth) {
-      const year = currentMonth.getFullYear();
-      const monthIndex = currentMonth.getMonth();
-      const monthKey = `${year}-${monthIndex}`;
-
-      // Get first and last day of this month
-      const firstDayOfMonth = new Date(year, monthIndex, 1);
-      const lastDayOfMonth = new Date(year, monthIndex + 1, 0);
-      const firstDayOfWeek = firstDayOfMonth.getDay();
-
-      // Generate all days for this complete month
-      const monthDays: ActivityDay[] = [];
-      let currentDay = new Date(firstDayOfMonth);
-
-      while (currentDay <= lastDayOfMonth) {
-        const dateString = currentDay.toISOString().split('T')[0];
-        const isPastOrToday = currentDay <= today;
-        const isInRange = currentDay >= startDate && currentDay <= endDate;
-
-        // Use existing activity data if available, otherwise create empty day
-        let activityDay: ActivityDay;
-        if (activityDayMap.has(dateString)) {
-          activityDay = activityDayMap.get(dateString)!;
-        } else {
-          // Create empty day for dates outside the tracked range or future dates
-          activityDay = {
-            date: dateString,
-            count: 0,
-            level: 0,
-            habits: [],
-            dayOfWeek: currentDay.getDay(),
-            weekIndex: 0,
-            isWithinRange: isInRange
-          };
-        }
-
-        // Mark future days (but still show them in the calendar)
-        if (!isPastOrToday) {
-          activityDay.count = 0;
-          activityDay.level = 0;
-          activityDay.habits = [];
-        }
-
-        monthDays.push(activityDay);
-        currentDay.setDate(currentDay.getDate() + 1);
-      }
-
-      const totalActivities = monthDays
-        .filter(day => day.isWithinRange && new Date(day.date) <= today)
-        .reduce((sum, day) => sum + day.count, 0);
-
-      months.push({
-        name: this.months[monthIndex],
-        year: year,
-        days: monthDays,
-        firstDayOfWeek: firstDayOfWeek,
-        totalActivities: totalActivities
-      });
-
-      // Move to next month
-      currentMonth = new Date(year, monthIndex + 1, 1);
-    }
-
-    // Sort months by date
-    months.sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return this.months.indexOf(a.name) - this.months.indexOf(b.name);
-    });
-
-    this.calendarMonths = months;
-  }
-
-  getEmptyDays(firstDayOfWeek: number): number[] {
-    return Array(firstDayOfWeek).fill(0);
   }
 
   getDayNumber(dateString: string): number {
@@ -2076,8 +1915,13 @@ export class HabitTrackerComponent implements OnInit {
     console.log('First tracked date:', firstDate);
     console.log('Last tracked date:', lastDate);
 
-    if (totalTrackedDays !== 365) {
-      console.warn(`Grid has ${totalTrackedDays} days within range, expected 365`);
+    // Check for 365 or 366 days (leap year)
+    const currentYear = new Date().getFullYear();
+    const isLeapYear = (currentYear % 4 === 0 && currentYear % 100 !== 0) || (currentYear % 400 === 0);
+    const expectedDays = isLeapYear ? 366 : 365;
+
+    if (totalTrackedDays !== expectedDays) {
+      console.warn(`Grid has ${totalTrackedDays} days within range, expected ${expectedDays}`);
     }
   }
 

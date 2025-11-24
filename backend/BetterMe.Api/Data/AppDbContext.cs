@@ -17,6 +17,7 @@ namespace BetterMe.Api.Data
         public DbSet<TaskTag> TaskTags { get; set; }
         public DbSet<Habit> Habits { get; set; }
         public DbSet<HabitCompletion> HabitCompletions { get; set; }
+        public DbSet<FocusSession> FocusSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -175,6 +176,45 @@ namespace BetterMe.Api.Data
 
                 // FIXED: PostgreSQL uses NOW() instead of GETUTCDATE()
                 entity.Property(hc => hc.CompletedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // FocusSession configuration
+            modelBuilder.Entity<FocusSession>(entity =>
+            {
+                entity.HasKey(fs => fs.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(fs => new { fs.UserId, fs.IsCompleted });
+                entity.HasIndex(fs => fs.StartedAt);
+
+                // Relationship with User
+                entity.HasOne(fs => fs.User)
+                    .WithMany()
+                    .HasForeignKey(fs => fs.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with TodoTask (optional)
+                entity.HasOne(fs => fs.Task)
+                    .WithMany()
+                    .HasForeignKey(fs => fs.TaskId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Set default values
+                entity.Property(fs => fs.SessionType)
+                    .HasDefaultValue("work");
+
+                entity.Property(fs => fs.DurationMinutes)
+                    .HasDefaultValue(25);
+
+                entity.Property(fs => fs.IsCompleted)
+                    .HasDefaultValue(false);
+
+                entity.Property(fs => fs.WasInterrupted)
+                    .HasDefaultValue(false);
+
+                // FIXED: PostgreSQL uses NOW() instead of GETUTCDATE()
+                entity.Property(fs => fs.StartedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

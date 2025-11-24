@@ -2,7 +2,9 @@
 using BetterMe.Api
     .DTOs.Auth;
 using BetterMe.Api.DTOs.Task;
+using BetterMe.Api.DTOs.Focus;
 using BetterMe.Api.Models;
+using BetterMe.Api.Services.Interfaces;
 
 namespace BetterMe.Api.Mapping
 {
@@ -81,6 +83,16 @@ namespace BetterMe.Api.Mapping
             // Tag -> TagResponse mapping
             CreateMap<Tag, TagResponse>()
                 .ForMember(dest => dest.TaskCount, opt => opt.MapFrom(src => src.TaskTags.Count));
+
+            // FocusSession mappings
+            CreateMap<FocusSession, FocusSessionResponse>()
+                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : null))
+                .ForMember(dest => dest.TaskId, opt => opt.MapFrom(src => src.TaskId));
+
+            CreateMap<FocusSessionStats, FocusSessionStatsResponse>();
+            CreateMap<DailyFocusTime, DailyFocusTimeResponse>();
+            CreateMap<PomodoroSettings, PomodoroSettingsResponse>();
+            CreateMap<PomodoroSettingsResponse, PomodoroSettings>();
         }
     }
 }
