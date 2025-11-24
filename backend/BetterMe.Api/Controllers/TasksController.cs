@@ -176,6 +176,85 @@ namespace BetterMe.Api.Controllers
             return Ok(_mapper.Map<List<TaskResponse>>(habits));
         }
 
+        [HttpPost("search")]
+        public async Task<IActionResult> SearchTasks([FromBody] SearchTasksRequest request)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var (tasks, totalCount) = await _taskService.SearchTasksAsync(request, userId);
+            var dtos = _mapper.Map<List<TaskResponse>>(tasks);
+
+            return Ok(new
+            {
+                Tasks = dtos,
+                TotalCount = totalCount,
+                Page = request.Page ?? 1,
+                PageSize = request.PageSize ?? 100,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)(request.PageSize ?? 100))
+            });
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchTasksGet([FromQuery] string? searchTerm,
+            [FromQuery] string? category,
+            [FromQuery] bool? completed,
+            [FromQuery] int? priority,
+            [FromQuery] List<string>? tags,
+            [FromQuery] string? tagLogic,
+            [FromQuery] DateTime? dueDateFrom,
+            [FromQuery] DateTime? dueDateTo,
+            [FromQuery] DateTime? createdFrom,
+            [FromQuery] DateTime? createdTo,
+            [FromQuery] bool? hasDueDate,
+            [FromQuery] bool? isOverdue,
+            [FromQuery] bool? isDueToday,
+            [FromQuery] bool? isRecurring,
+            [FromQuery] string? sortBy,
+            [FromQuery] string? sortDirection,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var request = new SearchTasksRequest
+            {
+                SearchTerm = searchTerm,
+                Category = category,
+                Completed = completed,
+                Priority = priority,
+                Tags = tags,
+                TagLogic = tagLogic,
+                DueDateFrom = dueDateFrom,
+                DueDateTo = dueDateTo,
+                CreatedFrom = createdFrom,
+                CreatedTo = createdTo,
+                HasDueDate = hasDueDate,
+                IsOverdue = isOverdue,
+                IsDueToday = isDueToday,
+                IsRecurring = isRecurring,
+                SortBy = sortBy,
+                SortDirection = sortDirection,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var (tasks, totalCount) = await _taskService.SearchTasksAsync(request, userId);
+            var dtos = _mapper.Map<List<TaskResponse>>(tasks);
+
+            return Ok(new
+            {
+                Tasks = dtos,
+                TotalCount = totalCount,
+                Page = request.Page ?? 1,
+                PageSize = request.PageSize ?? 100,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)(request.PageSize ?? 100))
+            });
+        }
+
         public class CompleteInstanceRequest
         {
             public DateTime? CompletionDate { get; set; }

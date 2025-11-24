@@ -890,6 +890,65 @@ export class TaskService {
   }
 
   // Search tasks with advanced filtering
+  // Advanced search with backend API
+  advancedSearch(request: {
+    searchTerm?: string;
+    category?: string;
+    completed?: boolean;
+    priority?: number;
+    tags?: string[];
+    tagLogic?: 'AND' | 'OR';
+    dueDateFrom?: Date;
+    dueDateTo?: Date;
+    createdFrom?: Date;
+    createdTo?: Date;
+    hasDueDate?: boolean;
+    isOverdue?: boolean;
+    isDueToday?: boolean;
+    isRecurring?: boolean;
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+  }): Observable<{ tasks: Task[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
+    // Build query parameters
+    let queryParams = new HttpParams();
+    if (request.searchTerm) queryParams = queryParams.set('searchTerm', request.searchTerm);
+    if (request.category) queryParams = queryParams.set('category', request.category);
+    if (request.completed !== undefined) queryParams = queryParams.set('completed', request.completed.toString());
+    if (request.priority !== undefined) queryParams = queryParams.set('priority', request.priority.toString());
+    if (request.tags && request.tags.length > 0) {
+      request.tags.forEach(tag => queryParams = queryParams.append('tags', tag));
+    }
+    if (request.tagLogic) queryParams = queryParams.set('tagLogic', request.tagLogic);
+    if (request.dueDateFrom) queryParams = queryParams.set('dueDateFrom', request.dueDateFrom.toISOString());
+    if (request.dueDateTo) queryParams = queryParams.set('dueDateTo', request.dueDateTo.toISOString());
+    if (request.createdFrom) queryParams = queryParams.set('createdFrom', request.createdFrom.toISOString());
+    if (request.createdTo) queryParams = queryParams.set('createdTo', request.createdTo.toISOString());
+    if (request.hasDueDate !== undefined) queryParams = queryParams.set('hasDueDate', request.hasDueDate.toString());
+    if (request.isOverdue !== undefined) queryParams = queryParams.set('isOverdue', request.isOverdue.toString());
+    if (request.isDueToday !== undefined) queryParams = queryParams.set('isDueToday', request.isDueToday.toString());
+    if (request.isRecurring !== undefined) queryParams = queryParams.set('isRecurring', request.isRecurring.toString());
+    if (request.sortBy) queryParams = queryParams.set('sortBy', request.sortBy);
+    if (request.sortDirection) queryParams = queryParams.set('sortDirection', request.sortDirection);
+    if (request.page) queryParams = queryParams.set('page', request.page.toString());
+    if (request.pageSize) queryParams = queryParams.set('pageSize', request.pageSize.toString());
+
+    return this.http.get<any>(
+      `${this.apiUrl}/tasks/search`,
+      { headers: this.authHeaders(), params: queryParams }
+    ).pipe(
+      map(response => ({
+        tasks: response.tasks || response.Tasks || [],
+        totalCount: response.totalCount || response.TotalCount || 0,
+        page: response.page || response.Page || 1,
+        pageSize: response.pageSize || response.PageSize || 100,
+        totalPages: response.totalPages || response.TotalPages || 1
+      })),
+      catchError(err => this.handleError('advancedSearch', err))
+    );
+  }
+
   searchTasks(query: string, filters?: {
     category?: string;
     priority?: number;

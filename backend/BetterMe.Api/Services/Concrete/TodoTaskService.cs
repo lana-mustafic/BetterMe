@@ -2,6 +2,8 @@
 using BetterMe.Api.Models;
 using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Services.Interfaces;
+using BetterMe.Api.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,13 +15,16 @@ namespace BetterMe.Api.Services
     {
         private readonly ITodoTasksRepository _tasksRepo;
         private readonly ITagRepository _tagRepo;
+        private readonly AppDbContext _context;
 
         public TodoTaskService(
             ITodoTasksRepository tasksRepo,
-            ITagRepository tagRepo)
+            ITagRepository tagRepo,
+            AppDbContext context)
         {
             _tasksRepo = tasksRepo;
             _tagRepo = tagRepo;
+            _context = context;
         }
 
         public async Task<TodoTask> CreateTaskAsync(CreateTaskRequest request, int userId)
@@ -401,6 +406,155 @@ namespace BetterMe.Api.Services
             await _tagRepo.AddAsync(newTag);
             await _tagRepo.SaveChangesAsync();
             return newTag;
+        }
+
+        public async Task<(List<TodoTask> Tasks, int TotalCount)> SearchTasksAsync(SearchTasksRequest request, int userId)
+        {
+            var query = _context.TodoTasks
+                .Include(t => t.TaskTags)
+                    .ThenInclude(tt => tt.Tag)
+                .Where(t => t.UserId == userId)
+                .AsQueryable();
+
+            // Search term (full-text search across title, description, and tags)
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var searchLower = request.SearchTerm.ToLower();
+                query = query.Where(t =>
+                    t.Title.ToLower().Contains(searchLower) ||
+                    (t.Description != null && t.Description.ToLower().Contains(searchLower)) ||
+                    t.TaskTags.Any(tt => tt.Tag.Name.ToLower().Contains(searchLower))
+                );
+            }
+
+            // Category filter
+            if (!string.IsNullOrWhiteSpace(request.Category))
+            {
+                query = query.Where(t => t.Category == request.Category);
+            }
+
+            // Completion status
+            if (request.Completed.HasValue)
+            {
+                query = query.Where(t => t.Completed == request.Completed.Value);
+            }
+
+            // Priority filter
+            if (request.Priority.HasValue)
+            {
+                query = query.Where(t => t.Priority == request.Priority.Value);
+            }
+
+            // Tags filter (AND/OR logic)
+            if (request.Tags != null && request.Tags.Any())
+            {
+                if (request.TagLogic?.ToUpper() == "AND")
+                {
+                    // All tags must be present
+                    foreach (var tagName in request.Tags)
+                    {
+                        var tagNameLower = tagName.ToLower();
+                        query = query.Where(t => t.TaskTags.Any(tt => tt.Tag.Name.ToLower() == tagNameLower));
+                    }
+                }
+                else
+                {
+                    // At least one tag must be present (OR)
+                    query = query.Where(t => t.TaskTags.Any(tt => request.Tags.Contains(tt.Tag.Name)));
+                }
+            }
+
+            // Due date range
+            if (request.DueDateFrom.HasValue)
+            {
+                query = query.Where(t => t.DueDate.HasValue && t.DueDate >= request.DueDateFrom.Value);
+            }
+
+            if (request.DueDateTo.HasValue)
+            {
+                query = query.Where(t => t.DueDate.HasValue && t.DueDate <= request.DueDateTo.Value);
+            }
+
+            // Created date range
+            if (request.CreatedFrom.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt >= request.CreatedFrom.Value);
+            }
+
+            if (request.CreatedTo.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt <= request.CreatedTo.Value);
+            }
+
+            // Has due date filter
+            if (request.HasDueDate.HasValue)
+            {
+                if (request.HasDueDate.Value)
+                {
+                    query = query.Where(t => t.DueDate.HasValue);
+                }
+                else
+                {
+                    query = query.Where(t => !t.DueDate.HasValue);
+                }
+            }
+
+            // Overdue filter
+            if (request.IsOverdue == true)
+            {
+                var now = DateTime.UtcNow;
+                query = query.Where(t => t.DueDate.HasValue && 
+                    t.DueDate.Value < now && 
+                    !t.Completed);
+            }
+
+            // Due today filter
+            if (request.IsDueToday == true)
+            {
+                var today = DateTime.UtcNow.Date;
+                var tomorrow = today.AddDays(1);
+                query = query.Where(t => t.DueDate.HasValue && 
+                    t.DueDate.Value >= today && 
+                    t.DueDate.Value < tomorrow);
+            }
+
+            // Recurring filter
+            if (request.IsRecurring.HasValue)
+            {
+                query = query.Where(t => t.IsRecurring == request.IsRecurring.Value);
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Sorting
+            query = request.SortBy?.ToLower() switch
+            {
+                "duedate" => request.SortDirection?.ToLower() == "asc"
+                    ? query.OrderBy(t => t.DueDate ?? DateTime.MaxValue)
+                    : query.OrderByDescending(t => t.DueDate ?? DateTime.MinValue),
+                "priority" => request.SortDirection?.ToLower() == "asc"
+                    ? query.OrderBy(t => t.Priority)
+                    : query.OrderByDescending(t => t.Priority),
+                "title" => request.SortDirection?.ToLower() == "asc"
+                    ? query.OrderBy(t => t.Title)
+                    : query.OrderByDescending(t => t.Title),
+                _ => request.SortDirection?.ToLower() == "asc"
+                    ? query.OrderBy(t => t.CreatedAt)
+                    : query.OrderByDescending(t => t.CreatedAt)
+            };
+
+            // Pagination
+            var page = request.Page ?? 1;
+            var pageSize = request.PageSize ?? 100;
+            var skip = (page - 1) * pageSize;
+
+            var tasks = await query
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (tasks, totalCount);
         }
     }
 }

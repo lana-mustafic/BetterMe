@@ -529,14 +529,75 @@ interface Category {
 
           <!-- Enhanced Filter Section (only show in list view) -->
           @if (activeView === 'list') {
+            <!-- Quick Filter Presets -->
+            <div class="quick-filters glass-card">
+              <h4>Quick Filters</h4>
+              <div class="quick-filters-grid">
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'overdue'"
+                  (click)="applyQuickFilter('overdue')"
+                >
+                  <span class="quick-filter-icon">⚠️</span>
+                  <span class="quick-filter-text">Overdue</span>
+                </button>
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'dueToday'"
+                  (click)="applyQuickFilter('dueToday')"
+                >
+                  <span class="quick-filter-icon">📅</span>
+                  <span class="quick-filter-text">Due Today</span>
+                </button>
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'noDueDate'"
+                  (click)="applyQuickFilter('noDueDate')"
+                >
+                  <span class="quick-filter-icon">∞</span>
+                  <span class="quick-filter-text">No Due Date</span>
+                </button>
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'highPriority'"
+                  (click)="applyQuickFilter('highPriority')"
+                >
+                  <span class="quick-filter-icon">🔥</span>
+                  <span class="quick-filter-text">High Priority</span>
+                </button>
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'recurring'"
+                  (click)="applyQuickFilter('recurring')"
+                >
+                  <span class="quick-filter-icon">🔄</span>
+                  <span class="quick-filter-text">Recurring</span>
+                </button>
+                <button 
+                  class="quick-filter-btn" 
+                  [class.active]="quickFilter === 'none'"
+                  (click)="applyQuickFilter('none')"
+                >
+                  <span class="quick-filter-icon">✨</span>
+                  <span class="quick-filter-text">Clear</span>
+                </button>
+              </div>
+            </div>
+
             <div class="filters-section glass-card">
               <div class="filters-header">
-                <h3>Smart Filters</h3>
-                @if (hasActiveFilters) {
-                  <button class="btn-clear-filters" (click)="clearFilters()">
-                    Clear All Filters
-                  </button>
-                }
+                <h3>Advanced Filters</h3>
+                <div class="filters-header-actions">
+                  <label class="use-backend-search">
+                    <input type="checkbox" [(ngModel)]="useBackendSearch" (change)="onFiltersChange()" />
+                    Use Server Search
+                  </label>
+                  @if (hasActiveFilters) {
+                    <button class="btn-clear-filters" (click)="clearFilters()">
+                      Clear All Filters
+                    </button>
+                  }
+                </div>
               </div>
               
               <div class="filters-grid">
@@ -672,6 +733,152 @@ interface Category {
                     <option value="low-focus">🧘 Light Focus</option>
                   </select>
                 </div>
+
+                <!-- Date Range Filters -->
+                <div class="filter-group date-range-group">
+                  <label class="filter-label">Due Date Range</label>
+                  <div class="date-range-inputs">
+                    <input
+                      type="date"
+                      class="filter-input date-input"
+                      [(ngModel)]="dueDateFrom"
+                      (change)="onFiltersChange()"
+                      placeholder="From"
+                    />
+                    <span class="date-separator">to</span>
+                    <input
+                      type="date"
+                      class="filter-input date-input"
+                      [(ngModel)]="dueDateTo"
+                      (change)="onFiltersChange()"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
+
+                <div class="filter-group date-range-group">
+                  <label class="filter-label">Created Date Range</label>
+                  <div class="date-range-inputs">
+                    <input
+                      type="date"
+                      class="filter-input date-input"
+                      [(ngModel)]="createdFrom"
+                      (change)="onFiltersChange()"
+                      placeholder="From"
+                    />
+                    <span class="date-separator">to</span>
+                    <input
+                      type="date"
+                      class="filter-input date-input"
+                      [(ngModel)]="createdTo"
+                      (change)="onFiltersChange()"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
+
+                <!-- Enhanced Tag Multi-Select -->
+                <div class="filter-group tag-multi-select-group">
+                  <label class="filter-label">Tags ({{ filteredTags.length }} selected)</label>
+                  <div class="tag-select-container">
+                    <div class="tag-input-wrapper">
+                      <input
+                        type="text"
+                        class="filter-input tag-search-input"
+                        placeholder="Search or add tags..."
+                        [(ngModel)]="tagSearchTerm"
+                        (input)="onTagSearchChange()"
+                        (keydown.enter)="addTagFromSearch($event)"
+                      />
+                      <button 
+                        class="tag-dropdown-btn"
+                        (click)="showTagDropdown = !showTagDropdown"
+                        type="button"
+                      >
+                        ▼
+                      </button>
+                    </div>
+                    @if (showTagDropdown) {
+                      <div class="tag-dropdown">
+                        @if (tagSuggestions.length > 0) {
+                          @for (tag of tagSuggestions; track tag.name) {
+                            <div 
+                              class="tag-option"
+                              [class.selected]="filteredTags.includes(tag.name)"
+                              (click)="toggleTagFilter(tag.name)"
+                            >
+                              <span class="tag-checkbox">{{ filteredTags.includes(tag.name) ? '✓' : '' }}</span>
+                              <span class="tag-name">{{ tag.name }}</span>
+                              <span class="tag-count">({{ tag.count }})</span>
+                            </div>
+                          }
+                        } @else if (tagSearchTerm) {
+                          <div class="tag-option add-new" (click)="addTagFromSearch($event)">
+                            <span>+ Add "{{ tagSearchTerm }}"</span>
+                          </div>
+                        } @else {
+                          <div class="tag-option empty">No tags found</div>
+                        }
+                      </div>
+                    }
+                    <div class="selected-tags-display">
+                      @for (tag of filteredTags; track tag) {
+                        <span class="selected-tag">
+                          {{ tag }}
+                          <button (click)="removeTagFilter(tag)" class="tag-remove">×</button>
+                        </span>
+                      }
+                    </div>
+                    <div class="tag-logic-toggle">
+                      <label>
+                        <input 
+                          type="radio" 
+                          name="tagLogic" 
+                          [value]="'OR'" 
+                          [(ngModel)]="tagFilterLogic"
+                          (change)="onFiltersChange()"
+                        />
+                        Any (OR)
+                      </label>
+                      <label>
+                        <input 
+                          type="radio" 
+                          name="tagLogic" 
+                          [value]="'AND'" 
+                          [(ngModel)]="tagFilterLogic"
+                          (change)="onFiltersChange()"
+                        />
+                        All (AND)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saved Filter Presets -->
+              <div class="saved-presets-section">
+                <div class="presets-header">
+                  <h4>Saved Filter Presets</h4>
+                  <button class="btn-preset-save" (click)="showSavePresetModal = true" [disabled]="!hasActiveFilters">
+                    💾 Save Current Filters
+                  </button>
+                </div>
+                @if (savedFilterPresets.length > 0) {
+                  <div class="presets-list">
+                    @for (preset of savedFilterPresets; track preset.id) {
+                      <button 
+                        class="preset-btn"
+                        (click)="loadPreset(preset)"
+                        (contextmenu)="deletePreset(preset.id, $event)"
+                      >
+                        <span class="preset-name">{{ preset.name }}</span>
+                        <span class="preset-icon">📌</span>
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <p class="no-presets">No saved presets. Save your current filters to create one!</p>
+                }
               </div>
 
               <!-- Active Filters Display -->
@@ -737,14 +944,94 @@ interface Category {
                 </div>
               }
 
-              <!-- Results Count -->
+              <!-- Results Count & Pagination -->
               <div class="results-info">
-                Showing {{ smartFilteredTasks.length }} of {{ tasks.length }} tasks
+                @if (useBackendSearch) {
+                  <div class="search-results-info">
+                    <span>Showing {{ (searchPage - 1) * searchPageSize + 1 }} - {{ Math.min(searchPage * searchPageSize, searchTotalCount) }} of {{ searchTotalCount }} tasks</span>
+                    @if (searchTotalCount > searchPageSize) {
+                      <div class="pagination-controls">
+                        <button 
+                          class="pagination-btn"
+                          [disabled]="searchPage === 1"
+                          (click)="goToPage(searchPage - 1)"
+                        >
+                          ← Previous
+                        </button>
+                        <span class="page-info">
+                          Page {{ searchPage }} of {{ Math.ceil(searchTotalCount / searchPageSize) }}
+                        </span>
+                        <button 
+                          class="pagination-btn"
+                          [disabled]="searchPage >= Math.ceil(searchTotalCount / searchPageSize)"
+                          (click)="goToPage(searchPage + 1)"
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <span>Showing {{ smartFilteredTasks.length }} of {{ tasks.length }} tasks</span>
+                }
                 @if (smartFilteredTasks.length === 0 && tasks.length > 0) {
                   <span class="no-results">No tasks match your filters</span>
                 }
               </div>
             </div>
+
+            <!-- Save Preset Modal -->
+            @if (showSavePresetModal) {
+              <div class="modal-overlay" (click)="showSavePresetModal = false">
+                <div class="modal-content preset-modal glass-card" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Save Filter Preset</h3>
+                    <button class="close-btn" (click)="showSavePresetModal = false">×</button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="form-group">
+                      <label class="form-label">Preset Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="presetName"
+                        placeholder="e.g., 'High Priority Work Tasks'"
+                        (keydown.enter)="savePreset()"
+                      />
+                    </div>
+                    <div class="preset-preview">
+                      <strong>Current Filters:</strong>
+                      <ul>
+                        @if (searchTerm) {
+                          <li>Search: "{{ searchTerm }}"</li>
+                        }
+                        @if (selectedCategory) {
+                          <li>Category: {{ selectedCategory }}</li>
+                        }
+                        @if (selectedStatus !== 'all') {
+                          <li>Status: {{ selectedStatus }}</li>
+                        }
+                        @if (selectedPriority !== 'all') {
+                          <li>Priority: {{ getPriorityText(selectedPriority) }}</li>
+                        }
+                        @if (filteredTags.length > 0) {
+                          <li>Tags: {{ filteredTags.join(', ') }} ({{ tagFilterLogic }})</li>
+                        }
+                        @if (dueDateFrom || dueDateTo) {
+                          <li>Due Date: {{ dueDateFrom || 'Any' }} to {{ dueDateTo || 'Any' }}</li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="modal-actions">
+                    <button class="btn btn-outline" (click)="showSavePresetModal = false">Cancel</button>
+                    <button class="btn btn-gradient" (click)="savePreset()" [disabled]="!presetName.trim()">
+                      Save Preset
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
 
             <!-- Sorting Controls -->
             @if (smartFilteredTasks.length > 0) {
@@ -2511,6 +2798,348 @@ interface Category {
       margin-left: 1rem;
     }
 
+    /* Date Range Inputs */
+    .date-range-group {
+      grid-column: span 2;
+    }
+
+    .date-range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .date-input {
+      flex: 1;
+    }
+
+    .date-separator {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+
+    /* Tag Multi-Select */
+    .tag-multi-select-group {
+      grid-column: span 2;
+    }
+
+    .tag-select-container {
+      position: relative;
+    }
+
+    .tag-input-wrapper {
+      position: relative;
+      display: flex;
+    }
+
+    .tag-search-input {
+      padding-right: 2.5rem;
+    }
+
+    .tag-dropdown-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .tag-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(30, 30, 50, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      margin-top: 0.25rem;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .tag-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tag-option:last-child {
+      border-bottom: none;
+    }
+
+    .tag-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tag-option.selected {
+      background: rgba(102, 126, 234, 0.2);
+    }
+
+    .tag-checkbox {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+    }
+
+    .tag-option.selected .tag-checkbox {
+      background: #667eea;
+      border-color: #667eea;
+    }
+
+    .tag-name {
+      flex: 1;
+      color: white;
+    }
+
+    .tag-count {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+    }
+
+    .tag-option.add-new {
+      color: #4ade80;
+      font-weight: 500;
+    }
+
+    .tag-option.empty {
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      cursor: default;
+    }
+
+    .selected-tags-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      min-height: 2rem;
+    }
+
+    .selected-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      background: rgba(102, 126, 234, 0.3);
+      border: 1px solid rgba(102, 126, 234, 0.5);
+      border-radius: 20px;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    .tag-remove {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .tag-remove:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .tag-logic-toggle {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tag-logic-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .tag-logic-toggle input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    /* Saved Presets */
+    .saved-presets-section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .presets-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .presets-header h4 {
+      color: white;
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .btn-preset-save {
+      padding: 0.5rem 1rem;
+      background: rgba(102, 126, 234, 0.3);
+      border: 1px solid rgba(102, 126, 234, 0.5);
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-preset-save:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-preset-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .presets-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .preset-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .preset-name {
+      font-weight: 500;
+    }
+
+    .preset-icon {
+      font-size: 0.8rem;
+    }
+
+    .no-presets {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* Preset Modal */
+    .preset-modal {
+      max-width: 500px;
+    }
+
+    .preset-preview {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .preset-preview strong {
+      color: white;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .preset-preview ul {
+      margin: 0;
+      padding-left: 1.5rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .preset-preview li {
+      margin: 0.25rem 0;
+    }
+
+    /* Pagination */
+    .search-results-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page-info {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      min-width: 120px;
+      text-align: center;
+    }
+
     /* Create Task Form */
     .create-task-form {
       padding: 2rem;
@@ -2994,6 +3623,15 @@ interface Category {
       .task-card {
         padding: 1.5rem;
       }
+
+      .date-range-group,
+      .tag-multi-select-group {
+        grid-column: span 1;
+      }
+
+      .tag-dropdown {
+        max-height: 150px;
+      }
       
       .tasks-grid {
         grid-template-columns: 1fr;
@@ -3037,7 +3675,27 @@ export class TasksComponent implements OnInit {
   tagSearchTerm: string = '';
   tagFilterLogic: 'AND' | 'OR' = 'OR';
   filteredTags: string[] = [];
+  showTagDropdown: boolean = false;
+  quickFilter: string = 'none';
+  useBackendSearch: boolean = false;
+  searchResults: Task[] = [];
+  searchTotalCount: number = 0;
+  searchPage: number = 1;
+  searchPageSize: number = 100;
   selectedTagNames: string[] = [];
+  
+  // Date range filters
+  dueDateFrom: string = '';
+  dueDateTo: string = '';
+  createdFrom: string = '';
+  createdTo: string = '';
+  showDateRangePicker: boolean = false;
+  
+  // Saved filter presets
+  savedFilterPresets: Array<{id: string; name: string; filters: any}> = [];
+  showSavePresetModal: boolean = false;
+  presetName: string = '';
+  showPresetsMenu: boolean = false;
 
   // NEW: Smart Organization Properties
   smartCategories: TaskCategory[] = [];
@@ -3329,6 +3987,11 @@ export class TasksComponent implements OnInit {
 
   // NEW: Smart filtering with all options
   get smartFilteredTasks(): Task[] {
+    // Use backend search results if enabled
+    if (this.useBackendSearch && this.searchResults.length > 0) {
+      return this.searchResults;
+    }
+    
     let tasks = this.filteredTasks;
 
     // Context filter
@@ -3391,6 +4054,11 @@ export class TasksComponent implements OnInit {
            this.selectedCategory !== '' ||
            this.selectedStatus !== 'all' ||
            this.selectedPriority !== 'all' ||
+           this.filteredTags.length > 0 ||
+           this.dueDateFrom !== '' ||
+           this.dueDateTo !== '' ||
+           this.createdFrom !== '' ||
+           this.createdTo !== '' ||
            this.smartFilterContext !== 'all' ||
            this.smartFilterEnergy !== 'all' ||
            this.smartFilterTime !== 'all' ||
@@ -3398,9 +4066,13 @@ export class TasksComponent implements OnInit {
            this.smartFilterFocus !== 'all';
   }
 
+  // Expose Math for template
+  Math = Math;
+
   ngOnInit(): void {
     this.loadTasks();
     this.initializeSmartFeatures();
+    this.loadPresetsFromStorage();
   }
 
   // NEW: Initialize smart features
@@ -3562,7 +4234,22 @@ export class TasksComponent implements OnInit {
   }
 
   // EXISTING methods from filtering
-  onTagSearchChange(): void {}
+  onTagSearchChange(): void {
+    // Tag suggestions are computed via getter
+  }
+
+  addTagFromSearch(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    const tagName = this.tagSearchTerm.trim();
+    if (tagName && !this.filteredTags.includes(tagName)) {
+      this.filteredTags = [...this.filteredTags, tagName];
+      this.tagSearchTerm = '';
+      this.showTagDropdown = false;
+      this.onFiltersChange();
+    }
+  }
 
   toggleTagFilter(tagName: string): void {
     if (this.filteredTags.includes(tagName)) {
@@ -3571,6 +4258,7 @@ export class TasksComponent implements OnInit {
       this.filteredTags = [...this.filteredTags, tagName];
     }
     this.tagSearchTerm = '';
+    this.onFiltersChange();
   }
 
   isTagFiltered(tagName: string): boolean {
@@ -3585,8 +4273,89 @@ export class TasksComponent implements OnInit {
     this.filteredTags = [];
   }
 
-  onFiltersChange(): void {}
-  
+  onFiltersChange(): void {
+    if (this.useBackendSearch) {
+      this.performBackendSearch();
+    }
+    // Client-side filtering happens automatically via getters
+  }
+
+  applyQuickFilter(filter: string): void {
+    this.quickFilter = filter;
+    this.clearFilters();
+    
+    switch (filter) {
+      case 'overdue':
+        this.useBackendSearch = true;
+        this.performBackendSearch({ isOverdue: true, completed: false });
+        break;
+      case 'dueToday':
+        this.useBackendSearch = true;
+        this.performBackendSearch({ isDueToday: true });
+        break;
+      case 'noDueDate':
+        this.useBackendSearch = true;
+        this.performBackendSearch({ hasDueDate: false });
+        break;
+      case 'highPriority':
+        this.selectedPriority = '3';
+        this.onFiltersChange();
+        break;
+      case 'recurring':
+        this.useBackendSearch = true;
+        this.performBackendSearch({ isRecurring: true });
+        break;
+      case 'none':
+        this.quickFilter = 'none';
+        this.useBackendSearch = false;
+        this.searchResults = [];
+        break;
+    }
+  }
+
+  performBackendSearch(additionalFilters?: any): void {
+    const searchRequest: any = {
+      searchTerm: this.searchTerm || undefined,
+      category: this.selectedCategory || undefined,
+      completed: this.selectedStatus === 'completed' ? true : this.selectedStatus === 'active' ? false : undefined,
+      priority: this.selectedPriority !== 'all' ? parseInt(this.selectedPriority) : undefined,
+      tags: this.filteredTags.length > 0 ? this.filteredTags : undefined,
+      tagLogic: this.tagFilterLogic,
+      dueDateFrom: this.dueDateFrom ? new Date(this.dueDateFrom) : undefined,
+      dueDateTo: this.dueDateTo ? new Date(this.dueDateTo) : undefined,
+      createdFrom: this.createdFrom ? new Date(this.createdFrom) : undefined,
+      createdTo: this.createdTo ? new Date(this.createdTo) : undefined,
+      sortBy: this.sortField === 'dueDate' ? 'dueDate' : this.sortField === 'priority' ? 'priority' : 'createdAt',
+      sortDirection: this.sortDirection,
+      page: this.searchPage,
+      pageSize: this.searchPageSize,
+      ...additionalFilters
+    };
+
+    // Remove undefined values
+    Object.keys(searchRequest).forEach(key => {
+      if (searchRequest[key] === undefined || searchRequest[key] === null || searchRequest[key] === '') {
+        delete searchRequest[key];
+      }
+    });
+
+    this.isLoading = true;
+    this.taskService.advancedSearch(searchRequest).subscribe({
+      next: (response) => {
+        this.searchResults = response.tasks;
+        this.searchTotalCount = response.totalCount;
+        this.searchPage = response.page;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Search failed:', err);
+        this.isLoading = false;
+        // Fallback to client-side filtering
+        this.useBackendSearch = false;
+      }
+    });
+  }
+
   clearFilters(): void {
     this.searchTerm = '';
     this.selectedCategory = '';
@@ -3599,6 +4368,108 @@ export class TasksComponent implements OnInit {
     this.smartFilterTime = 'all';
     this.smartFilterDifficulty = 'all';
     this.smartFilterFocus = 'all';
+    this.quickFilter = 'none';
+    this.useBackendSearch = false;
+    this.searchResults = [];
+    this.dueDateFrom = '';
+    this.dueDateTo = '';
+    this.createdFrom = '';
+    this.createdTo = '';
+    this.searchPage = 1;
+  }
+
+  // Saved Filter Presets
+  savePreset(): void {
+    if (!this.presetName.trim()) return;
+
+    const preset = {
+      id: Date.now().toString(),
+      name: this.presetName.trim(),
+      filters: {
+        searchTerm: this.searchTerm,
+        selectedCategory: this.selectedCategory,
+        selectedStatus: this.selectedStatus,
+        selectedPriority: this.selectedPriority,
+        filteredTags: [...this.filteredTags],
+        tagFilterLogic: this.tagFilterLogic,
+        dueDateFrom: this.dueDateFrom,
+        dueDateTo: this.dueDateTo,
+        createdFrom: this.createdFrom,
+        createdTo: this.createdTo,
+        smartFilterContext: this.smartFilterContext,
+        smartFilterEnergy: this.smartFilterEnergy,
+        smartFilterTime: this.smartFilterTime,
+        smartFilterDifficulty: this.smartFilterDifficulty,
+        smartFilterFocus: this.smartFilterFocus,
+        useBackendSearch: this.useBackendSearch
+      }
+    };
+
+    this.savedFilterPresets.push(preset);
+    this.savePresetsToStorage();
+    this.showSavePresetModal = false;
+    this.presetName = '';
+  }
+
+  loadPreset(preset: {id: string; name: string; filters: any}): void {
+    this.searchTerm = preset.filters.searchTerm || '';
+    this.selectedCategory = preset.filters.selectedCategory || '';
+    this.selectedStatus = preset.filters.selectedStatus || 'all';
+    this.selectedPriority = preset.filters.selectedPriority || 'all';
+    this.filteredTags = [...(preset.filters.filteredTags || [])];
+    this.tagFilterLogic = preset.filters.tagFilterLogic || 'OR';
+    this.dueDateFrom = preset.filters.dueDateFrom || '';
+    this.dueDateTo = preset.filters.dueDateTo || '';
+    this.createdFrom = preset.filters.createdFrom || '';
+    this.createdTo = preset.filters.createdTo || '';
+    this.smartFilterContext = preset.filters.smartFilterContext || 'all';
+    this.smartFilterEnergy = preset.filters.smartFilterEnergy || 'all';
+    this.smartFilterTime = preset.filters.smartFilterTime || 'all';
+    this.smartFilterDifficulty = preset.filters.smartFilterDifficulty || 'all';
+    this.smartFilterFocus = preset.filters.smartFilterFocus || 'all';
+    this.useBackendSearch = preset.filters.useBackendSearch || false;
+    this.searchPage = 1;
+    
+    if (this.useBackendSearch) {
+      this.performBackendSearch();
+    }
+  }
+
+  deletePreset(presetId: string, event: MouseEvent): void {
+    event.preventDefault();
+    if (confirm('Delete this filter preset?')) {
+      this.savedFilterPresets = this.savedFilterPresets.filter(p => p.id !== presetId);
+      this.savePresetsToStorage();
+    }
+  }
+
+  savePresetsToStorage(): void {
+    try {
+      localStorage.setItem('taskFilterPresets', JSON.stringify(this.savedFilterPresets));
+    } catch (e) {
+      console.error('Failed to save presets:', e);
+    }
+  }
+
+  loadPresetsFromStorage(): void {
+    try {
+      const saved = localStorage.getItem('taskFilterPresets');
+      if (saved) {
+        this.savedFilterPresets = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load presets:', e);
+    }
+  }
+
+  // Pagination
+  goToPage(page: number): void {
+    if (page >= 1 && page <= Math.ceil(this.searchTotalCount / this.searchPageSize)) {
+      this.searchPage = page;
+      this.performBackendSearch();
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
   
   clearSearch(): void { this.searchTerm = ''; }

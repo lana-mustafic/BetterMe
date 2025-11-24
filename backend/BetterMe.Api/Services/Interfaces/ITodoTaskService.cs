@@ -17,5 +17,6 @@ namespace BetterMe.Api.Services.Interfaces
         Task<List<TodoTask>> GenerateNextRecurringInstancesAsync();
         Task<int> CalculateHabitStreakAsync(int taskId);
         Task<TaskStatsResponse> GetTaskStatsAsync(int userId);
+        Task<(List<TodoTask> Tasks, int TotalCount)> SearchTasksAsync(SearchTasksRequest request, int userId);
     }
 }
