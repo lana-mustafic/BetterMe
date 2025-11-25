@@ -54,6 +54,15 @@ namespace BetterMe.Api.Models
 
         public int? OriginalTaskId { get; set; } // For tracking recurring task chains
 
+        // Subtasks - self-referencing relationship
+        public int? ParentTaskId { get; set; }
+
+        [ForeignKey("ParentTaskId")]
+        public TodoTask? ParentTask { get; set; }
+
+        [NotMapped]
+        public List<TodoTask> Subtasks { get; set; } = new List<TodoTask>();
+
         [NotMapped]
         public List<string> CompletedInstances
         {

@@ -29,6 +29,14 @@ namespace BetterMe.Api.Services
 
         public async Task<TodoTask> CreateTaskAsync(CreateTaskRequest request, int userId)
         {
+            // Validate parent task if provided
+            if (request.ParentTaskId.HasValue)
+            {
+                var parentTask = await _tasksRepo.GetByIdAsync(request.ParentTaskId.Value);
+                if (parentTask == null || parentTask.UserId != userId)
+                    throw new InvalidOperationException("Parent task not found or access denied");
+            }
+
             var task = new TodoTask
             {
                 Title = request.Title,
@@ -51,11 +59,61 @@ namespace BetterMe.Api.Services
                 OriginalTaskId = null,
                 TaskTags = new List<TaskTag>(),
                 IsInMyDay = request.IsInMyDay,
-                AddedToMyDayAt = request.IsInMyDay ? DateTime.UtcNow : null
+                AddedToMyDayAt = request.IsInMyDay ? DateTime.UtcNow : null,
+                ParentTaskId = request.ParentTaskId
             };
 
             await _tasksRepo.AddAsync(task);
             await _tasksRepo.SaveChangesAsync();
+
+            // Create subtasks if provided
+            if (request.Subtasks != null && request.Subtasks.Count > 0)
+            {
+                foreach (var subtaskRequest in request.Subtasks)
+                {
+                    var subtask = new TodoTask
+                    {
+                        Title = subtaskRequest.Title,
+                        Description = subtaskRequest.Description,
+                        DueDate = subtaskRequest.DueDate?.ToUniversalTime(),
+                        Priority = subtaskRequest.Priority,
+                        Category = task.Category, // Inherit category from parent
+                        UserId = userId,
+                        ParentTaskId = task.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        Completed = false,
+                        TaskTags = new List<TaskTag>()
+                    };
+                    await _tasksRepo.AddAsync(subtask);
+                }
+                await _tasksRepo.SaveChangesAsync();
+            }
+
+            // Create dependencies if provided
+            if (request.DependsOnTaskIds != null && request.DependsOnTaskIds.Count > 0)
+            {
+                foreach (var dependsOnTaskId in request.DependsOnTaskIds)
+                {
+                    var dependencyTask = await _tasksRepo.GetByIdAsync(dependsOnTaskId);
+                    if (dependencyTask == null || dependencyTask.UserId != userId)
+                        throw new InvalidOperationException($"Dependency task {dependsOnTaskId} not found or access denied");
+
+                    // Prevent circular dependencies
+                    if (dependsOnTaskId == task.Id)
+                        throw new InvalidOperationException("Task cannot depend on itself");
+
+                    var dependency = new TaskDependency
+                    {
+                        TaskId = task.Id,
+                        DependsOnTaskId = dependsOnTaskId,
+                        DependencyType = "blocks",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.TaskDependencies.Add(dependency);
+                }
+                await _context.SaveChangesAsync();
+            }
 
             if (request.Tags != null && request.Tags.Count > 0)
             {
@@ -113,6 +171,37 @@ namespace BetterMe.Api.Services
             {
                 if (request.Completed.Value && !task.Completed)
                 {
+                    // Check if all dependencies are completed
+                    var dependencies = await _context.TaskDependencies
+                        .Include(td => td.DependsOnTask)
+                        .Where(td => td.TaskId == task.Id)
+                        .ToListAsync();
+
+                    var incompleteDependencies = dependencies
+                        .Where(td => !td.DependsOnTask.Completed)
+                        .ToList();
+
+                    if (incompleteDependencies.Any())
+                    {
+                        var blockingTasks = incompleteDependencies
+                            .Select(td => td.DependsOnTask.Title)
+                            .ToList();
+                        throw new InvalidOperationException(
+                            $"Cannot complete task. The following tasks must be completed first: {string.Join(", ", blockingTasks)}");
+                    }
+
+                    // Check if all subtasks are completed (optional - can be configured)
+                    var subtasks = await _context.TodoTasks
+                        .Where(t => t.ParentTaskId == task.Id)
+                        .ToListAsync();
+
+                    var incompleteSubtasks = subtasks.Where(t => !t.Completed).ToList();
+                    if (incompleteSubtasks.Any())
+                    {
+                        // Optionally warn but don't block - or make it configurable
+                        // For now, we'll allow completion even if subtasks aren't done
+                    }
+
                     task.CompletedAt = DateTime.UtcNow;
 
                     // If this is a recurring task and it's being marked complete, handle instance tracking

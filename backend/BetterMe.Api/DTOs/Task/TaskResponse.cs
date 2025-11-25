@@ -30,5 +30,26 @@
         public string? AssignedToUserName { get; set; }
         public bool IsShared { get; set; }
         public int CommentCount { get; set; }
+
+        // Subtasks
+        public int? ParentTaskId { get; set; }
+        public string? ParentTaskTitle { get; set; }
+        public List<TaskResponse> Subtasks { get; set; } = new List<TaskResponse>();
+        public int SubtaskCount { get; set; }
+        public int CompletedSubtaskCount { get; set; }
+
+        // Dependencies
+        public List<int> DependsOnTaskIds { get; set; } = new List<int>();
+        public List<DependencyInfo> Dependencies { get; set; } = new List<DependencyInfo>();
+        public bool CanBeCompleted { get; set; } = true; // True if all dependencies are completed
+        public List<string> BlockingReasons { get; set; } = new List<string>(); // Reasons why task can't be completed
+    }
+
+    public class DependencyInfo
+    {
+        public int TaskId { get; set; }
+        public string TaskTitle { get; set; } = string.Empty;
+        public bool IsCompleted { get; set; }
+        public string DependencyType { get; set; } = "blocks";
     }
 }

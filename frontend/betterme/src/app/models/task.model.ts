@@ -18,13 +18,22 @@ export interface Task {
   nextOccurrence?: string;
   streakCount: number;
   lastCompletedDate?: string;
-  parentTaskId?: number;
   estimatedDuration?: number; // in minutes
   difficulty: TaskDifficulty;
   completionCount?: number; // Track how many times this task has been completed
   
+  // Subtasks and Dependencies
+  parentTaskId?: number;
+  parentTaskTitle?: string;
+  subtasks?: Task[]; // Nested subtasks (full Task objects)
+  subtaskCount?: number;
+  completedSubtaskCount?: number;
+  dependsOnTaskIds?: number[];
+  dependencies?: DependencyInfo[];
+  canBeCompleted?: boolean;
+  blockingReasons?: string[];
+  
   // Suggested additions
-  subtasks?: Subtask[]; // For task breakdown
   attachments?: Attachment[]; // File attachments
   reminders?: Reminder[]; // Pre-due date reminders
   energyLevel?: EnergyLevel; // When user feels most productive for this task
@@ -48,6 +57,13 @@ export interface Subtask {
   title: string;
   completed: boolean;
   position: number;
+}
+
+export interface DependencyInfo {
+  taskId: number;
+  taskTitle: string;
+  isCompleted: boolean;
+  dependencyType: string;
 }
 
 export interface Attachment {
@@ -93,10 +109,19 @@ export interface CreateTaskRequest {
   difficulty?: TaskDifficulty;
   completionCount?: number;
   // Add new optional fields:
-  subtasks?: Pick<Subtask, 'title'>[];
+  parentTaskId?: number;
+  subtasks?: CreateSubtaskRequest[];
+  dependsOnTaskIds?: number[];
   reminders?: Pick<Reminder, 'remindAt' | 'method'>[];
   energyLevel?: EnergyLevel;
   context?: TaskContext[];
+}
+
+export interface CreateSubtaskRequest {
+  title: string;
+  description?: string;
+  dueDate?: string;
+  priority?: number;
 }
 
 export interface UpdateTaskRequest {
@@ -114,7 +139,9 @@ export interface UpdateTaskRequest {
   difficulty?: TaskDifficulty;
   completionCount?: number;
   // Add new optional fields:
-  subtasks?: Subtask[];
+  parentTaskId?: number;
+  dependsOnTaskIds?: number[];
+  // Note: subtasks are not included here - they are updated individually
   reminders?: Reminder[];
   energyLevel?: EnergyLevel;
   context?: TaskContext[];

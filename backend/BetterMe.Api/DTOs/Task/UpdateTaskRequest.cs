@@ -13,4 +13,6 @@
     public DateTime? RecurrenceEndDate { get; set; }
     public List<string>? CompletedInstances { get; set; }
     public bool? IsInMyDay { get; set; }
+    public int? ParentTaskId { get; set; }
+    public List<int>? DependsOnTaskIds { get; set; }
 }

@@ -16,6 +16,7 @@ import { ShareTaskModalComponent } from '../../components/share-task-modal/share
 import { TaskCommentsComponent } from '../../components/task-comments/task-comments.component';
 import { TaskActivityFeedComponent } from '../../components/task-activity-feed/task-activity-feed.component';
 import { QuickAddTaskComponent } from '../../components/quick-add-task/quick-add-task.component';
+import { TaskSubtasksComponent } from '../../components/task-subtasks/task-subtasks.component';
 import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
 import { CollaborationService } from '../../services/collaboration.service';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
@@ -72,7 +73,8 @@ interface Category {
     ShareTaskModalComponent,
     TaskCommentsComponent,
     TaskActivityFeedComponent,
-    QuickAddTaskComponent
+    QuickAddTaskComponent,
+    TaskSubtasksComponent
   ],
   template: `
     <div class="tasks-page">
@@ -93,7 +95,7 @@ interface Category {
               <p class="subtitle">Manage your productivity and track your progress</p>
             </div>
             <div class="header-actions">
-              <button class="btn btn-gradient" (click)="showCreateForm = !showCreateForm; editingTaskId = null;">
+              <button class="btn btn-gradient" (click)="showCreateForm = !showCreateForm; editingTaskId = null; updateAvailableTasks();">
                 <span class="btn-icon">+</span>
                 Add New Task
               </button>
@@ -1521,6 +1523,99 @@ interface Category {
                   </select>
                 </div>
 
+                <!-- Parent Task Selection -->
+                <div class="form-group">
+                  <label class="form-label">Parent Task (optional)</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskParentTaskId"
+                    name="parentTaskId"
+                    (change)="onParentTaskChange()"
+                  >
+                    <option [value]="null">None (Top-level task)</option>
+                    @for (task of availableParentTasks; track task.id) {
+                      <option [value]="task.id">{{ task.title }}</option>
+                    }
+                  </select>
+                  <small class="form-help-text">Make this task a subtask of another task</small>
+                </div>
+
+                <!-- Subtasks Section -->
+                <div class="form-group">
+                  <label class="form-label">Subtasks</label>
+                  <div class="subtasks-form-container">
+                    <div class="subtask-input-container">
+                      <input 
+                        type="text" 
+                        class="form-input"
+                        placeholder="Add a subtask (press Enter to add)"
+                        [(ngModel)]="newSubtaskInput"
+                        name="subtaskInput"
+                        (keydown.enter)="addSubtaskToForm($event)"
+                      />
+                      <button type="button" class="btn btn-outline btn-sm" (click)="addSubtaskToForm()">
+                        Add
+                      </button>
+                    </div>
+                    @if (newTaskSubtasks.length > 0) {
+                      <ul class="subtasks-list-form">
+                        @for (subtask of newTaskSubtasks; track $index) {
+                          <li class="subtask-item-form">
+                            <span>{{ subtask }}</span>
+                            <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm($index)">
+                              ×
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Task Dependencies -->
+                <div class="form-group">
+                  <label class="form-label">Dependencies</label>
+                  <div class="dependencies-form-container">
+                    <select 
+                      class="form-input"
+                      [(ngModel)]="selectedDependencyTaskId"
+                      name="dependencyTask"
+                      (change)="addDependencyToForm()"
+                    >
+                      <option [value]="null">Select a task this depends on...</option>
+                      @for (task of availableDependencyTasks; track task.id) {
+                        <option [value]="task.id" [disabled]="newTaskDependsOnTaskIds.includes(task.id)">
+                          {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                        </option>
+                      }
+                    </select>
+                    @if (newTaskDependsOnTaskIds.length > 0) {
+                      <div class="dependencies-list-form">
+                        <label class="form-label-small">This task depends on:</label>
+                        <ul class="dependencies-list">
+                          @for (depTaskId of newTaskDependsOnTaskIds; track depTaskId) {
+                            @if (getTaskById(depTaskId)) {
+                              <li class="dependency-item-form">
+                                <span class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                                <span class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                                  {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                                </span>
+                                <button type="button" class="btn-icon-small" (click)="removeDependencyFromForm(depTaskId)">
+                                  ×
+                                </button>
+                              </li>
+                            }
+                          }
+                        </ul>
+                      </div>
+                    } @else {
+                      <p class="form-help-text">No dependencies. This task can be started immediately.</p>
+                    }
+                  </div>
+                </div>
+
                 <div class="form-actions">
                   <button type="submit" class="btn btn-gradient">
                     {{ editingTaskId ? 'Update Task' : 'Create Task' }}
@@ -1726,6 +1821,14 @@ interface Category {
                             <span class="tag-more">+{{ task.tags.length - 3 }} more</span>
                           }
                         </div>
+                      }
+
+                      <!-- Subtasks and Dependencies -->
+                      @if ((task.subtasks && task.subtasks.length > 0) || (task.dependencies && task.dependencies.length > 0)) {
+                        <app-task-subtasks 
+                          [task]="task"
+                          (taskUpdated)="onTaskUpdated($event)"
+                        ></app-task-subtasks>
                       }
 
                       <!-- Task Footer -->
@@ -4108,6 +4211,105 @@ interface Category {
       gap: 1rem;
     }
 
+    .form-help-text {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .form-label-small {
+      display: block;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* Subtasks Form Section */
+    .subtasks-form-container {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .subtask-input-container {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .subtask-input-container input {
+      flex-grow: 1;
+    }
+
+    .subtasks-list-form {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .subtask-item-form {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .subtask-item-form span {
+      flex-grow: 1;
+    }
+
+    /* Dependencies Form Section */
+    .dependencies-form-container {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dependencies-list-form {
+      margin-top: 1rem;
+    }
+
+    .dependencies-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.5rem 0 0 0;
+    }
+
+    .dependency-item-form {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      gap: 1rem;
+    }
+
+    .dependency-title {
+      flex-grow: 1;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .dependency-status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      background: rgba(243, 156, 18, 0.3);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .dependency-status.completed {
+      background: rgba(39, 174, 96, 0.3);
+    }
+
     /* NEW: Smart Suggestions Styles */
     .smart-suggestions {
       padding: 1.5rem;
@@ -4593,6 +4795,15 @@ export class TasksComponent implements OnInit {
   newTaskEstimatedDuration: number | null = null;
   newTaskDifficulty: string = 'medium';
   newTaskAttachments: Attachment[] = [];
+  
+  // Subtasks and Dependencies
+  newTaskSubtasks: string[] = []; // Array of subtask titles
+  newSubtaskInput: string = '';
+  newTaskParentTaskId: number | null = null;
+  newTaskDependsOnTaskIds: number[] = [];
+  selectedDependencyTaskId: number | null = null;
+  availableParentTasks: Task[] = []; // Tasks that can be parent tasks
+  availableDependencyTasks: Task[] = []; // Tasks that can be dependencies
 
   // Filter fields
   searchTerm: string = '';
@@ -5031,6 +5242,8 @@ export class TasksComponent implements OnInit {
 
   // UPDATED: Load tasks without mock data
   loadTasks(): void {
+    // Update available tasks for parent/dependency selection
+    this.updateAvailableTasks();
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -5879,7 +6092,7 @@ export class TasksComponent implements OnInit {
     }
 
     // Create the task data object with proper type handling
-    const taskData = {
+    const taskData: any = {
       title: this.newTaskTitle,
       description: this.newTaskDescription,
       dueDate: this.newTaskDueDate || undefined,
@@ -5889,18 +6102,31 @@ export class TasksComponent implements OnInit {
       isRecurring: this.newTaskIsRecurring,
       recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
       recurrenceInterval: this.newTaskRecurrenceInterval,
-      estimatedDuration: this.newTaskEstimatedDuration || undefined, // Convert null to undefined
-      difficulty: this.newTaskDifficulty as TaskDifficulty
+      estimatedDuration: this.newTaskEstimatedDuration || undefined,
+      difficulty: this.newTaskDifficulty as TaskDifficulty,
+      parentTaskId: this.newTaskParentTaskId || undefined,
+      dependsOnTaskIds: this.newTaskDependsOnTaskIds.length > 0 ? this.newTaskDependsOnTaskIds : undefined
     };
 
     if (this.editingTaskId) {
       // For update, you can use taskData directly since it matches UpdateTaskRequest
       this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
-        next: (updatedTask: Task) => {
+        next: async (updatedTask: Task) => {
+          // Create subtasks if any were added
+          if (this.newTaskSubtasks.length > 0) {
+            for (const subtaskTitle of this.newTaskSubtasks) {
+              await this.taskService.createTask({ 
+                title: subtaskTitle, 
+                parentTaskId: updatedTask.id 
+              } as any).toPromise();
+            }
+          }
+          
           const index = this.tasks.findIndex(t => t.id === this.editingTaskId);
           if (index !== -1) {
             this.tasks[index] = updatedTask;
           }
+          this.loadTasks(); // Reload to get updated subtasks
           this.resetForm();
           this.showCreateForm = false;
           this.editingTaskId = null;
@@ -5914,8 +6140,18 @@ export class TasksComponent implements OnInit {
     } else {
       // For create, use taskData directly
       this.taskService.createTask(taskData).subscribe({
-        next: (newTask: Task) => {
-          this.tasks.unshift(newTask);
+        next: async (newTask: Task) => {
+          // Create subtasks if any were added
+          if (this.newTaskSubtasks.length > 0) {
+            for (const subtaskTitle of this.newTaskSubtasks) {
+              await this.taskService.createTask({ 
+                title: subtaskTitle, 
+                parentTaskId: newTask.id 
+              } as any).toPromise();
+            }
+          }
+          
+          this.loadTasks(); // Reload to get updated subtasks
           this.resetForm();
           this.showCreateForm = false;
           this.errorMessage = '';
@@ -5956,8 +6192,16 @@ export class TasksComponent implements OnInit {
     this.newTaskEstimatedDuration = task.estimatedDuration || null;
     this.newTaskDifficulty = task.difficulty || 'medium';
     
+    // Set subtasks and dependencies
+    this.newTaskParentTaskId = task.parentTaskId || null;
+    this.newTaskDependsOnTaskIds = task.dependsOnTaskIds || [];
+    this.newTaskSubtasks = task.subtasks?.map(st => st.title) || [];
+    
     // Store the task ID being edited
     this.editingTaskId = task.id;
+    
+    // Update available tasks for parent/dependency selection
+    this.updateAvailableTasks();
     
     // Show the create form (which will now work as edit form)
     this.showCreateForm = true;
@@ -5997,6 +6241,84 @@ export class TasksComponent implements OnInit {
     this.loadTasks();
   }
 
+  onTaskUpdated(updatedTask: Task): void {
+    // Update the task in the local array
+    const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+    if (index !== -1) {
+      this.tasks[index] = updatedTask;
+      // Recalculate filtered tasks if needed
+      if (this.smartFilteredTasks) {
+        const filteredIndex = this.smartFilteredTasks.findIndex(t => t.id === updatedTask.id);
+        if (filteredIndex !== -1) {
+          this.smartFilteredTasks[filteredIndex] = updatedTask;
+        }
+      }
+    }
+  }
+
+  // Subtask and Dependency Form Helpers
+  addSubtaskToForm(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    if (this.newSubtaskInput.trim()) {
+      this.newTaskSubtasks.push(this.newSubtaskInput.trim());
+      this.newSubtaskInput = '';
+    }
+  }
+
+  removeSubtaskFromForm(index: number): void {
+    this.newTaskSubtasks.splice(index, 1);
+  }
+
+  addDependencyToForm(): void {
+    if (this.selectedDependencyTaskId && !this.newTaskDependsOnTaskIds.includes(this.selectedDependencyTaskId)) {
+      // Prevent circular dependencies
+      if (this.editingTaskId && this.selectedDependencyTaskId === this.editingTaskId) {
+        this.errorMessage = 'A task cannot depend on itself';
+        return;
+      }
+      this.newTaskDependsOnTaskIds.push(this.selectedDependencyTaskId);
+      this.selectedDependencyTaskId = null;
+    }
+  }
+
+  removeDependencyFromForm(taskId: number): void {
+    this.newTaskDependsOnTaskIds = this.newTaskDependsOnTaskIds.filter(id => id !== taskId);
+  }
+
+  onParentTaskChange(): void {
+    // Update available dependency tasks when parent changes
+    this.updateAvailableTasks();
+  }
+
+  updateAvailableTasks(): void {
+    // Get all tasks that can be parent tasks (exclude current task if editing, exclude tasks that are subtasks)
+    this.availableParentTasks = this.tasks.filter(t => 
+      !t.parentTaskId && // Only top-level tasks can be parents
+      (!this.editingTaskId || t.id !== this.editingTaskId) && // Exclude current task
+      (!this.editingTaskId || !this.isTaskDescendant(t.id, this.editingTaskId!)) // Prevent circular hierarchy
+    );
+
+    // Get all tasks that can be dependencies (exclude current task if editing)
+    this.availableDependencyTasks = this.tasks.filter(t => 
+      (!this.editingTaskId || t.id !== this.editingTaskId) && // Exclude current task
+      (!this.editingTaskId || !this.isTaskDescendant(this.editingTaskId!, t.id)) // Prevent circular dependencies
+    );
+  }
+
+  isTaskDescendant(ancestorId: number, descendantId: number): boolean {
+    // Check if descendantId is a descendant of ancestorId
+    const task = this.tasks.find(t => t.id === descendantId);
+    if (!task || !task.parentTaskId) return false;
+    if (task.parentTaskId === ancestorId) return true;
+    return this.isTaskDescendant(ancestorId, task.parentTaskId);
+  }
+
+  getTaskById(taskId: number): Task | undefined {
+    return this.tasks.find(t => t.id === taskId);
+  }
+
   toggleTaskDetails(taskId: number): void {
     if (this.expandedTasks.has(taskId)) {
       this.expandedTasks.delete(taskId);
@@ -6029,10 +6351,14 @@ export class TasksComponent implements OnInit {
     this.newTaskRecurrenceInterval = 1;
     this.newTaskEstimatedDuration = null;
     this.newTaskDifficulty = 'medium';
-    this.editingTaskId = null;
     this.suggestedCategory = null;
     this.suggestedTags = [];
-    this.newTaskAttachments = [];
+    
+    // Reset subtasks and dependencies
+    this.newTaskSubtasks = [];
+    this.newSubtaskInput = '';
+    this.newTaskParentTaskId = null;
+    this.newTaskDependsOnTaskIds = [];
   }
 
   // Rich text and attachment helpers

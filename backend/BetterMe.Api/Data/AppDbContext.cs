@@ -27,6 +27,7 @@ namespace BetterMe.Api.Data
         public DbSet<TaskReminder> TaskReminders { get; set; }
         public DbSet<UserNotificationSettings> UserNotificationSettings { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<TaskDependency> TaskDependencies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,6 +44,13 @@ namespace BetterMe.Api.Data
                 .WithMany(u => u.TodoTasks)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Subtasks - self-referencing relationship
+            modelBuilder.Entity<TodoTask>()
+                .HasOne(t => t.ParentTask)
+                .WithMany()
+                .HasForeignKey(t => t.ParentTaskId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete of parent
 
             // Set default category for TodoTask
             modelBuilder.Entity<TodoTask>()
@@ -513,6 +521,36 @@ namespace BetterMe.Api.Data
                     .HasDefaultValue(false);
 
                 entity.Property(n => n.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // TaskDependency configuration
+            modelBuilder.Entity<TaskDependency>(entity =>
+            {
+                entity.HasKey(td => td.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(td => td.TaskId);
+                entity.HasIndex(td => td.DependsOnTaskId);
+                entity.HasIndex(td => new { td.TaskId, td.DependsOnTaskId }).IsUnique(); // Prevent duplicate dependencies
+
+                // Relationship with Task (the task that depends on another)
+                entity.HasOne(td => td.Task)
+                    .WithMany()
+                    .HasForeignKey(td => td.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with DependsOnTask (the task that must be completed first)
+                entity.HasOne(td => td.DependsOnTask)
+                    .WithMany()
+                    .HasForeignKey(td => td.DependsOnTaskId)
+                    .OnDelete(DeleteBehavior.Restrict); // Prevent deletion of dependency task
+
+                // Set default values
+                entity.Property(td => td.DependencyType)
+                    .HasDefaultValue("blocks");
+
+                entity.Property(td => td.CreatedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

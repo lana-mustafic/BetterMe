@@ -569,6 +569,15 @@ export class TaskService {
     );
   }
 
+  createSubtask(parentTaskId: number, subtaskData: { title: string; description?: string }): Observable<Task> {
+    return this.http.post<Task>(`${this.apiUrl}/tasks/${parentTaskId}/subtasks`, subtaskData, {
+      headers: this.authHeaders()
+    }).pipe(
+      tap(() => console.log('✅ Subtask created for task:', parentTaskId)),
+      catchError(err => this.handleError('createSubtask', err))
+    );
+  }
+
   toggleTaskCompletion(id: number): Observable<Task> {
     return this.getTaskById(id).pipe(
       switchMap((task: Task) => {

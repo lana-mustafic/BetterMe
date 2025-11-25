@@ -11,6 +11,7 @@ using System.Linq;
 using BetterMe.Api.Services;
 using BetterMe.Api.Models;
 using BetterMe.Api.Data;
+using BetterMe.Api.Services.Concrete;
 using Microsoft.EntityFrameworkCore;
 
 namespace BetterMe.Api.Controllers
@@ -117,6 +118,7 @@ namespace BetterMe.Api.Controllers
                     .ThenInclude(tt => tt.Tag)
                 .Include(t => t.Attachments)
                 .Include(t => t.AssignedToUser)
+                .Include(t => t.ParentTask)
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
 
@@ -132,21 +134,26 @@ namespace BetterMe.Api.Controllers
                 .Include(t => t.Attachments)
                 .Include(t => t.AssignedToUser)
                 .Include(t => t.User)
+                .Include(t => t.ParentTask)
                 .Where(t => sharedTaskIds.Contains(t.Id))
                 .ToListAsync();
 
             // Combine and map
             var allTasks = ownedTasks.Concat(sharedTasks).DistinctBy(t => t.Id).ToList();
-            var dtos = _mapper.Map<List<TaskResponse>>(allTasks);
-
-            // Set collaboration fields
-            foreach (var dto in dtos)
+            
+            // Only get root tasks (tasks without a parent)
+            var rootTasks = allTasks.Where(t => !t.ParentTaskId.HasValue).ToList();
+            
+            // Build task responses with subtasks and dependencies (recursive)
+            var dtos = new List<TaskResponse>();
+            foreach (var task in rootTasks)
             {
-                var task = allTasks.First(t => t.Id == dto.Id);
+                var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId);
                 dto.AssignedToUserId = task.AssignedToUserId;
                 dto.AssignedToUserName = task.AssignedToUser?.Name;
                 dto.IsShared = task.UserId != userId || sharedTaskIds.Contains(task.Id);
                 dto.CommentCount = await _context.TaskComments.CountAsync(c => c.TaskId == task.Id);
+                dtos.Add(dto);
             }
 
             return Ok(dtos);
@@ -159,14 +166,21 @@ namespace BetterMe.Api.Controllers
                       User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             if (!int.TryParse(sub, out var userId)) return Unauthorized();
 
-            var task = await _taskService.GetByIdAsync(id);
+            var task = await _context.TodoTasks
+                .Include(t => t.TaskTags)
+                    .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
+                .Include(t => t.AssignedToUser)
+                .Include(t => t.ParentTask)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (task == null) return NotFound();
 
             // Check if user can access (owner or shared)
             if (!await _collaborationService.CanUserAccessTaskAsync(id, userId))
                 return Forbid();
 
-            var dto = _mapper.Map<TaskResponse>(task);
+            var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId);
             dto.AssignedToUserId = task.AssignedToUserId;
             dto.AssignedToUserName = task.AssignedToUser?.Name;
             dto.IsShared = task.UserId != userId;

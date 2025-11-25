@@ -29,5 +29,27 @@ namespace BetterMe.Api.DTOs.Task
 
         // My Day feature
         public bool IsInMyDay { get; set; } = false;
+
+        // Subtasks
+        public int? ParentTaskId { get; set; }
+        public List<CreateSubtaskRequest> Subtasks { get; set; } = new List<CreateSubtaskRequest>();
+
+        // Dependencies
+        public List<int> DependsOnTaskIds { get; set; } = new List<int>();
+    }
+
+    public class CreateSubtaskRequest
+    {
+        [Required]
+        [MaxLength(100)]
+        public string Title { get; set; }
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
+        public DateTime? DueDate { get; set; }
+
+        [Range(1, 3)]
+        public int Priority { get; set; } = 1;
     }
 }

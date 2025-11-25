@@ -2659,8 +2659,9 @@ getFormattedBlockDate(dateString: string): string {
     if (task) {
       const formattedDate = newDueDate.toISOString().split('T')[0];
       
+      const { subtasks, dependencies, subtaskCount, completedSubtaskCount, canBeCompleted, blockingReasons, ...updateData } = task;
       this.taskService.updateTask(taskId, {
-        ...task,
+        ...updateData,
         dueDate: formattedDate
       }).subscribe({
         next: (updatedTask) => {
@@ -2988,8 +2989,9 @@ getFormattedBlockDate(dateString: string): string {
   updateTaskPriority(taskId: number, priority: number): void {
     const task = this.tasks.find(t => t.id === taskId);
     if (task) {
+      const { subtasks, dependencies, subtaskCount, completedSubtaskCount, canBeCompleted, blockingReasons, ...updateData } = task;
       this.taskService.updateTask(taskId, {
-        ...task,
+        ...updateData,
         priority
       }).subscribe({
         next: (updatedTask) => {
