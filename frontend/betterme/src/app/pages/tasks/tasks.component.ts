@@ -15,6 +15,7 @@ import { WeeklyCompletionChartComponent } from '../../components/weekly-completi
 import { ShareTaskModalComponent } from '../../components/share-task-modal/share-task-modal.component';
 import { TaskCommentsComponent } from '../../components/task-comments/task-comments.component';
 import { TaskActivityFeedComponent } from '../../components/task-activity-feed/task-activity-feed.component';
+import { QuickAddTaskComponent } from '../../components/quick-add-task/quick-add-task.component';
 import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
 import { CollaborationService } from '../../services/collaboration.service';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
@@ -70,7 +71,8 @@ interface Category {
     WeeklyCompletionChartComponent,
     ShareTaskModalComponent,
     TaskCommentsComponent,
-    TaskActivityFeedComponent
+    TaskActivityFeedComponent,
+    QuickAddTaskComponent
   ],
   template: `
     <div class="tasks-page">
@@ -105,6 +107,9 @@ interface Category {
               </button>
             </div>
           </div>
+
+          <!-- Quick Add Task -->
+          <app-quick-add-task (taskCreated)="onQuickAddTaskCreated($event)"></app-quick-add-task>
 
           <!-- View Toggle -->
           <div class="view-toggle-container">
@@ -5785,6 +5790,13 @@ export class TasksComponent implements OnInit {
     return this.sortDirection === 'asc' ? '↑' : '↓';
   }
   
+  onQuickAddTaskCreated(task: Task): void {
+    // Add the task to the beginning of the list
+    this.tasks.unshift(task);
+    // Refresh the tasks to ensure proper sorting/filtering
+    this.loadTasks();
+  }
+
   onCreateTask(): void {
     if (!this.newTaskTitle.trim()) {
       this.errorMessage = 'Task title is required';

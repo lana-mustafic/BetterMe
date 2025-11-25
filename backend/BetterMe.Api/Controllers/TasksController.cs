@@ -25,14 +25,16 @@ namespace BetterMe.Api.Controllers
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ICollaborationService _collaborationService;
+        private readonly INaturalLanguageParser _naturalLanguageParser;
 
-        public TasksController(ITodoTaskService taskService, IMapper mapper, AppDbContext context, IWebHostEnvironment environment, ICollaborationService collaborationService)
+        public TasksController(ITodoTaskService taskService, IMapper mapper, AppDbContext context, IWebHostEnvironment environment, ICollaborationService collaborationService, INaturalLanguageParser naturalLanguageParser)
         {
             _taskService = taskService;
             _mapper = mapper;
             _context = context;
             _environment = environment;
             _collaborationService = collaborationService;
+            _naturalLanguageParser = naturalLanguageParser;
         }
 
         [HttpGet("debug")]
@@ -48,6 +50,18 @@ namespace BetterMe.Api.Controllers
                 IsAuthenticated = User.Identity.IsAuthenticated,
                 IdentityName = User.Identity.Name
             });
+        }
+
+        [HttpPost("parse")]
+        public IActionResult ParseNaturalLanguage([FromBody] ParseTaskRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Input))
+            {
+                return BadRequest(new { message = "Input cannot be empty" });
+            }
+
+            var result = _naturalLanguageParser.ParseTaskInput(request.Input);
+            return Ok(result);
         }
 
         [HttpPost]

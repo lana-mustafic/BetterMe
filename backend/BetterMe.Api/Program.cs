@@ -80,6 +80,7 @@ builder.Services.AddScoped<IHabitService, HabitService>();
 builder.Services.AddScoped<IFocusSessionService, FocusSessionService>();
 builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
 builder.Services.AddScoped<ICollaborationService, CollaborationService>();
+builder.Services.AddScoped<INaturalLanguageParser, NaturalLanguageParser>();
 
 var app = builder.Build();
 

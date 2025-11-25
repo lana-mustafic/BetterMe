@@ -75,6 +75,16 @@ interface TaskFilters {
   eisenhowerCategory?: string;
 }
 
+export interface ParseTaskResponse {
+  title: string;
+  description?: string;
+  dueDate?: string | null;
+  priority: number; // 1: Low, 2: Medium, 3: High
+  category: string;
+  tags: string[];
+  extractedData?: { [key: string]: any };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -485,6 +495,14 @@ export class TaskService {
       headers: this.authHeaders()
     }).pipe(
       catchError(err => this.handleError('getTaskById', err))
+    );
+  }
+
+  parseNaturalLanguage(input: string): Observable<ParseTaskResponse> {
+    return this.http.post<ParseTaskResponse>(`${this.apiUrl}/tasks/parse`, { input }, {
+      headers: this.authHeaders()
+    }).pipe(
+      catchError(err => this.handleError('parseNaturalLanguage', err))
     );
   }
 
