@@ -1650,7 +1650,11 @@ interface Category {
               @if (smartFilteredTasks.length > 0) {
                 <div class="tasks-grid">
                   @for (task of smartFilteredTasks; track task.id) {
-                    <div class="task-card glass-card" [class.completed]="task.completed">
+                    <div 
+                      class="task-card glass-card" 
+                      [class.completed]="task.completed"
+                      (contextmenu)="showTaskContextMenu($event, task)"
+                    >
                       <!-- Task Header -->
                       <div class="task-header">
                         <div class="task-main-info">
@@ -1701,6 +1705,22 @@ interface Category {
                             title="Edit task"
                           >
                             ✏️
+                          </button>
+                          
+                          <button 
+                            class="btn-reschedule" 
+                            (click)="openRescheduleModal(task); $event.stopPropagation()"
+                            title="Reschedule task"
+                          >
+                            📅
+                          </button>
+                          
+                          <button 
+                            class="btn-duplicate" 
+                            (click)="duplicateTask(task); $event.stopPropagation()"
+                            title="Duplicate task"
+                          >
+                            📋
                           </button>
                           
                           <button 
@@ -1930,6 +1950,140 @@ interface Category {
         (closed)="showShareModal = false; selectedTaskForShare = null"
         (shared)="onTaskShared()"
       ></app-share-task-modal>
+
+      <!-- Reschedule Modal -->
+      @if (showRescheduleModal && selectedTaskForReschedule) {
+        <div class="modal-overlay" (click)="showRescheduleModal = false">
+          <div class="modal-content preset-modal glass-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Reschedule Task</h3>
+              <button class="close-btn" (click)="showRescheduleModal = false">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Task: {{ selectedTaskForReschedule.title }}</label>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Current Due Date</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [value]="selectedTaskForReschedule.dueDate ? formatDate(selectedTaskForReschedule.dueDate) : 'No due date'"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Due Date</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="rescheduleDate"
+                  name="rescheduleDate"
+                  [min]="getTodayDateString()"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quick Options</label>
+                <div class="quick-reschedule-options">
+                  <button class="btn btn-outline btn-sm" (click)="setRescheduleDate('today')">
+                    Today
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="setRescheduleDate('tomorrow')">
+                    Tomorrow
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="setRescheduleDate('nextWeek')">
+                    Next Week
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="setRescheduleDate('nextMonth')">
+                    Next Month
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="setRescheduleDate('clear')">
+                    Remove Due Date
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn-outline" (click)="showRescheduleModal = false">Cancel</button>
+              <button class="btn btn-gradient" (click)="rescheduleTask()">
+                {{ rescheduleDate ? 'Reschedule' : 'Remove Due Date' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Context Menu -->
+      @if (showContextMenu && contextMenuTask) {
+        <div 
+          class="context-menu glass-card"
+          [style.left.px]="contextMenuPosition.x"
+          [style.top.px]="contextMenuPosition.y"
+          (click)="$event.stopPropagation()"
+          (contextmenu)="$event.preventDefault(); $event.stopPropagation()"
+        >
+          <button 
+            class="context-menu-item"
+            (click)="onToggleComplete(contextMenuTask.id); hideContextMenu()"
+          >
+            <span class="context-menu-icon">{{ contextMenuTask.completed ? '↶' : '✓' }}</span>
+            <span>{{ contextMenuTask.completed ? 'Mark as Pending' : 'Mark as Done' }}</span>
+          </button>
+          <button 
+            class="context-menu-item"
+            (click)="openRescheduleModal(contextMenuTask); hideContextMenu()"
+          >
+            <span class="context-menu-icon">📅</span>
+            <span>Reschedule</span>
+          </button>
+          <button 
+            class="context-menu-item"
+            (click)="duplicateTask(contextMenuTask); hideContextMenu()"
+          >
+            <span class="context-menu-icon">📋</span>
+            <span>Duplicate</span>
+          </button>
+          @if (!contextMenuTask.isInMyDay) {
+            <button 
+              class="context-menu-item"
+              (click)="addToMyDay(contextMenuTask.id); hideContextMenu()"
+            >
+              <span class="context-menu-icon">☀️</span>
+              <span>Add to My Day</span>
+            </button>
+          } @else {
+            <button 
+              class="context-menu-item"
+              (click)="removeFromMyDay(contextMenuTask.id); hideContextMenu()"
+            >
+              <span class="context-menu-icon">✓</span>
+              <span>Remove from My Day</span>
+            </button>
+          }
+          <button 
+            class="context-menu-item"
+            (click)="onEditTask(contextMenuTask); hideContextMenu()"
+          >
+            <span class="context-menu-icon">✏️</span>
+            <span>Edit</span>
+          </button>
+          <button 
+            class="context-menu-item"
+            (click)="openShareModal(contextMenuTask); hideContextMenu()"
+          >
+            <span class="context-menu-icon">🔗</span>
+            <span>Share</span>
+          </button>
+          <div class="context-menu-divider"></div>
+          <button 
+            class="context-menu-item danger"
+            (click)="onDeleteTask(contextMenuTask.id); hideContextMenu()"
+          >
+            <span class="context-menu-icon">🗑️</span>
+            <span>Delete</span>
+          </button>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -2412,6 +2566,48 @@ interface Category {
       background: rgba(34, 197, 94, 0.3);
       border-color: rgba(34, 197, 94, 0.5);
       color: #22c55e;
+    }
+
+    .btn-reschedule {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+      background: rgba(139, 92, 246, 0.3);
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      color: #a78bfa;
+    }
+
+    .btn-reschedule:hover {
+      background: rgba(139, 92, 246, 0.5);
+      transform: scale(1.1);
+    }
+
+    .btn-duplicate {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+      background: rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+    }
+
+    .btn-duplicate:hover {
+      background: rgba(59, 130, 246, 0.5);
+      transform: scale(1.1);
     }
 
     .collaboration-info {
@@ -4574,6 +4770,64 @@ interface Category {
       color: rgba(255, 255, 255, 0.6);
     }
 
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      z-index: 2000;
+      min-width: 200px;
+      padding: 0.5rem 0;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+    }
+
+    .context-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    .context-menu-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .context-menu-item.danger {
+      color: #fecaca;
+    }
+
+    .context-menu-item.danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .context-menu-icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 0.5rem 0;
+    }
+
+    /* Quick Reschedule Options */
+    .quick-reschedule-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
     /* Form Control Style */
     .form-control {
       width: 100%;
@@ -4867,6 +5121,14 @@ export class TasksComponent implements OnInit {
   selectedTaskIds: number[] = [];
   bulkTagInput: string = '';
   isBulkEditing: boolean = false;
+
+  // Reschedule and Duplicate
+  showRescheduleModal: boolean = false;
+  selectedTaskForReschedule: Task | null = null;
+  rescheduleDate: string = '';
+  contextMenuTask: Task | null = null;
+  contextMenuPosition: { x: number; y: number } = { x: 0, y: 0 };
+  showContextMenu: boolean = false;
 
   // Smart filters
   smartFilterContext: string = 'all';
@@ -6083,6 +6345,141 @@ export class TasksComponent implements OnInit {
         this.errorMessage = 'Failed to remove task from My Day';
       }
     });
+  }
+
+  openRescheduleModal(task: Task): void {
+    this.selectedTaskForReschedule = task;
+    this.rescheduleDate = task.dueDate ? this.formatDateForInput(task.dueDate) : '';
+    this.showRescheduleModal = true;
+  }
+
+  setRescheduleDate(option: string): void {
+    const today = new Date();
+    let newDate: Date;
+
+    switch (option) {
+      case 'today':
+        newDate = new Date(today);
+        break;
+      case 'tomorrow':
+        newDate = new Date(today);
+        newDate.setDate(today.getDate() + 1);
+        break;
+      case 'nextWeek':
+        newDate = new Date(today);
+        newDate.setDate(today.getDate() + 7);
+        break;
+      case 'nextMonth':
+        newDate = new Date(today);
+        newDate.setMonth(today.getMonth() + 1);
+        break;
+      case 'clear':
+        this.rescheduleDate = '';
+        return;
+      default:
+        return;
+    }
+
+    this.rescheduleDate = this.formatDateForInput(newDate.toISOString());
+  }
+
+  rescheduleTask(): void {
+    if (!this.selectedTaskForReschedule) return;
+
+    const updateData: any = {
+      dueDate: this.rescheduleDate ? new Date(this.rescheduleDate).toISOString() : null
+    };
+
+    this.taskService.updateTask(this.selectedTaskForReschedule.id, updateData).subscribe({
+      next: (updatedTask) => {
+        const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+        this.showRescheduleModal = false;
+        this.selectedTaskForReschedule = null;
+        this.rescheduleDate = '';
+      },
+      error: (error) => {
+        console.error('Error rescheduling task:', error);
+        this.errorMessage = 'Failed to reschedule task';
+      }
+    });
+  }
+
+  duplicateTask(task: Task): void {
+    if (!task) return;
+
+    const duplicateData: any = {
+      title: `${task.title} (Copy)`,
+      description: task.description || '',
+      dueDate: task.dueDate || null,
+      priority: task.priority,
+      category: task.category || 'Other',
+      tags: [...(task.tags || [])],
+      isRecurring: task.isRecurring,
+      recurrencePattern: task.recurrencePattern || 'none',
+      recurrenceInterval: task.recurrenceInterval || 1,
+      estimatedDuration: task.estimatedDuration || null,
+      difficulty: task.difficulty || 'medium',
+      isInMyDay: false
+    };
+
+    this.taskService.createTask(duplicateData).subscribe({
+      next: (newTask) => {
+        this.tasks.unshift(newTask);
+        this.loadTasks(); // Refresh to ensure proper sorting
+      },
+      error: (error) => {
+        console.error('Error duplicating task:', error);
+        this.errorMessage = 'Failed to duplicate task';
+      }
+    });
+  }
+
+  showTaskContextMenu(event: MouseEvent, task: Task): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    this.contextMenuTask = task;
+    this.contextMenuPosition = {
+      x: event.clientX,
+      y: event.clientY
+    };
+    this.showContextMenu = true;
+
+    // Close context menu when clicking elsewhere
+    setTimeout(() => {
+      const closeHandler = (e: MouseEvent) => {
+        if (!(e.target as HTMLElement).closest('.context-menu')) {
+          this.hideContextMenu();
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 0);
+  }
+
+  hideContextMenu(): void {
+    this.showContextMenu = false;
+    this.contextMenuTask = null;
+  }
+
+  formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getTodayDateString(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   onCreateTask(): void {

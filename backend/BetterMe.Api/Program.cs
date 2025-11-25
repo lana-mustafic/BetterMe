@@ -14,6 +14,8 @@ using BetterMe.Api.Services.Concrete;
 using BetterMe.Api.Filters;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Hangfire.Common;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -133,10 +135,24 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Schedule recurring job for processing reminders (runs every minute)
-RecurringJob.AddOrUpdate<ReminderBackgroundJob>(
-    "process-due-reminders",
-    job => job.ProcessDueReminders(),
-    Cron.Minutely);
+// Use service-based API instead of static API - must be done after app is built
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        recurringJobManager.AddOrUpdate<ReminderBackgroundJob>(
+            "process-due-reminders",
+            job => job.ProcessDueReminders(),
+            Cron.Minutely);
+    }
+}
+catch (Exception ex)
+{
+    // Log error but don't fail startup if Hangfire isn't available
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Failed to set up Hangfire recurring job. Background jobs may not work.");
+}
 
 // Render Dynamic Port Binding
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
