@@ -10,6 +10,9 @@ import { CalendarViewComponent } from '../calendar-view/calendar-view.component'
 import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
 import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
 import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
+import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
+import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
+import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
 import { 
   Task, 
@@ -58,7 +61,9 @@ interface Category {
     CommonModule,
     RouterLink,
     RichTextEditorComponent,
-    FileUploadComponent
+    FileUploadComponent,
+    CategoryPieChartComponent,
+    WeeklyCompletionChartComponent
   ],
   template: `
     <div class="tasks-page">
@@ -570,35 +575,29 @@ interface Category {
 
                 <!-- Right Column -->
                 <div class="charts-column">
-                  <!-- Category Distribution -->
+                  <!-- Category Distribution Chart -->
                   <div class="chart-widget glass-card">
                     <div class="chart-header">
                       <h3>Tasks by Category</h3>
-                      <div class="chart-actions">
-                        <button class="chart-action-btn" (click)="showAllCategories()">View All</button>
-                      </div>
                     </div>
-                    <div class="category-widget">
-                      @for (category of categoryStats; track category.name; let i = $index) {
-                        <div 
-                          class="category-item" 
-                          (click)="filterByCategory(category.name)"
-                          [style.--color]="getCategoryColor(category.name)"
-                        >
-                          <div class="category-main">
-                            <div class="category-icon-small">{{ getCategoryIcon(category.name) }}</div>
-                            <span class="category-name">{{ category.name }}</span>
-                            <span class="category-count">{{ category.count }}</span>
-                          </div>
-                          <div class="category-bar">
-                            <div 
-                              class="category-progress" 
-                              [style.width.%]="category.percentage"
-                            ></div>
-                          </div>
-                          <div class="category-percentage">{{ category.percentage }}%</div>
-                        </div>
-                      }
+                    <div style="height: 350px;">
+                      <app-category-pie-chart 
+                        [data]="categoryDistribution"
+                        title="Category Distribution">
+                      </app-category-pie-chart>
+                    </div>
+                  </div>
+                  
+                  <!-- Weekly Completion Chart -->
+                  <div class="chart-widget glass-card">
+                    <div class="chart-header">
+                      <h3>Weekly Activity</h3>
+                    </div>
+                    <div style="height: 300px;">
+                      <app-weekly-completion-chart 
+                        [data]="weeklyCompletion"
+                        title="Tasks by Day of Week">
+                      </app-weekly-completion-chart>
                     </div>
                   </div>
 
@@ -2250,12 +2249,6 @@ interface Category {
     .attachment-size {
       color: rgba(255, 255, 255, 0.6);
       font-size: 0.75rem;
-    }
-      margin-bottom: 1.25rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
 
     /* Task Meta Grid */
@@ -4359,6 +4352,7 @@ interface Category {
 export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
   private templateService = inject(TaskTemplateService);
+  private analyticsService = inject(AnalyticsService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
 
@@ -4436,6 +4430,14 @@ export class TasksComponent implements OnInit {
   // Smart suggestions
   suggestedCategory: TaskCategory | null = null;
   suggestedTags: string[] = [];
+  
+  // Analytics data
+  completionTrends: CompletionTrend[] = [];
+  categoryDistribution: CategoryDistribution[] = [];
+  priorityDistribution: PriorityDistribution[] = [];
+  weeklyCompletion: { day: string; completed: number; created: number }[] = [];
+  productivityMetrics: ProductivityMetrics | null = null;
+  trendDays: number = 30;
   
   // Bulk operations
   selectedTaskIds: number[] = [];
@@ -4802,6 +4804,7 @@ export class TasksComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadTasks();
+    this.loadAnalytics();
     this.initializeSmartFeatures();
     this.loadPresetsFromStorage();
   }
@@ -4824,6 +4827,8 @@ export class TasksComponent implements OnInit {
         // Update available tags from loaded tasks
         this.availableTags = [...new Set([...this.availableTags, ...tasks.flatMap(task => task.tags || [])])];
         this.isLoading = false;
+        // Reload analytics when tasks are loaded
+        this.loadAnalytics();
       },
       error: (error: any) => {
         this.errorMessage = 'Failed to load tasks. Please try again.';
@@ -5791,5 +5796,58 @@ export class TasksComponent implements OnInit {
 
   onAttachmentsChange(attachments: Attachment[]): void {
     this.newTaskAttachments = attachments;
+  }
+
+  // Analytics loading
+  loadAnalytics(): void {
+    // Load completion trends
+    this.analyticsService.getCompletionTrends(this.trendDays).subscribe({
+      next: (trends) => {
+        this.completionTrends = trends;
+      },
+      error: (error) => {
+        console.error('Error loading completion trends:', error);
+      }
+    });
+
+    // Load category distribution
+    this.analyticsService.getCategoryDistribution().subscribe({
+      next: (distribution) => {
+        this.categoryDistribution = distribution;
+      },
+      error: (error) => {
+        console.error('Error loading category distribution:', error);
+      }
+    });
+
+    // Load priority distribution
+    this.analyticsService.getPriorityDistribution().subscribe({
+      next: (distribution) => {
+        this.priorityDistribution = distribution;
+      },
+      error: (error) => {
+        console.error('Error loading priority distribution:', error);
+      }
+    });
+
+    // Load weekly completion
+    this.analyticsService.getWeeklyCompletion().subscribe({
+      next: (weekly) => {
+        this.weeklyCompletion = weekly;
+      },
+      error: (error) => {
+        console.error('Error loading weekly completion:', error);
+      }
+    });
+
+    // Load productivity metrics
+    this.analyticsService.getProductivityMetrics().subscribe({
+      next: (metrics) => {
+        this.productivityMetrics = metrics;
+      },
+      error: (error) => {
+        console.error('Error loading productivity metrics:', error);
+      }
+    });
   }
 }
