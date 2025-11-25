@@ -16,15 +16,18 @@ namespace BetterMe.Api.Services
         private readonly ITodoTasksRepository _tasksRepo;
         private readonly ITagRepository _tagRepo;
         private readonly AppDbContext _context;
+        private readonly IGamificationService _gamificationService;
 
         public TodoTaskService(
             ITodoTasksRepository tasksRepo,
             ITagRepository tagRepo,
-            AppDbContext context)
+            AppDbContext context,
+            IGamificationService gamificationService)
         {
             _tasksRepo = tasksRepo;
             _tagRepo = tagRepo;
             _context = context;
+            _gamificationService = gamificationService;
         }
 
         public async Task<TodoTask> CreateTaskAsync(CreateTaskRequest request, int userId)
@@ -208,11 +211,19 @@ namespace BetterMe.Api.Services
                     if (task.IsRecurring)
                     {
                         await CompleteRecurringInstanceAsync(task.Id, userId, DateTime.UtcNow);
+                        // Award points for recurring instance
+                        await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: true);
+                    }
+                    else
+                    {
+                        // Award points for task completion
+                        await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: false);
                     }
                 }
                 else if (!request.Completed.Value && task.Completed)
                 {
                     task.CompletedAt = null;
+                    // Note: We don't remove points when uncompleting, but we could if needed
                 }
             }
 

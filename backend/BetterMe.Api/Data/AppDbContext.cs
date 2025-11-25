@@ -28,6 +28,10 @@ namespace BetterMe.Api.Data
         public DbSet<UserNotificationSettings> UserNotificationSettings { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<TaskDependency> TaskDependencies { get; set; }
+        public DbSet<UserGamification> UserGamifications { get; set; }
+        public DbSet<TaskCompletion> TaskCompletions { get; set; }
+        public DbSet<Achievement> Achievements { get; set; }
+        public DbSet<UserAchievement> UserAchievements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -551,6 +555,109 @@ namespace BetterMe.Api.Data
                     .HasDefaultValue("blocks");
 
                 entity.Property(td => td.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // UserGamification configuration
+            modelBuilder.Entity<UserGamification>(entity =>
+            {
+                entity.HasKey(ug => ug.Id);
+
+                entity.HasIndex(ug => ug.UserId).IsUnique();
+
+                entity.HasOne(ug => ug.User)
+                    .WithMany()
+                    .HasForeignKey(ug => ug.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ug => ug.TotalPoints)
+                    .HasDefaultValue(0);
+
+                entity.Property(ug => ug.CurrentStreak)
+                    .HasDefaultValue(0);
+
+                entity.Property(ug => ug.BestStreak)
+                    .HasDefaultValue(0);
+
+                entity.Property(ug => ug.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+
+                entity.Property(ug => ug.UpdatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // TaskCompletion configuration
+            modelBuilder.Entity<TaskCompletion>(entity =>
+            {
+                entity.HasKey(tc => tc.Id);
+
+                entity.HasIndex(tc => new { tc.TaskId, tc.UserId });
+                entity.HasIndex(tc => tc.CompletedAt);
+                entity.HasIndex(tc => tc.UserId);
+
+                entity.HasOne(tc => tc.Task)
+                    .WithMany()
+                    .HasForeignKey(tc => tc.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(tc => tc.User)
+                    .WithMany()
+                    .HasForeignKey(tc => tc.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(tc => tc.PointsEarned)
+                    .HasDefaultValue(0);
+
+                entity.Property(tc => tc.IsRecurringInstance)
+                    .HasDefaultValue(false);
+
+                entity.Property(tc => tc.CompletedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // Achievement configuration
+            modelBuilder.Entity<Achievement>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+
+                entity.HasIndex(a => a.Code).IsUnique();
+
+                entity.Property(a => a.Icon)
+                    .HasDefaultValue("🏆");
+
+                entity.Property(a => a.Category)
+                    .HasDefaultValue("general");
+
+                entity.Property(a => a.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.Property(a => a.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // UserAchievement configuration
+            modelBuilder.Entity<UserAchievement>(entity =>
+            {
+                entity.HasKey(ua => ua.Id);
+
+                entity.HasIndex(ua => new { ua.UserId, ua.AchievementId }).IsUnique();
+                entity.HasIndex(ua => ua.UserId);
+                entity.HasIndex(ua => ua.UnlockedAt);
+
+                entity.HasOne(ua => ua.User)
+                    .WithMany()
+                    .HasForeignKey(ua => ua.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ua => ua.Achievement)
+                    .WithMany()
+                    .HasForeignKey(ua => ua.AchievementId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(ua => ua.IsNew)
+                    .HasDefaultValue(true);
+
+                entity.Property(ua => ua.UnlockedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

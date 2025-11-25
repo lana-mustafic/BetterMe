@@ -95,6 +95,7 @@ builder.Services.AddScoped<ICollaborationService, CollaborationService>();
 builder.Services.AddScoped<INaturalLanguageParser, NaturalLanguageParser>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IGamificationService, GamificationService>();
 builder.Services.AddScoped<ReminderBackgroundJob>();
 
 var app = builder.Build();
