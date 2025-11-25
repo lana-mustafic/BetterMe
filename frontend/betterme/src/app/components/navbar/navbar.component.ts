@@ -2,11 +2,12 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CommonModule } from '@angular/common';
+import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, ThemeToggleComponent],
   template: `
     <nav class="navbar">
       <div class="nav-container">
@@ -24,6 +25,7 @@ import { CommonModule } from '@angular/common';
           <!-- ✅ Use async pipe to read current user -->
           <ng-container *ngIf="authService.currentUser$ | async as user; else guestLinks">
             <div class="user-section">
+              <app-theme-toggle></app-theme-toggle>
               <a routerLink="/profile" class="user-info">
                 <span class="welcome-emoji">👋</span>
                 <span class="user-name">{{ user.displayName }}</span>
@@ -34,6 +36,7 @@ import { CommonModule } from '@angular/common';
 
           <ng-template #guestLinks>
             <div class="auth-links">
+              <app-theme-toggle></app-theme-toggle>
               <a routerLink="/login" routerLinkActive="active" class="auth-link">Login</a>
               <a routerLink="/register" routerLinkActive="active" class="auth-link auth-link--primary">Register</a>
             </div>

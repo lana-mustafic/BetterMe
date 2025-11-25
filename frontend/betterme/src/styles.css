@@ -310,6 +310,78 @@ a, button, input, select, textarea {
   transition: all var(--transition-fast);
 }
 
+/* Drag and Drop Styles */
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing !important;
+}
+
+.drag-placeholder {
+  background: rgba(102, 126, 234, 0.2);
+  border: 2px dashed rgba(102, 126, 234, 0.5);
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  transition: all 0.2s;
+}
+
+.drop-zone-active {
+  border: 2px solid var(--accent-primary) !important;
+  background: rgba(102, 126, 234, 0.1) !important;
+  transform: scale(1.02);
+  transition: all 0.2s;
+}
+
+/* Smooth Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Smooth page transitions */
+router-outlet + * {
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* Focus styles for accessibility */
 a:focus-visible,
 button:focus-visible,
