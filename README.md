@@ -15,9 +15,17 @@ A modern full-stack productivity app to help users **organize daily tasks, build
 |---------|------------------------|
 | <a href="https://betterme-frontend.onrender.com" target="_blank"><img src="https://img.shields.io/badge/Live%20Frontend-0d1117?style=for-the-badge&logo=angular&logoColor=white&color=red" /></a> | <a href="https://betterme-pihl.onrender.com/swagger/index.html" target="_blank"><img src="https://img.shields.io/badge/Swagger%20API-0d1117?style=for-the-badge&logo=swagger&logoColor=white&color=brightgreen" /></a> |
 
+<br><br/>
+
+### 🚀 [Try the Live Demo](https://betterme-frontend.onrender.com/)
+
+<a href="https://betterme-frontend.onrender.com/" target="_blank">
+  <img src="https://img.shields.io/badge/🚀%20Live%20Demo-4ade80?style=for-the-badge&logo=rocket&logoColor=white&labelColor=0d1117" alt="Live Demo" />
+</a>
+
 </div>
 
-> **Note:** The backend may take a few seconds to start — Render free tier sleeps when idle. Just retry after a moment 😊
+> **Note:** The application may take a few seconds to load on first visit — Render free tier sleeps when idle. Just retry after a moment 😊
 
 ---
 
