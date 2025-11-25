@@ -11,6 +11,7 @@ import { ChangePasswordComponent } from './pages/password/change-password.compon
 import { authGuard } from './guards/auth.guard';
 import { HabitTrackerComponent } from './pages/habit-tracker/habit-tracker.component';
 import { FocusModeComponent } from './pages/focus-mode/focus-mode.component';
+import { MyDayComponent } from './pages/my-day/my-day.component';
 
 export const routes: Routes = [
   { 
@@ -95,6 +96,17 @@ export const routes: Routes = [
     data: { 
       title: 'Focus Mode - TaskFlow',
       breadcrumb: 'Focus Mode'
+    }
+  },
+
+  // My Day Route
+  { 
+    path: 'my-day', 
+    component: MyDayComponent,
+    canActivate: [authGuard],
+    data: { 
+      title: 'My Day - TaskFlow',
+      breadcrumb: 'My Day'
     }
   },
 

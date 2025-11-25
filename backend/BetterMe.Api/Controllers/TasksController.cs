@@ -244,6 +244,56 @@ namespace BetterMe.Api.Controllers
             return Ok(_mapper.Map<List<TaskResponse>>(habits));
         }
 
+        [HttpPost("{id:int}/add-to-my-day")]
+        public async Task<IActionResult> AddTaskToMyDay(int id)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var success = await _taskService.AddTaskToMyDayAsync(id, userId);
+            if (!success) return NotFound();
+
+            var task = await _taskService.GetByIdAsync(id);
+            return Ok(_mapper.Map<TaskResponse>(task));
+        }
+
+        [HttpPost("{id:int}/remove-from-my-day")]
+        public async Task<IActionResult> RemoveTaskFromMyDay(int id)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var success = await _taskService.RemoveTaskFromMyDayAsync(id, userId);
+            if (!success) return NotFound();
+
+            var task = await _taskService.GetByIdAsync(id);
+            return Ok(_mapper.Map<TaskResponse>(task));
+        }
+
+        [HttpGet("my-day")]
+        public async Task<IActionResult> GetMyDayTasks()
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var tasks = await _taskService.GetMyDayTasksAsync(userId);
+            return Ok(_mapper.Map<List<TaskResponse>>(tasks));
+        }
+
+        [HttpGet("my-day/suggestions")]
+        public async Task<IActionResult> GetSuggestedTasksForMyDay()
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var tasks = await _taskService.GetSuggestedTasksForMyDayAsync(userId);
+            return Ok(_mapper.Map<List<TaskResponse>>(tasks));
+        }
+
         [HttpPost("search")]
         public async Task<IActionResult> SearchTasks([FromBody] SearchTasksRequest request)
         {

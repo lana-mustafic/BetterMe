@@ -12,4 +12,5 @@
     public int? RecurrenceInterval { get; set; }
     public DateTime? RecurrenceEndDate { get; set; }
     public List<string>? CompletedInstances { get; set; }
+    public bool? IsInMyDay { get; set; }
 }

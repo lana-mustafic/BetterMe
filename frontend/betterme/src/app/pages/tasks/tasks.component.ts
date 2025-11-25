@@ -1615,6 +1615,24 @@ interface Category {
                           >
                             🔗
                           </button>
+                          
+                          @if (!task.isInMyDay) {
+                            <button 
+                              class="btn-my-day" 
+                              (click)="addToMyDay(task.id); $event.stopPropagation()"
+                              title="Add to My Day"
+                            >
+                              ☀️
+                            </button>
+                          } @else {
+                            <button 
+                              class="btn-my-day active" 
+                              (click)="removeFromMyDay(task.id); $event.stopPropagation()"
+                              title="Remove from My Day"
+                            >
+                              ✓
+                            </button>
+                          }
                         </div>
                       </div>
                       
@@ -2264,6 +2282,33 @@ interface Category {
     .btn-share:hover {
       background: rgba(74, 222, 128, 0.5);
       transform: scale(1.1);
+    }
+
+    .btn-my-day {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+      background: rgba(255, 193, 7, 0.3);
+      border: 1px solid rgba(255, 193, 7, 0.5);
+      color: #ffc107;
+    }
+
+    .btn-my-day:hover {
+      background: rgba(255, 193, 7, 0.5);
+      transform: scale(1.1);
+    }
+
+    .btn-my-day.active {
+      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.5);
+      color: #22c55e;
     }
 
     .collaboration-info {
@@ -5795,6 +5840,36 @@ export class TasksComponent implements OnInit {
     this.tasks.unshift(task);
     // Refresh the tasks to ensure proper sorting/filtering
     this.loadTasks();
+  }
+
+  addToMyDay(taskId: number): void {
+    this.taskService.addTaskToMyDay(taskId).subscribe({
+      next: (updatedTask) => {
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+      },
+      error: (error) => {
+        console.error('Error adding task to My Day:', error);
+        this.errorMessage = 'Failed to add task to My Day';
+      }
+    });
+  }
+
+  removeFromMyDay(taskId: number): void {
+    this.taskService.removeTaskFromMyDay(taskId).subscribe({
+      next: (updatedTask) => {
+        const index = this.tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+          this.tasks[index] = updatedTask;
+        }
+      },
+      error: (error) => {
+        console.error('Error removing task from My Day:', error);
+        this.errorMessage = 'Failed to remove task from My Day';
+      }
+    });
   }
 
   onCreateTask(): void {

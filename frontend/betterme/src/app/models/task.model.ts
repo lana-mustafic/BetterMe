@@ -36,6 +36,10 @@ export interface Task {
   isShared?: boolean;
   commentCount?: number;
   ownerId?: number;
+  
+  // My Day feature
+  isInMyDay?: boolean;
+  addedToMyDayAt?: string;
 }
 
 // Additional types

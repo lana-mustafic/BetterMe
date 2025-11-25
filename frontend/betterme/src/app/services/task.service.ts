@@ -528,6 +528,38 @@ export class TaskService {
     );
   }
 
+  addTaskToMyDay(taskId: number): Observable<Task> {
+    return this.http.post<Task>(`${this.apiUrl}/tasks/${taskId}/add-to-my-day`, {}, {
+      headers: this.authHeaders()
+    }).pipe(
+      catchError(err => this.handleError('addTaskToMyDay', err))
+    );
+  }
+
+  removeTaskFromMyDay(taskId: number): Observable<Task> {
+    return this.http.post<Task>(`${this.apiUrl}/tasks/${taskId}/remove-from-my-day`, {}, {
+      headers: this.authHeaders()
+    }).pipe(
+      catchError(err => this.handleError('removeTaskFromMyDay', err))
+    );
+  }
+
+  getMyDayTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/my-day`, {
+      headers: this.authHeaders()
+    }).pipe(
+      catchError(err => this.handleError('getMyDayTasks', err))
+    );
+  }
+
+  getSuggestedTasksForMyDay(): Observable<Task[]> {
+    return this.http.get<Task[]>(`${this.apiUrl}/tasks/my-day/suggestions`, {
+      headers: this.authHeaders()
+    }).pipe(
+      catchError(err => this.handleError('getSuggestedTasksForMyDay', err))
+    );
+  }
+
   deleteTask(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/tasks/${id}`, {
       headers: this.authHeaders()

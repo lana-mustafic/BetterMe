@@ -78,6 +78,10 @@ namespace BetterMe.Api.Models
         public List<TaskComment> Comments { get; set; } = new List<TaskComment>();
 
         public List<TaskActivity> Activities { get; set; } = new List<TaskActivity>();
+
+        // My Day feature
+        public bool IsInMyDay { get; set; } = false;
+        public DateTime? AddedToMyDayAt { get; set; }
     }
 
     // NEW: DTO for recurrence configuration

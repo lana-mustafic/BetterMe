@@ -16,6 +16,7 @@ import { CommonModule } from '@angular/common';
 
         <div class="nav-links">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a>
+          <a routerLink="/my-day" routerLinkActive="active" class="nav-link">My Day</a>
           <a routerLink="/tasks" routerLinkActive="active" class="nav-link">Tasks</a>
           <a routerLink="/habits" routerLinkActive="active" class="nav-link">Habits</a>
           <a routerLink="/focus" routerLinkActive="active" class="nav-link">Focus</a> 

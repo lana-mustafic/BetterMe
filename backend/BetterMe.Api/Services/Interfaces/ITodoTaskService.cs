@@ -18,5 +18,9 @@ namespace BetterMe.Api.Services.Interfaces
         Task<int> CalculateHabitStreakAsync(int taskId);
         Task<TaskStatsResponse> GetTaskStatsAsync(int userId);
         Task<(List<TodoTask> Tasks, int TotalCount)> SearchTasksAsync(SearchTasksRequest request, int userId);
+        Task<bool> AddTaskToMyDayAsync(int taskId, int userId);
+        Task<bool> RemoveTaskFromMyDayAsync(int taskId, int userId);
+        Task<List<TodoTask>> GetMyDayTasksAsync(int userId);
+        Task<List<TodoTask>> GetSuggestedTasksForMyDayAsync(int userId);
     }
 }

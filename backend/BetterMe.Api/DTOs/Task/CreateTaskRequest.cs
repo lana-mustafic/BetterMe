@@ -26,5 +26,8 @@ namespace BetterMe.Api.DTOs.Task
         public string RecurrencePattern { get; set; } = "none";
         public int RecurrenceInterval { get; set; } = 1;
         public DateTime? RecurrenceEndDate { get; set; }
+
+        // My Day feature
+        public bool IsInMyDay { get; set; } = false;
     }
 }

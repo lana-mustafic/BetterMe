@@ -49,7 +49,9 @@ namespace BetterMe.Api.Services
                 NextDueDate = request.DueDate?.ToUniversalTime(), // ✅ Ensure UTC
                 CompletedInstances = new List<string>(),
                 OriginalTaskId = null,
-                TaskTags = new List<TaskTag>()
+                TaskTags = new List<TaskTag>(),
+                IsInMyDay = request.IsInMyDay,
+                AddedToMyDayAt = request.IsInMyDay ? DateTime.UtcNow : null
             };
 
             await _tasksRepo.AddAsync(task);
@@ -140,6 +142,13 @@ namespace BetterMe.Api.Services
 
             if (request.CompletedInstances != null)
                 task.CompletedInstances = request.CompletedInstances;
+
+            // Update My Day status
+            if (request.IsInMyDay.HasValue)
+            {
+                task.IsInMyDay = request.IsInMyDay.Value;
+                task.AddedToMyDayAt = request.IsInMyDay.Value ? DateTime.UtcNow : null;
+            }
 
             task.UpdatedAt = DateTime.UtcNow;
 
@@ -555,6 +564,67 @@ namespace BetterMe.Api.Services
                 .ToListAsync();
 
             return (tasks, totalCount);
+        }
+
+        public async Task<bool> AddTaskToMyDayAsync(int taskId, int userId)
+        {
+            var task = await _tasksRepo.GetByIdAsync(taskId);
+            if (task == null || task.UserId != userId)
+                return false;
+
+            task.IsInMyDay = true;
+            task.AddedToMyDayAt = DateTime.UtcNow;
+            await _tasksRepo.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveTaskFromMyDayAsync(int taskId, int userId)
+        {
+            var task = await _tasksRepo.GetByIdAsync(taskId);
+            if (task == null || task.UserId != userId)
+                return false;
+
+            task.IsInMyDay = false;
+            task.AddedToMyDayAt = null;
+            await _tasksRepo.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<TodoTask>> GetMyDayTasksAsync(int userId)
+        {
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
+
+            return await _context.TodoTasks
+                .Where(t => t.UserId == userId && t.IsInMyDay && !t.Completed)
+                .OrderBy(t => t.Priority)
+                .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
+                .ToListAsync();
+        }
+
+        public async Task<List<TodoTask>> GetSuggestedTasksForMyDayAsync(int userId)
+        {
+            var today = DateTime.UtcNow.Date;
+            var nextWeek = today.AddDays(7);
+
+            // Get tasks that are:
+            // 1. Not already in My Day
+            // 2. Not completed
+            // 3. Due today or in the next week, OR high priority
+            var suggestedTasks = await _context.TodoTasks
+                .Where(t => t.UserId == userId 
+                    && !t.IsInMyDay 
+                    && !t.Completed
+                    && (
+                        (t.DueDate.HasValue && t.DueDate.Value.Date <= nextWeek) ||
+                        t.Priority == 3 // High priority
+                    ))
+                .OrderByDescending(t => t.Priority)
+                .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
+                .Take(10)
+                .ToListAsync();
+
+            return suggestedTasks;
         }
     }
 }
