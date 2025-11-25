@@ -3,17 +3,20 @@ using System;
 using BetterMe.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace BetterMe.Api.Migrations
+namespace BetterMe.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125002828_AddTaskAttachments")]
+    partial class AddTaskAttachments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,107 +85,6 @@ namespace BetterMe.Api.Migrations
                     b.ToTable("FocusSessions");
                 });
 
-            modelBuilder.Entity("BetterMe.Api.Models.SharedTask", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsPublic")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime?>("LastAccessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Permission")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("ShareToken")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("SharedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<int>("SharedWithUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TaskId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("ShareToken")
-                        .IsUnique()
-                        .HasFilter("\"ShareToken\" IS NOT NULL");
-
-                    b.HasIndex("SharedWithUserId");
-
-                    b.HasIndex("TaskId", "SharedWithUserId");
-
-                    b.ToTable("SharedTasks");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.SharedTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastAccessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ShareToken")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("SharedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("SharedWithUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TemplateId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("SharedWithUserId");
-
-                    b.HasIndex("TemplateId");
-
-                    b.ToTable("SharedTemplates");
-                });
-
             modelBuilder.Entity("BetterMe.Api.Models.Tag", b =>
                 {
                     b.Property<int>("Id")
@@ -210,59 +112,6 @@ namespace BetterMe.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Tags");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.TaskActivity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActivityType")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Metadata")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<int?>("RelatedCommentId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("RelatedUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TaskId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("RelatedCommentId");
-
-                    b.HasIndex("RelatedUserId");
-
-                    b.HasIndex("TaskId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("TaskId", "CreatedAt");
-
-                    b.ToTable("TaskActivities");
                 });
 
             modelBuilder.Entity("BetterMe.Api.Models.TaskAttachment", b =>
@@ -308,52 +157,6 @@ namespace BetterMe.Api.Migrations
                     b.HasIndex("TodoTaskId");
 
                     b.ToTable("TaskAttachments");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.TaskComment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<bool>("IsEdited")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<int?>("ParentCommentId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TaskId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentCommentId");
-
-                    b.HasIndex("TaskId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("TaskComments");
                 });
 
             modelBuilder.Entity("BetterMe.Api.Models.TaskTag", b =>
@@ -480,9 +283,6 @@ namespace BetterMe.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AssignedToUserId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Category")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -546,8 +346,6 @@ namespace BetterMe.Api.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedToUserId");
 
                     b.HasIndex("UserId");
 
@@ -771,60 +569,6 @@ namespace BetterMe.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BetterMe.Api.Models.SharedTask", b =>
-                {
-                    b.HasOne("BetterMe.Api.Models.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.User", "SharedWithUser")
-                        .WithMany()
-                        .HasForeignKey("SharedWithUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.TodoTask", "Task")
-                        .WithMany("SharedWith")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("SharedWithUser");
-
-                    b.Navigation("Task");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.SharedTemplate", b =>
-                {
-                    b.HasOne("BetterMe.Api.Models.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.User", "SharedWithUser")
-                        .WithMany()
-                        .HasForeignKey("SharedWithUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.TaskTemplate", "Template")
-                        .WithMany()
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-
-                    b.Navigation("SharedWithUser");
-
-                    b.Navigation("Template");
-                });
-
             modelBuilder.Entity("BetterMe.Api.Models.Tag", b =>
                 {
                     b.HasOne("BetterMe.Api.Models.User", "User")
@@ -832,39 +576,6 @@ namespace BetterMe.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.TaskActivity", b =>
-                {
-                    b.HasOne("BetterMe.Api.Models.TaskComment", "RelatedComment")
-                        .WithMany()
-                        .HasForeignKey("RelatedCommentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("BetterMe.Api.Models.User", "RelatedUser")
-                        .WithMany()
-                        .HasForeignKey("RelatedUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("BetterMe.Api.Models.TodoTask", "Task")
-                        .WithMany("Activities")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RelatedComment");
-
-                    b.Navigation("RelatedUser");
-
-                    b.Navigation("Task");
 
                     b.Navigation("User");
                 });
@@ -878,32 +589,6 @@ namespace BetterMe.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("TodoTask");
-                });
-
-            modelBuilder.Entity("BetterMe.Api.Models.TaskComment", b =>
-                {
-                    b.HasOne("BetterMe.Api.Models.TaskComment", "ParentComment")
-                        .WithMany("Replies")
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BetterMe.Api.Models.TodoTask", "Task")
-                        .WithMany("Comments")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BetterMe.Api.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ParentComment");
-
-                    b.Navigation("Task");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BetterMe.Api.Models.TaskTag", b =>
@@ -938,17 +623,11 @@ namespace BetterMe.Api.Migrations
 
             modelBuilder.Entity("BetterMe.Api.Models.TodoTask", b =>
                 {
-                    b.HasOne("BetterMe.Api.Models.User", "AssignedToUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedToUserId");
-
                     b.HasOne("BetterMe.Api.Models.User", "User")
                         .WithMany("TodoTasks")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedToUser");
 
                     b.Navigation("User");
                 });
@@ -982,20 +661,9 @@ namespace BetterMe.Api.Migrations
                     b.Navigation("TaskTags");
                 });
 
-            modelBuilder.Entity("BetterMe.Api.Models.TaskComment", b =>
-                {
-                    b.Navigation("Replies");
-                });
-
             modelBuilder.Entity("BetterMe.Api.Models.TodoTask", b =>
                 {
-                    b.Navigation("Activities");
-
                     b.Navigation("Attachments");
-
-                    b.Navigation("Comments");
-
-                    b.Navigation("SharedWith");
 
                     b.Navigation("TaskTags");
                 });

@@ -29,6 +29,13 @@ export interface Task {
   reminders?: Reminder[]; // Pre-due date reminders
   energyLevel?: EnergyLevel; // When user feels most productive for this task
   context?: TaskContext[]; // Where/when this task can be done
+  
+  // Collaboration fields
+  assignedToUserId?: number;
+  assignedToUserName?: string;
+  isShared?: boolean;
+  commentCount?: number;
+  ownerId?: number;
 }
 
 // Additional types

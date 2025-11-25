@@ -20,6 +20,10 @@ namespace BetterMe.Api.Data
         public DbSet<FocusSession> FocusSessions { get; set; }
         public DbSet<TaskTemplate> TaskTemplates { get; set; }
         public DbSet<TaskAttachment> TaskAttachments { get; set; }
+        public DbSet<SharedTask> SharedTasks { get; set; }
+        public DbSet<TaskComment> TaskComments { get; set; }
+        public DbSet<TaskActivity> TaskActivities { get; set; }
+        public DbSet<SharedTemplate> SharedTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -282,6 +286,122 @@ namespace BetterMe.Api.Data
 
                 // Set default values
                 entity.Property(ta => ta.UploadedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // SharedTask configuration
+            modelBuilder.Entity<SharedTask>(entity =>
+            {
+                entity.HasKey(st => st.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(st => new { st.TaskId, st.SharedWithUserId });
+                entity.HasIndex(st => st.SharedWithUserId);
+                entity.HasIndex(st => st.OwnerId);
+                entity.HasIndex(st => st.ShareToken).IsUnique().HasFilter("\"ShareToken\" IS NOT NULL");
+
+                // Relationship with TodoTask
+                entity.HasOne(st => st.Task)
+                    .WithMany(t => t.SharedWith)
+                    .HasForeignKey(st => st.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with Owner
+                entity.HasOne(st => st.Owner)
+                    .WithMany()
+                    .HasForeignKey(st => st.OwnerId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with SharedWithUser
+                entity.HasOne(st => st.SharedWithUser)
+                    .WithMany()
+                    .HasForeignKey(st => st.SharedWithUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Set default values
+                entity.Property(st => st.Permission)
+                    .HasDefaultValue(SharePermission.View);
+
+                entity.Property(st => st.SharedAt)
+                    .HasDefaultValueSql("NOW()");
+
+                entity.Property(st => st.IsPublic)
+                    .HasDefaultValue(false);
+            });
+
+            // TaskComment configuration
+            modelBuilder.Entity<TaskComment>(entity =>
+            {
+                entity.HasKey(tc => tc.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(tc => tc.TaskId);
+                entity.HasIndex(tc => tc.UserId);
+                entity.HasIndex(tc => tc.ParentCommentId);
+
+                // Relationship with TodoTask
+                entity.HasOne(tc => tc.Task)
+                    .WithMany(t => t.Comments)
+                    .HasForeignKey(tc => tc.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with User
+                entity.HasOne(tc => tc.User)
+                    .WithMany()
+                    .HasForeignKey(tc => tc.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Self-referencing relationship for replies
+                entity.HasOne(tc => tc.ParentComment)
+                    .WithMany(pc => pc.Replies)
+                    .HasForeignKey(tc => tc.ParentCommentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Set default values
+                entity.Property(tc => tc.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+
+                entity.Property(tc => tc.IsEdited)
+                    .HasDefaultValue(false);
+            });
+
+            // TaskActivity configuration
+            modelBuilder.Entity<TaskActivity>(entity =>
+            {
+                entity.HasKey(ta => ta.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(ta => ta.TaskId);
+                entity.HasIndex(ta => ta.UserId);
+                entity.HasIndex(ta => ta.CreatedAt);
+                entity.HasIndex(ta => new { ta.TaskId, ta.CreatedAt });
+
+                // Relationship with TodoTask
+                entity.HasOne(ta => ta.Task)
+                    .WithMany(t => t.Activities)
+                    .HasForeignKey(ta => ta.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with User
+                entity.HasOne(ta => ta.User)
+                    .WithMany()
+                    .HasForeignKey(ta => ta.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with RelatedUser
+                entity.HasOne(ta => ta.RelatedUser)
+                    .WithMany()
+                    .HasForeignKey(ta => ta.RelatedUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Relationship with RelatedComment
+                entity.HasOne(ta => ta.RelatedComment)
+                    .WithMany()
+                    .HasForeignKey(ta => ta.RelatedCommentId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Set default values
+                entity.Property(ta => ta.CreatedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

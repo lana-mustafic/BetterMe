@@ -24,5 +24,11 @@
         public DateTime? NextDueDate { get; set; }
         public int? OriginalTaskId { get; set; }
         public List<AttachmentResponse> Attachments { get; set; } = new List<AttachmentResponse>();
+
+        // Collaboration fields
+        public int? AssignedToUserId { get; set; }
+        public string? AssignedToUserName { get; set; }
+        public bool IsShared { get; set; }
+        public int CommentCount { get; set; }
     }
 }

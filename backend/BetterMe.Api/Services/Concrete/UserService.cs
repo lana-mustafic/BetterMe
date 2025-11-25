@@ -6,6 +6,9 @@ using AuthDTOs = BetterMe.Api.DTOs.Auth;
 using System;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Linq;
+using BetterMe.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BetterMe.Api.Services
 {
@@ -13,13 +16,16 @@ namespace BetterMe.Api.Services
     {
         private readonly IUserRepository _usersRepo;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly AppDbContext _context;
 
         public UserService(
             IUserRepository usersRepo,
-            IPasswordHasher<User> passwordHasher)
+            IPasswordHasher<User> passwordHasher,
+            AppDbContext context)
         {
             _usersRepo = usersRepo;
             _passwordHasher = passwordHasher;
+            _context = context;
         }
 
         public async Task<User> RegisterAsync(AuthDTOs.RegisterRequest request)
@@ -124,6 +130,16 @@ namespace BetterMe.Api.Services
         {
             await _usersRepo.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<User>> SearchUsersAsync(string query)
+        {
+            var lowerQuery = query.ToLower();
+            return await _context.Users
+                .Where(u => u.Email.ToLower().Contains(lowerQuery) || 
+                           u.Name.ToLower().Contains(lowerQuery))
+                .Take(10) // Limit results
+                .ToListAsync();
         }
     }
 }

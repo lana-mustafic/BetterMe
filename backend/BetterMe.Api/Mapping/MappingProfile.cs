@@ -34,9 +34,9 @@ namespace BetterMe.Api.Mapping
                 .ForMember(dest => dest.TodoTasks, opt => opt.Ignore())
                 .ForMember(dest => dest.Tags, opt => opt.Ignore());
 
-            // TodoTask -> TaskResponse mapping (REMOVED OwnerId mapping)
+            // TodoTask -> TaskResponse mapping
             CreateMap<TodoTask, TaskResponse>()
-                // REMOVED: .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(
                     src => src.Completed ? src.CompletedAt : null))
                 .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))

@@ -12,7 +12,11 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
 import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
 import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
 import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
+import { ShareTaskModalComponent } from '../../components/share-task-modal/share-task-modal.component';
+import { TaskCommentsComponent } from '../../components/task-comments/task-comments.component';
+import { TaskActivityFeedComponent } from '../../components/task-activity-feed/task-activity-feed.component';
 import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
+import { CollaborationService } from '../../services/collaboration.service';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
 import { 
   Task, 
@@ -63,7 +67,10 @@ interface Category {
     RichTextEditorComponent,
     FileUploadComponent,
     CategoryPieChartComponent,
-    WeeklyCompletionChartComponent
+    WeeklyCompletionChartComponent,
+    ShareTaskModalComponent,
+    TaskCommentsComponent,
+    TaskActivityFeedComponent
   ],
   template: `
     <div class="tasks-page">
@@ -1595,8 +1602,31 @@ interface Category {
                           >
                             ✏️
                           </button>
+                          
+                          <button 
+                            class="btn-share" 
+                            (click)="openShareModal(task); $event.stopPropagation()"
+                            title="Share task"
+                          >
+                            🔗
+                          </button>
                         </div>
                       </div>
+                      
+                      <!-- Collaboration Info -->
+                      @if (task.isShared || task.assignedToUserId) {
+                        <div class="collaboration-info">
+                          @if (task.isShared) {
+                            <span class="collab-badge shared">🔗 Shared</span>
+                          }
+                          @if (task.assignedToUserId) {
+                            <span class="collab-badge assigned">👤 Assigned to {{ task.assignedToUserName || 'User' }}</span>
+                          }
+                          @if (task.commentCount && task.commentCount > 0) {
+                            <span class="collab-badge comments">💬 {{ task.commentCount }} comment{{ task.commentCount > 1 ? 's' : '' }}</span>
+                          }
+                        </div>
+                      }
 
                       <!-- Task Description -->
                       @if (task.description) {
@@ -1683,6 +1713,20 @@ interface Category {
                         
                         <div class="task-actions">
                           <button 
+                            class="btn-action btn-share" 
+                            (click)="openShareModal(task); $event.stopPropagation()"
+                            title="Share task"
+                          >
+                            🔗 Share
+                          </button>
+                          <button 
+                            class="btn-action btn-collab" 
+                            (click)="toggleTaskDetails(task.id); $event.stopPropagation()"
+                            [title]="expandedTasks.has(task.id) ? 'Hide details' : 'Show comments & activity'"
+                          >
+                            {{ expandedTasks.has(task.id) ? '▼' : '▶' }} Details
+                          </button>
+                          <button 
                             class="btn-action btn-view" 
                             [routerLink]="['/tasks', task.id]"
                             (click)="$event.stopPropagation()"
@@ -1697,6 +1741,21 @@ interface Category {
                           </button>
                         </div>
                       </div>
+
+                      <!-- Expandable Collaboration Details -->
+                      @if (expandedTasks.has(task.id)) {
+                        <div class="task-collaboration-details">
+                          <div class="collab-section">
+                            <app-task-comments 
+                              [taskId]="task.id"
+                              (commentAdded)="onTaskShared()"
+                            ></app-task-comments>
+                          </div>
+                          <div class="collab-section">
+                            <app-task-activity-feed [taskId]="task.id"></app-task-activity-feed>
+                          </div>
+                        </div>
+                      }
 
                       <!-- Completion Status Bar -->
                       <div class="completion-bar" [class.completed]="task.completed">
@@ -1736,6 +1795,15 @@ interface Category {
           }
         </div>
       </div>
+      
+      <!-- Share Task Modal -->
+      <app-share-task-modal
+        [isOpen]="showShareModal"
+        [taskId]="selectedTaskForShare?.id || 0"
+        [taskTitle]="selectedTaskForShare?.title || ''"
+        (closed)="showShareModal = false; selectedTaskForShare = null"
+        (shared)="onTaskShared()"
+      ></app-share-task-modal>
     </div>
   `,
   styles: [`
@@ -2170,6 +2238,97 @@ interface Category {
     .btn-edit:hover {
       background: rgba(59, 130, 246, 0.5);
       transform: scale(1.1);
+    }
+
+    .btn-share {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+      background: rgba(74, 222, 128, 0.3);
+      border: 1px solid rgba(74, 222, 128, 0.5);
+      color: #4ade80;
+    }
+
+    .btn-share:hover {
+      background: rgba(74, 222, 128, 0.5);
+      transform: scale(1.1);
+    }
+
+    .collaboration-info {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .collab-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .collab-badge.shared {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .collab-badge.assigned {
+      background: rgba(34, 211, 238, 0.2);
+      color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.3);
+    }
+
+    .collab-badge.comments {
+      background: rgba(139, 92, 246, 0.2);
+      color: #8b5cf6;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-action.btn-share {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+    }
+
+    .btn-action.btn-share:hover {
+      background: rgba(74, 222, 128, 0.2);
+    }
+
+    .btn-action.btn-collab {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #8b5cf6;
+    }
+
+    .btn-action.btn-collab:hover {
+      background: rgba(139, 92, 246, 0.2);
+    }
+
+    .task-collaboration-details {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .collab-section {
+      width: 100%;
     }
 
     /* Task Description */
@@ -4353,6 +4512,7 @@ export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
   private templateService = inject(TaskTemplateService);
   private analyticsService = inject(AnalyticsService);
+  private collaborationService = inject(CollaborationService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
 
@@ -4361,6 +4521,9 @@ export class TasksComponent implements OnInit {
   errorMessage: string = '';
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
+  showShareModal: boolean = false;
+  selectedTaskForShare: Task | null = null;
+  expandedTasks: Set<number> = new Set();
   activeView: 'list' | 'stats' | 'calendar' | 'kanban' = 'list';
   editingTaskId: number | null = null;
   availableTags: string[] = [];
@@ -5733,6 +5896,25 @@ export class TasksComponent implements OnInit {
           console.error('Error deleting task:', error);
         }
       });
+    }
+  }
+
+  // Collaboration methods
+  openShareModal(task: Task): void {
+    this.selectedTaskForShare = task;
+    this.showShareModal = true;
+  }
+
+  onTaskShared(): void {
+    // Reload tasks to get updated sharing info
+    this.loadTasks();
+  }
+
+  toggleTaskDetails(taskId: number): void {
+    if (this.expandedTasks.has(taskId)) {
+      this.expandedTasks.delete(taskId);
+    } else {
+      this.expandedTasks.add(taskId);
     }
   }
   

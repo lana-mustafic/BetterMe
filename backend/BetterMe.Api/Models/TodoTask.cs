@@ -66,6 +66,18 @@ namespace BetterMe.Api.Models
         public List<TaskTag> TaskTags { get; set; } = new List<TaskTag>();
 
         public List<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
+
+        // Collaboration features
+        public int? AssignedToUserId { get; set; }
+
+        [ForeignKey("AssignedToUserId")]
+        public User? AssignedToUser { get; set; }
+
+        public List<SharedTask> SharedWith { get; set; } = new List<SharedTask>();
+
+        public List<TaskComment> Comments { get; set; } = new List<TaskComment>();
+
+        public List<TaskActivity> Activities { get; set; } = new List<TaskActivity>();
     }
 
     // NEW: DTO for recurrence configuration

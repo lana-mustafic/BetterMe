@@ -24,13 +24,15 @@ namespace BetterMe.Api.Controllers
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly ICollaborationService _collaborationService;
 
-        public TasksController(ITodoTaskService taskService, IMapper mapper, AppDbContext context, IWebHostEnvironment environment)
+        public TasksController(ITodoTaskService taskService, IMapper mapper, AppDbContext context, IWebHostEnvironment environment, ICollaborationService collaborationService)
         {
             _taskService = taskService;
             _mapper = mapper;
             _context = context;
             _environment = environment;
+            _collaborationService = collaborationService;
         }
 
         [HttpGet("debug")]
@@ -95,13 +97,44 @@ namespace BetterMe.Api.Controllers
                 return Unauthorized();
             }
 
-            var tasks = await _context.TodoTasks
+            // Get owned tasks
+            var ownedTasks = await _context.TodoTasks
                 .Include(t => t.TaskTags)
                     .ThenInclude(tt => tt.Tag)
                 .Include(t => t.Attachments)
+                .Include(t => t.AssignedToUser)
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
-            var dtos = _mapper.Map<List<TaskResponse>>(tasks);
+
+            // Get shared tasks
+            var sharedTaskIds = await _context.SharedTasks
+                .Where(st => st.SharedWithUserId == userId)
+                .Select(st => st.TaskId)
+                .ToListAsync();
+
+            var sharedTasks = await _context.TodoTasks
+                .Include(t => t.TaskTags)
+                    .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
+                .Include(t => t.AssignedToUser)
+                .Include(t => t.User)
+                .Where(t => sharedTaskIds.Contains(t.Id))
+                .ToListAsync();
+
+            // Combine and map
+            var allTasks = ownedTasks.Concat(sharedTasks).DistinctBy(t => t.Id).ToList();
+            var dtos = _mapper.Map<List<TaskResponse>>(allTasks);
+
+            // Set collaboration fields
+            foreach (var dto in dtos)
+            {
+                var task = allTasks.First(t => t.Id == dto.Id);
+                dto.AssignedToUserId = task.AssignedToUserId;
+                dto.AssignedToUserName = task.AssignedToUser?.Name;
+                dto.IsShared = task.UserId != userId || sharedTaskIds.Contains(task.Id);
+                dto.CommentCount = await _context.TaskComments.CountAsync(c => c.TaskId == task.Id);
+            }
+
             return Ok(dtos);
         }
 
@@ -114,9 +147,18 @@ namespace BetterMe.Api.Controllers
 
             var task = await _taskService.GetByIdAsync(id);
             if (task == null) return NotFound();
-            if (task.UserId != userId) return Forbid();
 
-            return Ok(_mapper.Map<TaskResponse>(task));
+            // Check if user can access (owner or shared)
+            if (!await _collaborationService.CanUserAccessTaskAsync(id, userId))
+                return Forbid();
+
+            var dto = _mapper.Map<TaskResponse>(task);
+            dto.AssignedToUserId = task.AssignedToUserId;
+            dto.AssignedToUserName = task.AssignedToUser?.Name;
+            dto.IsShared = task.UserId != userId;
+            dto.CommentCount = await _context.TaskComments.CountAsync(c => c.TaskId == id);
+
+            return Ok(dto);
         }
 
         // FIXED: Changed from HttpPatch to HttpPut

@@ -104,6 +104,19 @@ namespace BetterMe.Api.Controllers
             }
         }
 
+        // GET: api/users/search?query=email
+        [Authorize]
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchUsers([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return BadRequest(new { message = "Query must be at least 2 characters" });
+
+            var users = await _userService.SearchUsersAsync(query);
+            var dtos = users.Select(u => _mapper.Map<UserResponse>(u)).ToList();
+            return Ok(dtos);
+        }
+
         // DEBUG: api/users/debug-claims
         [Authorize]
         [HttpGet("debug-claims")]
