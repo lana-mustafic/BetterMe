@@ -6420,8 +6420,6 @@ export class TasksComponent implements OnInit {
       isRecurring: task.isRecurring,
       recurrencePattern: task.recurrencePattern || 'none',
       recurrenceInterval: task.recurrenceInterval || 1,
-      estimatedDuration: task.estimatedDuration || null,
-      difficulty: task.difficulty || 'medium',
       isInMyDay: false
     };
 
@@ -6489,7 +6487,8 @@ export class TasksComponent implements OnInit {
     }
 
     // Create the task data object with proper type handling
-    const taskData: any = {
+    // Base task data (fields supported by CreateTaskRequest)
+    const baseTaskData: any = {
       title: this.newTaskTitle,
       description: this.newTaskDescription,
       dueDate: this.newTaskDueDate || undefined,
@@ -6499,15 +6498,18 @@ export class TasksComponent implements OnInit {
       isRecurring: this.newTaskIsRecurring,
       recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
       recurrenceInterval: this.newTaskRecurrenceInterval,
-      estimatedDuration: this.newTaskEstimatedDuration || undefined,
-      difficulty: this.newTaskDifficulty as TaskDifficulty,
       parentTaskId: this.newTaskParentTaskId || undefined,
       dependsOnTaskIds: this.newTaskDependsOnTaskIds.length > 0 ? this.newTaskDependsOnTaskIds : undefined
     };
 
     if (this.editingTaskId) {
-      // For update, you can use taskData directly since it matches UpdateTaskRequest
-      this.taskService.updateTask(this.editingTaskId, taskData).subscribe({
+      // For update, include additional fields if supported
+      const updateTaskData = {
+        ...baseTaskData,
+        estimatedDuration: this.newTaskEstimatedDuration || undefined,
+        difficulty: this.newTaskDifficulty as TaskDifficulty
+      };
+      this.taskService.updateTask(this.editingTaskId, updateTaskData).subscribe({
         next: async (updatedTask: Task) => {
           // Create subtasks if any were added
           if (this.newTaskSubtasks.length > 0) {
@@ -6535,8 +6537,8 @@ export class TasksComponent implements OnInit {
         }
       });
     } else {
-      // For create, use taskData directly
-      this.taskService.createTask(taskData).subscribe({
+      // For create, only use baseTaskData (without estimatedDuration/difficulty)
+      this.taskService.createTask(baseTaskData).subscribe({
         next: async (newTask: Task) => {
           // Create subtasks if any were added
           if (this.newTaskSubtasks.length > 0) {

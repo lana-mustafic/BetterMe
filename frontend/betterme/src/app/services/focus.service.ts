@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface FocusSession {
@@ -70,7 +70,15 @@ export class FocusService {
 
   getActiveSession(): Observable<FocusSession> {
     return this.http.get<FocusSession>(`${this.apiUrl}/active`).pipe(
-      tap(session => this.activeSessionSubject.next(session))
+      tap(session => this.activeSessionSubject.next(session)),
+      catchError(error => {
+        // 404 is expected when there's no active session
+        if (error.status === 404) {
+          this.activeSessionSubject.next(null);
+          return of(null as any); // Return null to indicate no active session
+        }
+        return throwError(() => error);
+      })
     );
   }
 

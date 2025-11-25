@@ -1297,7 +1297,8 @@ export class TaskDetailComponent implements OnInit {
     return patternMap[pattern] || pattern;
   }
 
-  formatDifficulty(difficulty: string): string {
+  formatDifficulty(difficulty: string | undefined | null): string {
+    if (!difficulty) return 'Medium';
     return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
   }
 
