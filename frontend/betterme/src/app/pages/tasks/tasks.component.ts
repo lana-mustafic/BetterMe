@@ -2,10 +2,14 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TaskService } from '../../services/task.service';
 import { TaskTemplateService, TaskTemplate, CreateTaskTemplateRequest } from '../../services/task-template.service';
+import { environment } from '../../../environments/environment';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
 import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
+import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
+import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
 import { 
   Task, 
@@ -52,7 +56,9 @@ interface Category {
     CalendarViewComponent,
     KanbanBoardComponent,
     CommonModule,
-    RouterLink
+    RouterLink,
+    RichTextEditorComponent,
+    FileUploadComponent
   ],
   template: `
     <div class="tasks-page">
@@ -1398,14 +1404,22 @@ interface Category {
                   />
                 </div>
                 <div class="form-group">
-                  <textarea 
-                    class="form-input"
-                    placeholder="Task description"
+                  <label class="form-label">Description</label>
+                  <app-rich-text-editor
                     [(ngModel)]="newTaskDescription"
                     name="description"
-                    (input)="onSmartInputChange()"
-                    rows="3"
-                  ></textarea>
+                    placeholder="Task description (supports rich text formatting)"
+                    (ngModelChange)="onSmartInputChange()"
+                  ></app-rich-text-editor>
+                </div>
+                
+                <!-- File Attachments -->
+                <div class="form-group">
+                  <label class="form-label">Attachments</label>
+                  <app-file-upload
+                    [taskId]="editingTaskId || undefined"
+                    (attachmentsChange)="onAttachmentsChange($event)"
+                  ></app-file-upload>
                 </div>
                 
                 <!-- Enhanced Category Dropdown -->
@@ -1587,7 +1601,27 @@ interface Category {
 
                       <!-- Task Description -->
                       @if (task.description) {
-                        <p class="task-description">{{ task.description }}</p>
+                        <div class="task-description" [innerHTML]="getSanitizedDescription(task.description)"></div>
+                      }
+                      
+                      <!-- Task Attachments -->
+                      @if (task.attachments && task.attachments.length > 0) {
+                        <div class="task-attachments">
+                          <div class="attachments-header">📎 Attachments ({{ task.attachments.length }})</div>
+                          <div class="attachments-list">
+                            @for (attachment of task.attachments; track attachment.id) {
+                              <a 
+                                [href]="getAttachmentUrl(task.id, attachment.id)" 
+                                target="_blank"
+                                class="attachment-link"
+                              >
+                                <span class="attachment-icon">{{ getFileIcon(attachment.type) }}</span>
+                                <span class="attachment-name">{{ attachment.filename }}</span>
+                                <span class="attachment-size">({{ formatFileSize(attachment.size) }})</span>
+                              </a>
+                            }
+                          </div>
+                        </div>
                       }
 
                       <!-- Task Meta Information -->
@@ -2144,6 +2178,79 @@ interface Category {
       color: rgba(255, 255, 255, 0.8);
       font-size: 0.9rem;
       line-height: 1.5;
+      margin: 8px 0;
+    }
+    .task-description :deep(p) {
+      margin: 0.5em 0;
+    }
+    .task-description :deep(ul), .task-description :deep(ol) {
+      margin: 0.5em 0;
+      padding-left: 1.5em;
+    }
+    .task-description :deep(strong) {
+      font-weight: 600;
+    }
+    .task-description :deep(em) {
+      font-style: italic;
+    }
+    .task-description :deep(a) {
+      color: #667eea;
+      text-decoration: underline;
+    }
+    .task-description :deep(img) {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin: 8px 0;
+    }
+    
+    /* Task Attachments */
+    .task-attachments {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+    .attachments-header {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .attachments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .attachment-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      text-decoration: none;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .attachment-link:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .attachment-icon {
+      font-size: 16px;
+    }
+    .attachment-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .attachment-size {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.75rem;
+    }
       margin-bottom: 1.25rem;
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -4253,6 +4360,7 @@ export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
   private templateService = inject(TaskTemplateService);
   private router = inject(Router);
+  private sanitizer = inject(DomSanitizer);
 
   tasks: Task[] = [];
   isLoading: boolean = false;
@@ -4277,6 +4385,7 @@ export class TasksComponent implements OnInit {
   newTaskRecurrenceInterval: number = 1;
   newTaskEstimatedDuration: number | null = null;
   newTaskDifficulty: string = 'medium';
+  newTaskAttachments: Attachment[] = [];
 
   // Filter fields
   searchTerm: string = '';
@@ -5640,6 +5749,8 @@ export class TasksComponent implements OnInit {
     this.newTaskTags = [];
     this.newTaskTagInput = '';
     this.newTaskIsRecurring = false;
+    this.newTaskAttachments = [];
+    this.editingTaskId = null;
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
     this.newTaskEstimatedDuration = null;
@@ -5647,5 +5758,38 @@ export class TasksComponent implements OnInit {
     this.editingTaskId = null;
     this.suggestedCategory = null;
     this.suggestedTags = [];
+    this.newTaskAttachments = [];
+  }
+
+  // Rich text and attachment helpers
+  getSanitizedDescription(description: string): SafeHtml {
+    // Use bypassSecurityTrustHtml for rich text content
+    return this.sanitizer.bypassSecurityTrustHtml(description);
+  }
+
+  getAttachmentUrl(taskId: number, attachmentId: number): string {
+    // Use the download endpoint
+    return `${environment.apiUrl}/tasks/${taskId}/attachments/${attachmentId}`;
+  }
+
+  getFileIcon(contentType: string): string {
+    if (contentType.startsWith('image/')) return '🖼️';
+    if (contentType.includes('pdf')) return '📄';
+    if (contentType.includes('word') || contentType.includes('document')) return '📝';
+    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '📊';
+    if (contentType.includes('zip') || contentType.includes('archive')) return '📦';
+    return '📎';
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  onAttachmentsChange(attachments: Attachment[]): void {
+    this.newTaskAttachments = attachments;
   }
 }

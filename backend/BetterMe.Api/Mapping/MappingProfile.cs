@@ -49,7 +49,8 @@ namespace BetterMe.Api.Mapping
                 .ForMember(dest => dest.RecurrenceEndDate, opt => opt.MapFrom(src => src.RecurrenceEndDate))
                 .ForMember(dest => dest.NextDueDate, opt => opt.MapFrom(src => src.NextDueDate))
                 .ForMember(dest => dest.CompletedInstances, opt => opt.MapFrom(src => src.CompletedInstances))
-                .ForMember(dest => dest.OriginalTaskId, opt => opt.MapFrom(src => src.OriginalTaskId));
+                .ForMember(dest => dest.OriginalTaskId, opt => opt.MapFrom(src => src.OriginalTaskId))
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
 
             // CreateTaskRequest -> TodoTask mapping
             CreateMap<CreateTaskRequest, TodoTask>()
@@ -105,6 +106,11 @@ namespace BetterMe.Api.Mapping
                 .ForMember(dest => dest.LastUsedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UseCount, opt => opt.Ignore())
                 .ForMember(dest => dest.IsFavorite, opt => opt.Ignore());
+
+            // TaskAttachment -> AttachmentResponse mapping
+            CreateMap<TaskAttachment, AttachmentResponse>()
+                .ForMember(dest => dest.Url, opt => opt.MapFrom(src => 
+                    src.Url ?? $"/api/tasks/{src.TodoTaskId}/attachments/{src.Id}"));
         }
     }
 }

@@ -19,6 +19,7 @@ namespace BetterMe.Api.Data
         public DbSet<HabitCompletion> HabitCompletions { get; set; }
         public DbSet<FocusSession> FocusSessions { get; set; }
         public DbSet<TaskTemplate> TaskTemplates { get; set; }
+        public DbSet<TaskAttachment> TaskAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -262,6 +263,25 @@ namespace BetterMe.Api.Data
 
                 // FIXED: PostgreSQL uses NOW() instead of GETUTCDATE()
                 entity.Property(tt => tt.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // TaskAttachment configuration
+            modelBuilder.Entity<TaskAttachment>(entity =>
+            {
+                entity.HasKey(ta => ta.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(ta => ta.TodoTaskId);
+
+                // Relationship with TodoTask
+                entity.HasOne(ta => ta.TodoTask)
+                    .WithMany(t => t.Attachments)
+                    .HasForeignKey(ta => ta.TodoTaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Set default values
+                entity.Property(ta => ta.UploadedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

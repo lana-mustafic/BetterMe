@@ -18,7 +18,7 @@ namespace BetterMe.Api.Models
         [MaxLength(100)]
         public string Title { get; set; }
 
-        [MaxLength(500)]
+        [MaxLength(5000)] // Increased for rich text HTML content
         public string Description { get; set; }
 
         public bool Completed { get; set; } = false;
@@ -64,6 +64,8 @@ namespace BetterMe.Api.Models
         }
 
         public List<TaskTag> TaskTags { get; set; } = new List<TaskTag>();
+
+        public List<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
     }
 
     // NEW: DTO for recurrence configuration

@@ -23,6 +23,7 @@ namespace BetterMe.Api.Repositories.Concrete
             return await _context.TodoTasks
                 .Include(t => t.TaskTags)
                 .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
@@ -31,6 +32,7 @@ namespace BetterMe.Api.Repositories.Concrete
             return await _context.TodoTasks
                 .Include(t => t.TaskTags)
                 .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
 
@@ -40,6 +42,7 @@ namespace BetterMe.Api.Repositories.Concrete
                 .Where(t => t.UserId == userId)
                 .Include(t => t.TaskTags)
                 .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
         }

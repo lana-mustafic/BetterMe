@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using BetterMe.Api.Services;
+using BetterMe.Api.Models;
+using BetterMe.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BetterMe.Api.Controllers
 {
@@ -19,11 +22,15 @@ namespace BetterMe.Api.Controllers
     {
         private readonly ITodoTaskService _taskService;
         private readonly IMapper _mapper;
+        private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public TasksController(ITodoTaskService taskService, IMapper mapper)
+        public TasksController(ITodoTaskService taskService, IMapper mapper, AppDbContext context, IWebHostEnvironment environment)
         {
             _taskService = taskService;
             _mapper = mapper;
+            _context = context;
+            _environment = environment;
         }
 
         [HttpGet("debug")]
@@ -88,7 +95,12 @@ namespace BetterMe.Api.Controllers
                 return Unauthorized();
             }
 
-            var tasks = await _taskService.GetAllTasksByUserAsync(userId);
+            var tasks = await _context.TodoTasks
+                .Include(t => t.TaskTags)
+                    .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Attachments)
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
             var dtos = _mapper.Map<List<TaskResponse>>(tasks);
             return Ok(dtos);
         }
@@ -253,6 +265,128 @@ namespace BetterMe.Api.Controllers
                 PageSize = request.PageSize ?? 100,
                 TotalPages = (int)Math.Ceiling(totalCount / (double)(request.PageSize ?? 100))
             });
+        }
+
+        [HttpPost("{id:int}/attachments")]
+        public async Task<IActionResult> UploadAttachment(int id, IFormFile file)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var task = await _taskService.GetByIdAsync(id);
+            if (task == null || task.UserId != userId) return NotFound();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file uploaded" });
+
+            // Validate file size (max 10MB)
+            const long maxFileSize = 10 * 1024 * 1024; // 10MB
+            if (file.Length > maxFileSize)
+                return BadRequest(new { message = "File size exceeds 10MB limit" });
+
+            // Create uploads directory if it doesn't exist
+            var uploadsPath = Path.Combine(_environment.ContentRootPath, "uploads", "attachments");
+            if (!Directory.Exists(uploadsPath))
+                Directory.CreateDirectory(uploadsPath);
+
+            // Generate unique filename
+            var fileExtension = Path.GetExtension(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(uploadsPath, uniqueFileName);
+
+            // Save file
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // Create attachment record
+            var attachment = new TaskAttachment
+            {
+                TodoTaskId = id,
+                Filename = file.FileName,
+                FilePath = filePath,
+                ContentType = file.ContentType,
+                FileSize = file.Length,
+                UploadedAt = DateTime.UtcNow,
+                Url = $"/api/tasks/{id}/attachments/{attachment.Id}" // Will be set after save
+            };
+
+            _context.TaskAttachments.Add(attachment);
+            await _context.SaveChangesAsync();
+
+            // Update URL with the actual attachment ID
+            attachment.Url = $"/api/tasks/{id}/attachments/{attachment.Id}";
+            await _context.SaveChangesAsync();
+
+            return Ok(_mapper.Map<AttachmentResponse>(attachment));
+        }
+
+        [HttpGet("{id:int}/attachments")]
+        public async Task<IActionResult> GetAttachments(int id)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var task = await _taskService.GetByIdAsync(id);
+            if (task == null || task.UserId != userId) return NotFound();
+
+            var attachments = await _context.TaskAttachments
+                .Where(a => a.TodoTaskId == id)
+                .ToListAsync();
+
+            return Ok(_mapper.Map<List<AttachmentResponse>>(attachments));
+        }
+
+        [HttpGet("{taskId:int}/attachments/{attachmentId:int}")]
+        public async Task<IActionResult> DownloadAttachment(int taskId, int attachmentId)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var task = await _taskService.GetByIdAsync(taskId);
+            if (task == null || task.UserId != userId) return NotFound();
+
+            var attachment = await _context.TaskAttachments
+                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.TodoTaskId == taskId);
+
+            if (attachment == null) return NotFound();
+
+            if (!System.IO.File.Exists(attachment.FilePath))
+                return NotFound(new { message = "File not found on server" });
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(attachment.FilePath);
+            return File(fileBytes, attachment.ContentType, attachment.Filename);
+        }
+
+        [HttpDelete("{taskId:int}/attachments/{attachmentId:int}")]
+        public async Task<IActionResult> DeleteAttachment(int taskId, int attachmentId)
+        {
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                      User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!int.TryParse(sub, out var userId)) return Unauthorized();
+
+            var task = await _taskService.GetByIdAsync(taskId);
+            if (task == null || task.UserId != userId) return NotFound();
+
+            var attachment = await _context.TaskAttachments
+                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.TodoTaskId == taskId);
+
+            if (attachment == null) return NotFound();
+
+            // Delete physical file
+            if (System.IO.File.Exists(attachment.FilePath))
+            {
+                System.IO.File.Delete(attachment.FilePath);
+            }
+
+            _context.TaskAttachments.Remove(attachment);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         public class CompleteInstanceRequest

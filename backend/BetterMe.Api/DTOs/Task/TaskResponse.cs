@@ -23,5 +23,6 @@
         public List<string> CompletedInstances { get; set; } = new List<string>();
         public DateTime? NextDueDate { get; set; }
         public int? OriginalTaskId { get; set; }
+        public List<AttachmentResponse> Attachments { get; set; } = new List<AttachmentResponse>();
     }
 }
