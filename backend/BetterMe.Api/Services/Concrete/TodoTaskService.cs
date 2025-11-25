@@ -212,12 +212,28 @@ namespace BetterMe.Api.Services
                     {
                         await CompleteRecurringInstanceAsync(task.Id, userId, DateTime.UtcNow);
                         // Award points for recurring instance
-                        await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: true);
+                        try
+                        {
+                            await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: true);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't fail task completion
+                            Console.WriteLine($"[Gamification] Error awarding points: {ex.Message}");
+                        }
                     }
                     else
                     {
                         // Award points for task completion
-                        await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: false);
+                        try
+                        {
+                            await _gamificationService.AwardTaskCompletionPointsAsync(task.Id, userId, isRecurringInstance: false);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't fail task completion
+                            Console.WriteLine($"[Gamification] Error awarding points: {ex.Message}");
+                        }
                     }
                 }
                 else if (!request.Completed.Value && task.Completed)

@@ -1,9 +1,9 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Output, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService, ParseTaskResponse } from '../../services/task.service';
 import { CreateTaskRequest, Task } from '../../models/task.model';
-import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-quick-add-task',
@@ -20,9 +20,13 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
           (keydown.enter)="onEnterKey()"
           (keydown.escape)="clearInput()"
           placeholder="Quick add task... (e.g., 'Call mom tomorrow at 3pm high priority')"
-          [disabled]="isProcessing"
         />
-        @if (isProcessing) {
+        @if (inputText.trim() && !isCreating) {
+          <button class="quick-add-btn" (click)="createTask()" [disabled]="isCreating">
+            Add Task
+          </button>
+        }
+        @if (isProcessing && !inputText.trim()) {
           <div class="loading-spinner"></div>
         }
         @if (suggestions.length > 0 && showSuggestions) {
@@ -75,7 +79,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
           </div>
           <div class="preview-actions">
             <button class="btn btn-outline" (click)="clearInput()">Cancel</button>
-            <button class="btn btn-gradient" (click)="createTask()" [disabled]="!parsedData.title || isCreating">
+            <button class="btn btn-gradient" (click)="createTask()" [disabled]="(!parsedData && !inputText.trim()) || isCreating">
               @if (isCreating) {
                 Creating...
               } @else {
@@ -99,6 +103,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
     .quick-add-input {
       width: 100%;
       padding: 1rem 1.25rem;
+      padding-right: 120px;
       font-size: 1rem;
       border: 2px solid rgba(255, 255, 255, 0.2);
       border-radius: 12px;
@@ -123,9 +128,37 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
       cursor: not-allowed;
     }
 
-    .loading-spinner {
+    .quick-add-btn {
       position: absolute;
       right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+
+    .quick-add-btn:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-50%) translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .quick-add-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loading-spinner {
+      position: absolute;
+      right: 7rem;
       top: 50%;
       transform: translateY(-50%);
       width: 20px;
@@ -289,7 +322,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
     }
   `]
 })
-export class QuickAddTaskComponent {
+export class QuickAddTaskComponent implements OnDestroy {
   @Output() taskCreated = new EventEmitter<Task>();
 
   private taskService = inject(TaskService);
@@ -311,11 +344,46 @@ export class QuickAddTaskComponent {
     'Review budget this weekend'
   ];
 
+  private parseSubject = new Subject<string>();
+  private parseSubscription?: any;
+
+  constructor() {
+    // Debounce parsing to avoid disabling input on every keystroke
+    this.parseSubscription = this.parseSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(input => {
+        if (!input.trim() || input.length < 3) {
+          return of(null);
+        }
+        this.isProcessing = true;
+        return this.taskService.parseNaturalLanguage(input).pipe(
+          catchError(error => {
+            console.error('Error parsing input:', error);
+            this.isProcessing = false;
+            return of(null);
+          })
+        );
+      })
+    ).subscribe(response => {
+      this.isProcessing = false;
+      if (response) {
+        this.parsedData = response;
+        this.showPreview = true;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.parseSubscription?.unsubscribe();
+  }
+
   onInputChange() {
     if (!this.inputText.trim()) {
       this.parsedData = null;
       this.showPreview = false;
       this.showSuggestions = false;
+      this.parseSubject.next('');
       return;
     }
 
@@ -325,7 +393,8 @@ export class QuickAddTaskComponent {
       this.showSuggestions = true;
     } else {
       this.showSuggestions = false;
-      this.parseInput();
+      // Trigger debounced parsing
+      this.parseSubject.next(this.inputText);
     }
   }
 
@@ -338,21 +407,8 @@ export class QuickAddTaskComponent {
 
   private parseInput() {
     if (!this.inputText.trim()) return;
-
-    this.isProcessing = true;
-    this.taskService.parseNaturalLanguage(this.inputText).pipe(
-      catchError(error => {
-        console.error('Error parsing input:', error);
-        this.isProcessing = false;
-        return of(null);
-      })
-    ).subscribe(response => {
-      this.isProcessing = false;
-      if (response) {
-        this.parsedData = response;
-        this.showPreview = true;
-      }
-    });
+    // Trigger debounced parsing
+    this.parseSubject.next(this.inputText);
   }
 
   onEnterKey() {
@@ -370,7 +426,36 @@ export class QuickAddTaskComponent {
   }
 
   createTask() {
-    if (!this.parsedData || !this.parsedData.title) return;
+    // If no parsed data yet, try to parse first or create from raw input
+    if (!this.parsedData || !this.parsedData.title) {
+      // If we have input text but no parsed data, try to create a simple task
+      if (this.inputText.trim()) {
+        // Cancel any pending parsing
+        this.parseSubject.next('');
+        
+        // Create a simple task from the input text
+        const taskData: CreateTaskRequest = {
+          title: this.inputText.trim(),
+          priority: 1,
+          category: 'Other',
+          tags: []
+        };
+
+        this.isCreating = true;
+        this.taskService.createTask(taskData).subscribe({
+          next: (task) => {
+            this.taskCreated.emit(task);
+            this.clearInput();
+          },
+          error: (error) => {
+            console.error('Error creating task:', error);
+            this.isCreating = false;
+          }
+        });
+        return;
+      }
+      return;
+    }
 
     this.isCreating = true;
     const taskData: CreateTaskRequest = {

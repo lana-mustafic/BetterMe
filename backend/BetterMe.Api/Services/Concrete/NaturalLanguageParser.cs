@@ -153,12 +153,20 @@ namespace BetterMe.Api.Services.Concrete
                 }
                 else if (hour > 12)
                 {
-                    // Assume 24-hour format
+                    // Assume 24-hour format (already correct)
                 }
                 else
                 {
-                    // Default to PM if ambiguous
-                    if (hour < 7) hour += 12;
+                    // Default to AM for hours 1-11 when no AM/PM is specified
+                    // This is more intuitive - "9:00" usually means 9 AM, not 9 PM
+                    // Only hours 1-11 without AM/PM default to AM
+                    // Hour 12 without AM/PM is ambiguous, but we'll treat it as noon (12 PM)
+                    if (hour == 12)
+                    {
+                        // 12 without AM/PM defaults to noon (12 PM)
+                        // hour stays 12
+                    }
+                    // For 1-11, keep as is (AM) - don't add 12
                 }
 
                 extractedDateText = timeMatch.Value;
