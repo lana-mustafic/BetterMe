@@ -310,14 +310,10 @@ namespace BetterMe.Api.Controllers
                 ContentType = file.ContentType,
                 FileSize = file.Length,
                 UploadedAt = DateTime.UtcNow,
-                Url = $"/api/tasks/{id}/attachments/{attachment.Id}" // Will be set after save
+                Url = null // Will be set by AutoMapper or after save
             };
 
             _context.TaskAttachments.Add(attachment);
-            await _context.SaveChangesAsync();
-
-            // Update URL with the actual attachment ID
-            attachment.Url = $"/api/tasks/{id}/attachments/{attachment.Id}";
             await _context.SaveChangesAsync();
 
             return Ok(_mapper.Map<AttachmentResponse>(attachment));
