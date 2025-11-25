@@ -82,6 +82,9 @@ namespace BetterMe.Api.Models
         // My Day feature
         public bool IsInMyDay { get; set; } = false;
         public DateTime? AddedToMyDayAt { get; set; }
+
+        // Reminders
+        public List<TaskReminder> Reminders { get; set; } = new List<TaskReminder>();
     }
 
     // NEW: DTO for recurrence configuration

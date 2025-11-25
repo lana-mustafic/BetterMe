@@ -11,6 +11,9 @@ using BetterMe.Api.Repositories.Interfaces;
 using BetterMe.Api.Repositories.Concrete;
 using AutoMapper;
 using BetterMe.Api.Services.Concrete;
+using BetterMe.Api.Filters;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,14 +39,21 @@ builder.Services.AddCors(options =>
 });
 
 // Database (PostgreSQL)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing.");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString))
-        throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing.");
-
     options.UseNpgsql(connectionString);
 });
+
+// Hangfire for background jobs
+builder.Services.AddHangfire(config =>
+{
+    config.UsePostgreSqlStorage(connectionString);
+});
+builder.Services.AddHangfireServer();
 
 // JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
@@ -81,6 +91,9 @@ builder.Services.AddScoped<IFocusSessionService, FocusSessionService>();
 builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
 builder.Services.AddScoped<ICollaborationService, CollaborationService>();
 builder.Services.AddScoped<INaturalLanguageParser, NaturalLanguageParser>();
+builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ReminderBackgroundJob>();
 
 var app = builder.Build();
 
@@ -100,6 +113,15 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Hangfire Dashboard (only in development)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new Hangfire.DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
+
 app.MapControllers();
 
 // Apply Migrations + Seed Database
@@ -109,6 +131,12 @@ using (var scope = app.Services.CreateScope())
     context.Database.Migrate();
     SeedData.Initialize(context);
 }
+
+// Schedule recurring job for processing reminders (runs every minute)
+RecurringJob.AddOrUpdate<ReminderBackgroundJob>(
+    "process-due-reminders",
+    job => job.ProcessDueReminders(),
+    Cron.Minutely);
 
 // Render Dynamic Port Binding
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";

@@ -111,6 +111,10 @@ namespace BetterMe.Api.Mapping
             CreateMap<TaskAttachment, AttachmentResponse>()
                 .ForMember(dest => dest.Url, opt => opt.MapFrom(src => 
                     src.Url ?? $"/api/tasks/{src.TodoTaskId}/attachments/{src.Id}"));
+
+            // TaskReminder -> ReminderResponse mapping
+            CreateMap<TaskReminder, ReminderResponse>()
+                .ForMember(dest => dest.TaskTitle, opt => opt.MapFrom(src => src.Task != null ? src.Task.Title : string.Empty));
         }
     }
 }

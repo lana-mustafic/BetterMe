@@ -24,6 +24,9 @@ namespace BetterMe.Api.Data
         public DbSet<TaskComment> TaskComments { get; set; }
         public DbSet<TaskActivity> TaskActivities { get; set; }
         public DbSet<SharedTemplate> SharedTemplates { get; set; }
+        public DbSet<TaskReminder> TaskReminders { get; set; }
+        public DbSet<UserNotificationSettings> UserNotificationSettings { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -402,6 +405,114 @@ namespace BetterMe.Api.Data
 
                 // Set default values
                 entity.Property(ta => ta.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // TaskReminder configuration
+            modelBuilder.Entity<TaskReminder>(entity =>
+            {
+                entity.HasKey(tr => tr.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(tr => new { tr.TaskId, tr.IsActive });
+                entity.HasIndex(tr => new { tr.UserId, tr.RemindAt, tr.IsSent });
+                entity.HasIndex(tr => tr.RemindAt);
+
+                // Relationship with TodoTask
+                entity.HasOne(tr => tr.Task)
+                    .WithMany(t => t.Reminders)
+                    .HasForeignKey(tr => tr.TaskId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with User
+                entity.HasOne(tr => tr.User)
+                    .WithMany()
+                    .HasForeignKey(tr => tr.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Set default values
+                entity.Property(tr => tr.ReminderType)
+                    .HasDefaultValue("before_due");
+
+                entity.Property(tr => tr.NotificationMethod)
+                    .HasDefaultValue("browser");
+
+                entity.Property(tr => tr.IsSent)
+                    .HasDefaultValue(false);
+
+                entity.Property(tr => tr.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.Property(tr => tr.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // UserNotificationSettings configuration
+            modelBuilder.Entity<UserNotificationSettings>(entity =>
+            {
+                entity.HasKey(uns => uns.Id);
+
+                // One-to-one relationship with User
+                entity.HasOne(uns => uns.User)
+                    .WithOne(u => u.NotificationSettings)
+                    .HasForeignKey<UserNotificationSettings>(uns => uns.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(uns => uns.UserId).IsUnique();
+
+                // Set default values
+                entity.Property(uns => uns.EnableBrowserNotifications)
+                    .HasDefaultValue(true);
+
+                entity.Property(uns => uns.EnableReminders)
+                    .HasDefaultValue(true);
+
+                entity.Property(uns => uns.DefaultReminderMinutes)
+                    .HasDefaultValue(30);
+
+                entity.Property(uns => uns.ActiveDays)
+                    .HasDefaultValue("0,1,2,3,4,5,6");
+
+                entity.Property(uns => uns.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // Notification configuration
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => n.TaskId);
+
+                // Relationship with User
+                entity.HasOne(n => n.User)
+                    .WithMany(u => u.Notifications)
+                    .HasForeignKey(n => n.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship with TodoTask
+                entity.HasOne(n => n.Task)
+                    .WithMany()
+                    .HasForeignKey(n => n.TaskId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Relationship with TaskReminder
+                entity.HasOne(n => n.Reminder)
+                    .WithMany()
+                    .HasForeignKey(n => n.ReminderId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Set default values
+                entity.Property(n => n.Type)
+                    .HasDefaultValue("reminder");
+
+                entity.Property(n => n.IsRead)
+                    .HasDefaultValue(false);
+
+                entity.Property(n => n.CreatedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

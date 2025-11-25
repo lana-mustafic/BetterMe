@@ -41,5 +41,11 @@ namespace BetterMe.Api.Models
 
         // NEW: Navigation property for Tags
         public List<Tag> Tags { get; set; } = new List<Tag>();
+
+        // Notification settings
+        public UserNotificationSettings? NotificationSettings { get; set; }
+
+        // Notifications
+        public List<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }
