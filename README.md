@@ -1,172 +1,222 @@
-<div align="center">
+# BetterMe — Full-Stack Productivity, Habits & Focus Platform
 
-# 🧠 BetterMe — Personal Productivity & Habit Tracking App
+BetterMe is a modern, full-stack productivity and habit-tracking application designed to help users organize their lives, build strong habits, stay focused, and level up through gamification.
 
-A modern full-stack productivity app to help users **organize daily tasks, build habits, track progress, and stay accountable**.
-
-</div>
+With a clean UI, powerful task management, deep analytics, reminders, collaboration, and a customizable focus system, BetterMe is built to be an all-in-one personal improvement platform.
 
 ---
 
-<div align="center">
-<br><br/>
+## Live Demo  
+👉 **https://betterme-frontend.onrender.com/**
 
-| Frontend | Backend (Swagger API) |
-|---------|------------------------|
-| <a href="https://betterme-frontend.onrender.com" target="_blank"><img src="https://img.shields.io/badge/Live%20Frontend-0d1117?style=for-the-badge&logo=angular&logoColor=white&color=red" /></a> | <a href="https://betterme-pihl.onrender.com/swagger/index.html" target="_blank"><img src="https://img.shields.io/badge/Swagger%20API-0d1117?style=for-the-badge&logo=swagger&logoColor=white&color=brightgreen" /></a> |
-
-<br><br/>
-
-### 🚀 [Try the Live Demo](https://betterme-frontend.onrender.com/)
-
-<a href="https://betterme-frontend.onrender.com/" target="_blank">
-  <img src="https://img.shields.io/badge/🚀%20Live%20Demo-4ade80?style=for-the-badge&logo=rocket&logoColor=white&labelColor=0d1117" alt="Live Demo" />
-</a>
-
-</div>
-
-> **Note:** The application may take a few seconds to load on first visit — Render free tier sleeps when idle. Just retry after a moment 😊
+*(First load may take a few seconds due to Render free tier.)*
 
 ---
 
+# Features Overview
 
+BetterMe combines advanced backend engineering with a smooth, fast, and interactive Angular UI.
 
-
-## Project Overview
-
-BetterMe is a full-stack productivity and habit-tracking application built using .NET 8 for the backend and Angular 20 for the frontend.
-It provides a smooth user experience for managing tasks, building habits, tracking progress, and maintaining personal discipline — all with a secure and modern architecture.
-
-This project is ideal for:
-
-- Demonstrating strong full-stack engineering skills
-
-- Showcasing secure authentication and authorization flows
-
-- Practicing API + Frontend integration and state management
-
-- Serving as a base for more advanced personal productivity or business applications
+## Core Modules
+- **Task Management** — List, Kanban, Calendar, My Day, rich-text descriptions, tags, priorities  
+- **Habit Tracking** — Streaks, completion history, analytics, reminders  
+- **Focus Mode & Pomodoro** — Fully customizable, integrated with tasks  
+- **Gamification** — Levels, points, achievements, streaks, leaderboards  
+- **Collaboration** — Shared tasks, comments, assignments, activity feed  
+- **Notifications** — Tasks, habits, achievements, system alerts  
+- **Advanced Analytics** — Charts, insights, completion patterns, category distribution  
+- **Natural Language Processing** — Smart parsing of dates, priorities, and tags  
+- **Modern UI/UX** — Glassmorphism, dark/light mode, responsive, keyboard shortcuts  
 
 ---
 
-## Features
+# Tech Stack
 
-- ✅ **User Authentication** (Register, Login, JWT-based sessions)
-- ✅ **Profile Management**
-- ✅ **Create & Manage Tasks**
-- ✅ **Support for Recurring / Habit Tasks**
-- ✅ **Tag System** for categorizing tasks
-- ✅ **Progress tracking**
-- ✅ **Responsive UI for mobile & desktop**
-- ✅ **Protected routes & secure API endpoints**
+## Backend (ASP.NET Core 8)
+- C# + ASP.NET Core Web API  
+- PostgreSQL + Entity Framework Core  
+- JWT authentication with refresh tokens  
+- Hangfire background jobs  
+- AutoMapper, Repository Pattern, Service Layer  
+- Swagger/OpenAPI documentation  
+- Docker-ready infrastructure  
+
+## Frontend (Angular 20 – Standalone Components)
+- Angular + TypeScript  
+- Angular CDK (drag & drop, overlays)  
+- Chart.js + ng2-charts  
+- Quill rich text editor  
+- RxJS state management  
+- Custom CSS (glassmorphism theme)  
+- Fully responsive UI + SSR-ready  
 
 ---
 
+# Detailed Feature Breakdown
 
-## Repository Structure
-Here is the top-level layout:
+## Authentication & User Profiles
+- JWT login & registration  
+- Password hashing, reset, change  
+- Persistent sessions  
+- Profile editing  
+- User preferences & security controls  
+
+---
+
+## Advanced Task Management
+- Smart NLP task creation (e.g., “Tomorrow at 3pm high priority pay bills #finance”)  
+- Categories, tags, priorities, due dates  
+- Rich text descriptions (Quill)  
+- Subtasks, dependencies, recurring tasks  
+- Attachments, reminders, activity feed  
+- Multiple views:
+  - **List View**
+  - **Kanban Board**
+  - **Calendar**
+  - **My Day**
+
+---
+
+## Habit Tracking System
+- Custom habits with frequency, difficulty, icons, color themes  
+- Streak tracking + contribution grid  
+- Habit analytics (charts, summaries, heatmaps)  
+- Habit reminders  
+- Today view / All habits / Stats view  
+
+---
+
+## Focus Mode (Pomodoro)
+- Customizable work/break times  
+- Session history  
+- Time tracking per task  
+- Distraction-free UI  
+- Session analytics  
+
+---
+
+## Gamification
+- Points for tasks & habits  
+- Level system with XP  
+- Achievements (streaks, milestones, completions)  
+- Leaderboards  
+- Streak stats and visualizations  
+
+---
+
+## Collaboration & Sharing
+- Task sharing with permissions  
+- Task assignment  
+- Real-time threaded comments  
+- Activity feed (audit log)  
+- Shared templates  
+
+---
+
+## Analytics & Reporting
+- Task completion trends  
+- Category breakdown  
+- Priority analysis  
+- Weekly performance charts  
+- Time tracking insights  
+
+---
+
+## Notifications
+- Task reminders & overdue alerts  
+- Habit notifications  
+- Achievement notifications  
+- Activity updates  
+- Notification center with preferences  
+
+---
+
+# UI & UX Highlights
+- Glassmorphism interface  
+- Light / Dark / Auto themes  
+- Custom accent colors  
+- Fully mobile-responsive  
+- Keyboard shortcuts  
+- Skeleton loaders, empty states, onboarding tour  
+
+---
+
+# Project Architecture
+
+## Backend Structure
 
 ```bash
-BetterMe/
-├── backend/ # .NET 8 Web API project (C#)
-│ └── BetterMe.Api/
-├── frontend/ # Angular 20 SPA project
-│ └── betterme/
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
+BetterMe.Api/
+├── Controllers/
+├── Models/
+├── DTOs/
+├── Services/
+├── Repositories/
+├── Data/
+└── Program.cs
 ```
 
----
-
-## Getting Started
-
-### Prerequisites
-
-- .NET 8 SDK installed on your development machine.  
-- Node.js (LTS) + Angular CLI installed.  
-- SQL Server (or compatible) installed and accessible (LocalDB or other).  
-- Docker Desktop (optional but recommended for containerized setup).  
+**Architecture Principles**
+- Repository Pattern  
+- DI everywhere  
+- DTO mapping with AutoMapper  
+- Hangfire for async jobs  
+- Validation & clean API boundaries  
 
 ---
 
-### Local Setup
-
-#### 1. Backend API Setup
+## Frontend Structure 
 ```bash
-cd backend/BetterMe.Api
-# Configure connection string in appsettings.json to point at your SQL Server instance
+betterme/
+├── app/
+│ ├── features/
+│ ├── components/
+│ ├── services/
+│ ├── guards/
+│ └── utils/
+├── assets/
+└── styles/
+```
+
+
+---
+
+# Installation & Development
+
+## Backend
+```bash
+cd BetterMe.Api
 dotnet restore
-dotnet ef database update    # Applies any migrations, creates schema
-dotnet run                   # Runs the API (typically at http://localhost:5000 or similar)
+dotnet ef database update
+dotnet run
 ```
 
-### 2. Frontend Application Setup
+## Frontend
 ```bash
-cd frontend/betterme
+cd betterme
 npm install
-ng serve                     # Launches the Angular app (typically at http://localhost:4200)
+ng serve
 ```
+---
 
-### 3. Dockerized Deployment
-
-From the root of the repo:
-```bash
-docker-compose up --build
-```
-## Usage
-
-- Navigate to the frontend URL (e.g., http://localhost:4200).  
-- Register a new user or login.  
-- Create, view, edit, and delete tasks.  
-- Filter or sort tasks by status, due date.  
-- Explore the API endpoints (e.g., via Swagger or Postman).
+# Roadmap (Future Enhancements)
+- Data export (CSV/JSON)  
+- Calendar syncing (Google/Microsoft)  
+- Mobile app (Flutter / React Native)  
+- Team workspaces & shared boards  
+- AI suggestions & productivity insights  
 
 ---
 
-## Author
-
-**Lana Mustafić**
-
-Feel free to reach out or connect with me:
-
-<div align="left" style="margin-top: 8px;">
-
-  <a href="mailto:lana-mustafic@outlook.com" target="_blank">
-    <img src="https://skillicons.dev/icons?i=gmail" width="45" height="45" alt="Email"/>
-  </a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://linkedin.com/in/lana-mustafic" target="_blank">
-    <img src="https://skillicons.dev/icons?i=linkedin" width="45" height="45" alt="LinkedIn"/>
-  </a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/lana-mustafic" target="_blank">
-    <img src="https://skillicons.dev/icons?i=github" width="45" height="45" alt="GitHub"/>
-  </a>
-
-</div>
-
-I’m passionate about building structured, maintainable applications, improving my full-stack skills, and leveraging best practices in real-world systems.
-
+# Contributing
+Pull requests are welcome. For major changes, please open an issue first.
 
 ---
 
-## Contributing
-
-Contributions are very welcome! If you’d like to:
-
-1. Fork the repository.  
-2. Create a feature branch (`git checkout -b feature/YourFeature`).  
-3. Commit your changes (`git commit -m 'Add YourFeature'`).  
-4. Push to your branch (`git push origin feature/YourFeature`).  
-5. Open a Pull Request – I’ll review and provide feedback.  
-
-Please follow the existing code style and include documentation/tests where appropriate.  
+# License
+This project is licensed under the MIT License.
 
 ---
 
-## Acknowledgements
-
-- Thanks to all developers and open-source libraries that make full-stack development accessible.  
-- Inspired by modern web architecture patterns and container-first deployment strategies.  
+# Support & Feedback
+If you like this project, consider giving it a ⭐ on GitHub — it really helps!
