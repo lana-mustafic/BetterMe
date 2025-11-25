@@ -18,6 +18,7 @@ namespace BetterMe.Api.Data
         public DbSet<Habit> Habits { get; set; }
         public DbSet<HabitCompletion> HabitCompletions { get; set; }
         public DbSet<FocusSession> FocusSessions { get; set; }
+        public DbSet<TaskTemplate> TaskTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -215,6 +216,52 @@ namespace BetterMe.Api.Data
 
                 // FIXED: PostgreSQL uses NOW() instead of GETUTCDATE()
                 entity.Property(fs => fs.StartedAt)
+                    .HasDefaultValueSql("NOW()");
+            });
+
+            // TaskTemplate configuration
+            modelBuilder.Entity<TaskTemplate>(entity =>
+            {
+                entity.HasKey(tt => tt.Id);
+
+                // Indexes for efficient queries
+                entity.HasIndex(tt => new { tt.UserId, tt.IsFavorite });
+                entity.HasIndex(tt => tt.CreatedAt);
+
+                // Relationship with User
+                entity.HasOne(tt => tt.User)
+                    .WithMany()
+                    .HasForeignKey(tt => tt.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Set default values
+                entity.Property(tt => tt.Category)
+                    .HasDefaultValue("Other");
+
+                entity.Property(tt => tt.Priority)
+                    .HasDefaultValue(1);
+
+                entity.Property(tt => tt.IsRecurring)
+                    .HasDefaultValue(false);
+
+                entity.Property(tt => tt.RecurrencePattern)
+                    .HasDefaultValue("none");
+
+                entity.Property(tt => tt.RecurrenceInterval)
+                    .HasDefaultValue(1);
+
+                entity.Property(tt => tt.UseCount)
+                    .HasDefaultValue(0);
+
+                entity.Property(tt => tt.IsFavorite)
+                    .HasDefaultValue(false);
+
+                // TagsJson is stored as string, conversion handled in model
+                entity.Property(tt => tt.TagsJson)
+                    .HasDefaultValue("[]");
+
+                // FIXED: PostgreSQL uses NOW() instead of GETUTCDATE()
+                entity.Property(tt => tt.CreatedAt)
                     .HasDefaultValueSql("NOW()");
             });
         }

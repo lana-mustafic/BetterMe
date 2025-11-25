@@ -78,6 +78,7 @@ builder.Services.AddScoped<ITodoTaskService, TodoTaskService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IHabitService, HabitService>();
 builder.Services.AddScoped<IFocusSessionService, FocusSessionService>();
+builder.Services.AddScoped<ITaskTemplateService, TaskTemplateService>();
 
 var app = builder.Build();
 

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { TaskService } from '../../services/task.service';
+import { TaskTemplateService, TaskTemplate, CreateTaskTemplateRequest } from '../../services/task-template.service';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
 import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
@@ -76,6 +77,10 @@ interface Category {
                 <span class="btn-icon">+</span>
                 Add New Task
               </button>
+              <button class="btn btn-outline" (click)="showTemplatesModal = true">
+                <span class="btn-icon">📋</span>
+                Templates
+              </button>
               <button class="btn btn-outline" (click)="showTagManager = true">
                 <span class="btn-icon">🏷️</span>
                 Manage Tags
@@ -129,6 +134,192 @@ interface Category {
           <!-- Kanban Board View -->
           @if (activeView === 'kanban') {
             <app-kanban-board></app-kanban-board>
+          }
+
+          <!-- Templates Management Modal -->
+          @if (showTemplatesModal) {
+            <div class="modal-overlay" (click)="showTemplatesModal = false">
+              <div class="modal-content templates-modal glass-card" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Task Templates</h3>
+                  <button class="close-btn" (click)="showTemplatesModal = false">×</button>
+                </div>
+                <div class="modal-body">
+                  @if (loadingTemplates) {
+                    <p>Loading templates...</p>
+                  } @else if (templates.length === 0) {
+                    <div class="empty-templates">
+                      <p>No templates yet. Create one by saving a task as a template!</p>
+                    </div>
+                  } @else {
+                    <div class="templates-list">
+                      @for (template of templates; track template.id) {
+                        <div class="template-item" [class.favorite]="template.isFavorite">
+                          <div class="template-item-content">
+                            <div class="template-item-header">
+                              <h4>
+                                @if (template.isFavorite) {
+                                  <span class="favorite-star">⭐</span>
+                                }
+                                {{ template.name }}
+                              </h4>
+                              <div class="template-item-actions">
+                                <button class="btn-icon-small" (click)="toggleTemplateFavorite(template.id)" title="Toggle favorite">
+                                  {{ template.isFavorite ? '⭐' : '☆' }}
+                                </button>
+                                <button class="btn-icon-small" (click)="editTemplate(template)" title="Edit">
+                                  ✏️
+                                </button>
+                                <button class="btn-icon-small" (click)="deleteTemplate(template.id)" title="Delete">
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                            <p class="template-item-title">{{ template.title }}</p>
+                            @if (template.description) {
+                              <p class="template-item-description">{{ template.description }}</p>
+                            }
+                            <div class="template-item-meta">
+                              <span class="meta-badge">{{ template.category }}</span>
+                              <span class="meta-badge priority-{{ template.priority }}">
+                                {{ getPriorityText(template.priority.toString()) }}
+                              </span>
+                              @if (template.useCount > 0) {
+                                <span class="meta-badge">Used {{ template.useCount }}x</span>
+                              }
+                            </div>
+                            <button class="btn btn-gradient btn-sm" (click)="createTaskFromTemplate(template)">
+                              Use Template
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Save as Template Modal -->
+          @if (showSaveAsTemplateModal) {
+            <div class="modal-overlay" (click)="showSaveAsTemplateModal = false">
+              <div class="modal-content preset-modal glass-card" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Save as Template</h3>
+                  <button class="close-btn" (click)="showSaveAsTemplateModal = false">×</button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label class="form-label">Template Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="templateName"
+                      placeholder="e.g., 'Weekly Review', 'Morning Routine'"
+                      (keydown.enter)="saveCurrentTaskAsTemplate()"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Template Description (optional)</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="templateDescription"
+                      placeholder="Describe when to use this template"
+                    />
+                  </div>
+                  <div class="preset-preview">
+                    <strong>Task Details:</strong>
+                    <ul>
+                      <li>Title: {{ newTaskTitle || '(empty)' }}</li>
+                      <li>Category: {{ newTaskCategory || 'Other' }}</li>
+                      <li>Priority: {{ getPriorityText(newTaskPriority.toString()) }}</li>
+                      @if (newTaskEstimatedDuration) {
+                        <li>Duration: {{ newTaskEstimatedDuration }} min</li>
+                      }
+                      @if (newTaskTags.length > 0) {
+                        <li>Tags: {{ newTaskTags.join(', ') }}</li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button class="btn btn-outline" (click)="showSaveAsTemplateModal = false">Cancel</button>
+                  <button class="btn btn-gradient" (click)="saveCurrentTaskAsTemplate()" [disabled]="!templateName.trim()">
+                    Save Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Edit Template Modal -->
+          @if (showEditTemplateModal && editingTemplate) {
+            <div class="modal-overlay" (click)="showEditTemplateModal = false">
+              <div class="modal-content preset-modal glass-card" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Edit Template</h3>
+                  <button class="close-btn" (click)="showEditTemplateModal = false">×</button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label class="form-label">Template Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editingTemplate.name"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Template Description</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editingTemplate.description"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Task Title</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editingTemplate.title"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Task Description</label>
+                    <textarea
+                      class="form-control"
+                      [(ngModel)]="editingTemplate.taskDescription"
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-control" [(ngModel)]="editingTemplate.category">
+                      @for (category of availableCategoriesWithIcons; track category.name) {
+                        <option [value]="category.name">{{ category.icon }} {{ category.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select class="form-control" [(ngModel)]="editingTemplate.priority">
+                      <option [value]="1">Low</option>
+                      <option [value]="2">Medium</option>
+                      <option [value]="3">High</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button class="btn btn-outline" (click)="showEditTemplateModal = false">Cancel</button>
+                  <button class="btn btn-gradient" (click)="updateTemplate()">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
           }
 
           <!-- Tag Manager Modal -->
@@ -1098,7 +1289,76 @@ interface Category {
           <!-- Create/Edit Task Form (only show in list view) -->
           @if (showCreateForm && activeView === 'list') {
             <div class="create-task-form glass-card">
-              <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
+              <div class="form-header">
+                <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
+                @if (!editingTaskId) {
+                  <div class="form-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" (click)="showTemplatePicker = !showTemplatePicker">
+                      <span class="btn-icon">📋</span>
+                      Use Template
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" (click)="showSaveAsTemplateModal = true" [disabled]="!canSaveAsTemplate()">
+                      <span class="btn-icon">💾</span>
+                      Save as Template
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <!-- Template Picker -->
+              @if (showTemplatePicker && !editingTaskId) {
+                <div class="template-picker">
+                  <div class="template-picker-header">
+                    <h4>Select a Template</h4>
+                    <button type="button" class="close-btn" (click)="showTemplatePicker = false">×</button>
+                  </div>
+                  @if (loadingTemplates) {
+                    <p>Loading templates...</p>
+                  } @else if (templates.length === 0) {
+                    <p class="no-templates">No templates available. Create one by saving a task as a template!</p>
+                  } @else {
+                    <div class="templates-grid">
+                      @for (template of templates; track template.id) {
+                        <div 
+                          class="template-card"
+                          [class.favorite]="template.isFavorite"
+                          (click)="loadTemplate(template)"
+                        >
+                          <div class="template-header">
+                            <h5>{{ template.name }}</h5>
+                            @if (template.isFavorite) {
+                              <span class="favorite-icon">⭐</span>
+                            }
+                          </div>
+                          <p class="template-title">{{ template.title }}</p>
+                          @if (template.description) {
+                            <p class="template-description">{{ template.description }}</p>
+                          }
+                          <div class="template-meta">
+                            <span class="template-category">{{ template.category }}</span>
+                            <span class="template-priority priority-{{ template.priority }}">
+                              {{ getPriorityText(template.priority.toString()) }}
+                            </span>
+                            @if (template.useCount > 0) {
+                              <span class="template-uses">Used {{ template.useCount }}x</span>
+                            }
+                          </div>
+                          @if (template.tags && template.tags.length > 0) {
+                            <div class="template-tags">
+                              @for (tag of template.tags.slice(0, 3); track tag) {
+                                <span class="template-tag">{{ tag }}</span>
+                              }
+                              @if (template.tags.length > 3) {
+                                <span class="template-tag">+{{ template.tags.length - 3 }}</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
               
               <!-- Smart Suggestions -->
               @if (suggestedCategory || suggestedTags.length > 0) {
@@ -3204,10 +3464,296 @@ interface Category {
       text-align: center;
     }
 
+    /* Template Picker */
+    .template-picker {
+      margin-bottom: 1.5rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .template-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .template-picker-header h4 {
+      color: white;
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .template-card {
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .template-card:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .template-card.favorite {
+      border-color: rgba(255, 215, 0, 0.5);
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .template-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .template-header h5 {
+      color: white;
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .favorite-icon {
+      font-size: 1rem;
+    }
+
+    .template-title {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    .template-description {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      margin: 0.5rem 0;
+    }
+
+    .template-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+    }
+
+    .template-category {
+      padding: 0.25rem 0.5rem;
+      background: rgba(102, 126, 234, 0.3);
+      border-radius: 8px;
+      color: white;
+      font-size: 0.75rem;
+    }
+
+    .template-priority {
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .template-priority.priority-1 {
+      background: rgba(39, 174, 96, 0.3);
+    }
+
+    .template-priority.priority-2 {
+      background: rgba(243, 156, 18, 0.3);
+    }
+
+    .template-priority.priority-3 {
+      background: rgba(231, 76, 60, 0.3);
+    }
+
+    .template-uses {
+      padding: 0.25rem 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.75rem;
+    }
+
+    .template-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .template-tag {
+      padding: 0.2rem 0.5rem;
+      background: rgba(102, 126, 234, 0.2);
+      border-radius: 12px;
+      color: white;
+      font-size: 0.7rem;
+    }
+
+    .no-templates {
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      padding: 2rem;
+    }
+
+    /* Templates Modal */
+    .templates-modal {
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .templates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .template-item {
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .template-item.favorite {
+      border-color: rgba(255, 215, 0, 0.5);
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .template-item-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .template-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .template-item-header h4 {
+      color: white;
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .favorite-star {
+      font-size: 1rem;
+    }
+
+    .template-item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-icon-small {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .btn-icon-small:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .template-item-title {
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .template-item-description {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .template-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .meta-badge {
+      padding: 0.4rem 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    .meta-badge.priority-1 {
+      background: rgba(39, 174, 96, 0.3);
+    }
+
+    .meta-badge.priority-2 {
+      background: rgba(243, 156, 18, 0.3);
+    }
+
+    .meta-badge.priority-3 {
+      background: rgba(231, 76, 60, 0.3);
+    }
+
+    .empty-templates {
+      text-align: center;
+      padding: 3rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     /* Create Task Form */
     .create-task-form {
       padding: 2rem;
       margin-bottom: 2rem;
+    }
+
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h3 {
+      color: white;
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .form-header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
     }
 
     .create-task-form h3 {
@@ -3705,6 +4251,7 @@ interface Category {
 })
 export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
+  private templateService = inject(TaskTemplateService);
   private router = inject(Router);
 
   tasks: Task[] = [];
@@ -3760,6 +4307,17 @@ export class TasksComponent implements OnInit {
   showSavePresetModal: boolean = false;
   presetName: string = '';
   showPresetsMenu: boolean = false;
+
+  // Task Templates
+  templates: TaskTemplate[] = [];
+  loadingTemplates: boolean = false;
+  editingTemplate: TaskTemplate | null = null;
+  templateName: string = '';
+  templateDescription: string = '';
+  showTemplatesModal: boolean = false;
+  showTemplatePicker: boolean = false;
+  showSaveAsTemplateModal: boolean = false;
+  showEditTemplateModal: boolean = false;
 
   // NEW: Smart Organization Properties
   smartCategories: TaskCategory[] = [];
@@ -4534,6 +5092,144 @@ export class TasksComponent implements OnInit {
       // Scroll to top of results
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  // Task Templates
+  loadTemplates(): void {
+    this.loadingTemplates = true;
+    this.templateService.getAllTemplates().subscribe({
+      next: (templates) => {
+        this.templates = templates;
+        this.loadingTemplates = false;
+      },
+      error: (err) => {
+        console.error('Failed to load templates:', err);
+        this.loadingTemplates = false;
+      }
+    });
+  }
+
+  loadTemplate(template: TaskTemplate): void {
+    this.newTaskTitle = template.title;
+    this.newTaskDescription = template.taskDescription || '';
+    this.newTaskCategory = template.category;
+    this.newTaskPriority = template.priority;
+    this.newTaskEstimatedDuration = template.estimatedDurationMinutes || null;
+    this.newTaskDifficulty = template.difficulty || 'medium';
+    this.newTaskTags = [...(template.tags || [])];
+    this.newTaskIsRecurring = template.isRecurring;
+    this.newTaskRecurrencePattern = template.recurrencePattern;
+    this.newTaskRecurrenceInterval = template.recurrenceInterval;
+    this.showTemplatePicker = false;
+  }
+
+  createTaskFromTemplate(template: TaskTemplate): void {
+    this.isLoading = true;
+    this.templateService.createTaskFromTemplate(template.id).subscribe({
+      next: (task) => {
+        this.loadTasks();
+        this.showTemplatesModal = false;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to create task from template:', err);
+        this.isLoading = false;
+        alert('Failed to create task from template. Please try again.');
+      }
+    });
+  }
+
+  canSaveAsTemplate(): boolean {
+    return !!(this.newTaskTitle && this.newTaskTitle.trim());
+  }
+
+  saveCurrentTaskAsTemplate(): void {
+    if (!this.templateName.trim() || !this.newTaskTitle.trim()) {
+      return;
+    }
+
+    const templateRequest: CreateTaskTemplateRequest = {
+      name: this.templateName.trim(),
+      description: this.templateDescription.trim() || undefined,
+      title: this.newTaskTitle,
+      taskDescription: this.newTaskDescription || undefined,
+      category: this.newTaskCategory || 'Other',
+      priority: this.newTaskPriority,
+      estimatedDurationMinutes: this.newTaskEstimatedDuration || undefined,
+      difficulty: this.newTaskDifficulty || undefined,
+      isRecurring: this.newTaskIsRecurring,
+      recurrencePattern: this.newTaskRecurrencePattern,
+      recurrenceInterval: this.newTaskRecurrenceInterval,
+      tags: this.newTaskTags
+    };
+
+    this.templateService.createTemplate(templateRequest).subscribe({
+      next: () => {
+        this.loadTemplates();
+        this.showSaveAsTemplateModal = false;
+        this.templateName = '';
+        this.templateDescription = '';
+      },
+      error: (err) => {
+        console.error('Failed to save template:', err);
+        alert('Failed to save template. Please try again.');
+      }
+    });
+  }
+
+  editTemplate(template: TaskTemplate): void {
+    this.editingTemplate = { ...template };
+    this.showEditTemplateModal = true;
+  }
+
+  updateTemplate(): void {
+    if (!this.editingTemplate) return;
+
+    const updateRequest = {
+      name: this.editingTemplate.name,
+      description: this.editingTemplate.description,
+      title: this.editingTemplate.title,
+      taskDescription: this.editingTemplate.taskDescription,
+      category: this.editingTemplate.category,
+      priority: this.editingTemplate.priority
+    };
+
+    this.templateService.updateTemplate(this.editingTemplate.id, updateRequest).subscribe({
+      next: () => {
+        this.loadTemplates();
+        this.showEditTemplateModal = false;
+        this.editingTemplate = null;
+      },
+      error: (err) => {
+        console.error('Failed to update template:', err);
+        alert('Failed to update template. Please try again.');
+      }
+    });
+  }
+
+  deleteTemplate(templateId: number): void {
+    if (confirm('Are you sure you want to delete this template?')) {
+      this.templateService.deleteTemplate(templateId).subscribe({
+        next: () => {
+          this.loadTemplates();
+        },
+        error: (err) => {
+          console.error('Failed to delete template:', err);
+          alert('Failed to delete template. Please try again.');
+        }
+      });
+    }
+  }
+
+  toggleTemplateFavorite(templateId: number): void {
+    this.templateService.toggleFavorite(templateId).subscribe({
+      next: () => {
+        this.loadTemplates();
+      },
+      error: (err) => {
+        console.error('Failed to toggle favorite:', err);
+      }
+    });
   }
   
   clearSearch(): void { this.searchTerm = ''; }

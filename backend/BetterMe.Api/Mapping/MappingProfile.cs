@@ -93,6 +93,18 @@ namespace BetterMe.Api.Mapping
             CreateMap<DailyFocusTime, DailyFocusTimeResponse>();
             CreateMap<PomodoroSettings, PomodoroSettingsResponse>();
             CreateMap<PomodoroSettingsResponse, PomodoroSettings>();
+
+            // TaskTemplate mappings
+            CreateMap<TaskTemplate, TaskTemplateResponse>()
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags));
+
+            CreateMap<CreateTaskTemplateRequest, TaskTemplate>()
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags ?? new List<string>()))
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.LastUsedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UseCount, opt => opt.Ignore())
+                .ForMember(dest => dest.IsFavorite, opt => opt.Ignore());
         }
     }
 }
