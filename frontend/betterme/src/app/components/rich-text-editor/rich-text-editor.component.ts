@@ -1,8 +1,8 @@
-import { Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, Input, AfterViewInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
-declare var Quill: any;
+// @ts-ignore - Quill types may not be available
+import Quill from 'quill';
 
 @Component({
   selector: 'app-rich-text-editor',
@@ -29,19 +29,26 @@ declare var Quill: any;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: text;
+      pointer-events: auto;
     }
     :host ::ng-deep .ql-container {
       font-family: inherit;
       font-size: 14px;
       color: white;
       min-height: 150px;
+      cursor: text;
+      pointer-events: auto;
     }
     :host ::ng-deep .ql-editor {
       min-height: 150px;
       color: white;
+      cursor: text;
+      pointer-events: auto;
     }
     :host ::ng-deep .ql-editor.ql-blank::before {
       color: rgba(255, 255, 255, 0.6);
+      font-style: normal;
     }
     :host ::ng-deep .ql-toolbar {
       border-top-left-radius: 8px;
@@ -53,10 +60,13 @@ declare var Quill: any;
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
     }
+    :host ::ng-deep .ql-editor:focus {
+      outline: none;
+    }
   `]
 })
-export class RichTextEditorComponent implements OnInit, ControlValueAccessor {
-  @ViewChild('editorContainer', { static: true }) editorContainer!: ElementRef;
+export class RichTextEditorComponent implements AfterViewInit, ControlValueAccessor {
+  @ViewChild('editorContainer', { static: false }) editorContainer!: ElementRef;
   
   @Input() placeholder: string = 'Enter description...';
   
@@ -64,45 +74,51 @@ export class RichTextEditorComponent implements OnInit, ControlValueAccessor {
   private onChange = (value: string) => {};
   private onTouched = () => {};
 
-  ngOnInit() {
-    // Wait for Quill to be available
-    if (typeof Quill === 'undefined') {
-      console.error('Quill is not loaded. Please ensure Quill is imported.');
+  ngAfterViewInit() {
+    // Wait for the view to be initialized
+    if (!this.editorContainer || !this.editorContainer.nativeElement) {
+      console.error('Editor container not found');
       return;
     }
 
     // Initialize Quill editor
-    this.quill = new Quill(this.editorContainer.nativeElement, {
-      theme: 'snow',
-      placeholder: this.placeholder,
-      modules: {
-        toolbar: [
-          [{ 'header': [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          [{ 'color': [] }, { 'background': [] }],
-          ['link', 'image'],
-          ['clean']
-        ]
-      }
-    });
+    try {
+      this.quill = new Quill(this.editorContainer.nativeElement, {
+        theme: 'snow',
+        placeholder: this.placeholder,
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'color': [] }, { 'background': [] }],
+            ['link', 'image'],
+            ['clean']
+          ]
+        }
+      });
 
-    // Ensure editor is enabled and focusable
-    this.quill.enable(true);
-    // Don't auto-focus - let user click to focus
+      // Ensure editor is enabled and focusable
+      this.quill.enable(true);
 
-    // Listen for text changes
-    this.quill.on('text-change', () => {
-      const content = this.quill.root.innerHTML;
-      this.onChange(content);
-    });
+      // Listen for text changes
+      this.quill.on('text-change', () => {
+        const content = this.quill.root.innerHTML;
+        this.onChange(content);
+      });
 
-    // Listen for focus events to mark as touched
-    this.quill.on('selection-change', (range: any) => {
-      if (range) {
-        this.onTouched();
-      }
-    });
+      // Listen for focus events to mark as touched
+      this.quill.on('selection-change', (range: any) => {
+        if (range) {
+          this.onTouched();
+        }
+      });
+
+      // Make editor clickable and focusable
+      this.quill.root.setAttribute('contenteditable', 'true');
+    } catch (error) {
+      console.error('Error initializing Quill editor:', error);
+    }
   }
 
   writeValue(value: string): void {
