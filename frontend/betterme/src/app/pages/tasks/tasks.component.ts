@@ -8,7 +8,6 @@ import { TaskTemplateService, TaskTemplate, CreateTaskTemplateRequest } from '..
 import { environment } from '../../../environments/environment';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
 import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
-import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
 import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
 import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
 import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
@@ -66,7 +65,6 @@ interface Category {
     KanbanBoardComponent,
     CommonModule,
     RouterLink,
-    RichTextEditorComponent,
     FileUploadComponent,
     CategoryPieChartComponent,
     WeeklyCompletionChartComponent,
@@ -1418,12 +1416,14 @@ interface Category {
                 </div>
                 <div class="form-group">
                   <label class="form-label">Description</label>
-                  <app-rich-text-editor
+                  <textarea 
+                    class="form-input"
+                    placeholder="Add more details about your task..."
                     [(ngModel)]="newTaskDescription"
                     name="description"
-                    placeholder="Task description (supports rich text formatting)"
-                    (ngModelChange)="onSmartInputChange()"
-                  ></app-rich-text-editor>
+                    rows="4"
+                    (input)="onSmartInputChange()"
+                  ></textarea>
                 </div>
                 
                 <!-- File Attachments -->
@@ -4400,6 +4400,13 @@ interface Category {
       outline: none;
       border-color: rgba(255, 255, 255, 0.5);
       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Ensure textarea matches form-input styling */
+    textarea.form-input {
+      resize: vertical;
+      font-family: inherit;
+      color: white;
     }
 
     /* Fix select dropdown visibility - make selected text always visible */
