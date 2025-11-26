@@ -33,11 +33,15 @@ declare var Quill: any;
     :host ::ng-deep .ql-container {
       font-family: inherit;
       font-size: 14px;
-      color: #333;
+      color: white;
       min-height: 150px;
     }
     :host ::ng-deep .ql-editor {
       min-height: 150px;
+      color: white;
+    }
+    :host ::ng-deep .ql-editor.ql-blank::before {
+      color: rgba(255, 255, 255, 0.6);
     }
     :host ::ng-deep .ql-toolbar {
       border-top-left-radius: 8px;
@@ -61,6 +65,12 @@ export class RichTextEditorComponent implements OnInit, ControlValueAccessor {
   private onTouched = () => {};
 
   ngOnInit() {
+    // Wait for Quill to be available
+    if (typeof Quill === 'undefined') {
+      console.error('Quill is not loaded. Please ensure Quill is imported.');
+      return;
+    }
+
     // Initialize Quill editor
     this.quill = new Quill(this.editorContainer.nativeElement, {
       theme: 'snow',
@@ -77,10 +87,21 @@ export class RichTextEditorComponent implements OnInit, ControlValueAccessor {
       }
     });
 
+    // Ensure editor is enabled and focusable
+    this.quill.enable(true);
+    // Don't auto-focus - let user click to focus
+
     // Listen for text changes
     this.quill.on('text-change', () => {
       const content = this.quill.root.innerHTML;
       this.onChange(content);
+    });
+
+    // Listen for focus events to mark as touched
+    this.quill.on('selection-change', (range: any) => {
+      if (range) {
+        this.onTouched();
+      }
     });
   }
 

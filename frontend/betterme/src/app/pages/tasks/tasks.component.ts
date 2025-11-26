@@ -1491,9 +1491,9 @@ interface Category {
                     [(ngModel)]="newTaskPriority"
                     name="priority"
                   >
-                    <option value="1">Low</option>
-                    <option value="2">Medium</option>
-                    <option value="3">High</option>
+                    <option [ngValue]="1">Low</option>
+                    <option [ngValue]="2">Medium</option>
+                    <option [ngValue]="3">High</option>
                   </select>
                 </div>
 
@@ -4402,6 +4402,30 @@ interface Category {
       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
     }
 
+    /* Fix select dropdown visibility - make selected text always visible */
+    select.form-input {
+      color: white !important;
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    select.form-input:focus {
+      color: white !important;
+      background-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Style options in dropdown */
+    select.form-input option {
+      background: #2d3748 !important;
+      color: white !important;
+      padding: 0.5rem;
+    }
+
+    /* Ensure selected option text is visible */
+    select.form-input option:checked {
+      background: #4a5568 !important;
+      color: white !important;
+    }
+
     .form-actions {
       display: flex;
       gap: 1rem;
@@ -6481,23 +6505,31 @@ export class TasksComponent implements OnInit {
   }
 
   onCreateTask(): void {
-    if (!this.newTaskTitle.trim()) {
+    // Clear any previous error messages
+    this.errorMessage = '';
+    
+    if (!this.newTaskTitle || !this.newTaskTitle.trim()) {
       this.errorMessage = 'Task title is required';
       return;
     }
 
+    // Ensure priority is a number
+    const priority = typeof this.newTaskPriority === 'string' 
+      ? parseInt(this.newTaskPriority, 10) 
+      : (this.newTaskPriority || 1);
+
     // Create the task data object with proper type handling
     // Base task data (fields supported by CreateTaskRequest)
     const baseTaskData: any = {
-      title: this.newTaskTitle,
-      description: this.newTaskDescription,
+      title: this.newTaskTitle.trim(),
+      description: this.newTaskDescription || undefined,
       dueDate: this.newTaskDueDate || undefined,
-      priority: this.newTaskPriority,
+      priority: priority,
       category: this.newTaskCategory || 'Other',
-      tags: this.newTaskTags,
-      isRecurring: this.newTaskIsRecurring,
-      recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern,
-      recurrenceInterval: this.newTaskRecurrenceInterval,
+      tags: this.newTaskTags || [],
+      isRecurring: this.newTaskIsRecurring || false,
+      recurrencePattern: this.newTaskRecurrencePattern as RecurrencePattern || 'none',
+      recurrenceInterval: this.newTaskRecurrenceInterval || 1,
       parentTaskId: this.newTaskParentTaskId || undefined,
       dependsOnTaskIds: this.newTaskDependsOnTaskIds.length > 0 ? this.newTaskDependsOnTaskIds : undefined
     };
@@ -6538,8 +6570,10 @@ export class TasksComponent implements OnInit {
       });
     } else {
       // For create, only use baseTaskData (without estimatedDuration/difficulty)
+      console.log('Creating task with data:', baseTaskData);
       this.taskService.createTask(baseTaskData).subscribe({
         next: async (newTask: Task) => {
+          console.log('Task created successfully:', newTask);
           // Create subtasks if any were added
           if (this.newTaskSubtasks.length > 0) {
             for (const subtaskTitle of this.newTaskSubtasks) {
@@ -6556,8 +6590,9 @@ export class TasksComponent implements OnInit {
           this.errorMessage = '';
         },
         error: (error: any) => {
-          this.errorMessage = 'Failed to create task. Please try again.';
           console.error('Error creating task:', error);
+          this.errorMessage = error?.error?.message || error?.message || 'Failed to create task. Please try again.';
+          // Keep form open so user can fix and retry
         }
       });
     }
