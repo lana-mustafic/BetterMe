@@ -735,6 +735,331 @@ interface Category {
             </div>
           }
 
+          <!-- Create/Edit Task Form (only show in list view) -->
+          @if (showCreateForm && activeView === 'list') {
+            <div class="create-task-form glass-card">
+              <div class="form-header">
+                <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
+                @if (!editingTaskId) {
+                  <div class="form-header-actions">
+                    <button type="button" class="btn btn-outline btn-sm" (click)="showTemplatePicker = !showTemplatePicker">
+                      <span class="btn-icon">📋</span>
+                      Use Template
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" (click)="showSaveAsTemplateModal = true" [disabled]="!canSaveAsTemplate()">
+                      <span class="btn-icon">💾</span>
+                      Save as Template
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <!-- Template Picker -->
+              @if (showTemplatePicker && !editingTaskId) {
+                <div class="template-picker">
+                  <div class="template-picker-header">
+                    <h4>Select a Template</h4>
+                    <button type="button" class="close-btn" (click)="showTemplatePicker = false">×</button>
+                  </div>
+                  @if (loadingTemplates) {
+                    <p>Loading templates...</p>
+                  } @else if (templates.length === 0) {
+                    <p class="no-templates">No templates available. Create one by saving a task as a template!</p>
+                  } @else {
+                    <div class="templates-grid">
+                      @for (template of templates; track template.id) {
+                        <div 
+                          class="template-card"
+                          [class.favorite]="template.isFavorite"
+                          (click)="loadTemplate(template)"
+                        >
+                          <div class="template-header">
+                            <h5>{{ template.name }}</h5>
+                            @if (template.isFavorite) {
+                              <span class="favorite-icon">⭐</span>
+                            }
+                          </div>
+                          <p class="template-title">{{ template.title }}</p>
+                          @if (template.description) {
+                            <p class="template-description">{{ template.description }}</p>
+                          }
+                          <div class="template-meta">
+                            <span class="template-category">{{ template.category }}</span>
+                            <span class="template-priority priority-{{ template.priority }}">
+                              {{ getPriorityText(template.priority.toString()) }}
+                            </span>
+                            @if (template.useCount > 0) {
+                              <span class="template-uses">Used {{ template.useCount }}x</span>
+                            }
+                          </div>
+                          @if (template.tags && template.tags.length > 0) {
+                            <div class="template-tags">
+                              @for (tag of template.tags.slice(0, 3); track tag) {
+                                <span class="template-tag">{{ tag }}</span>
+                              }
+                              @if (template.tags.length > 3) {
+                                <span class="template-tag">+{{ template.tags.length - 3 }}</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+              
+              <!-- Smart Suggestions -->
+              @if (suggestedCategory || suggestedTags.length > 0) {
+                <div class="smart-suggestions glass-card">
+                  <h4>💡 Smart Suggestions</h4>
+                  
+                  @if (suggestedCategory) {
+                    <div class="suggestion-item">
+                      <span>Category: {{ suggestedCategory.icon }} {{ suggestedCategory.name }}</span>
+                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
+                        Apply
+                      </button>
+                    </div>
+                  }
+                  
+                  @if (suggestedTags.length > 0) {
+                    <div class="suggestion-item">
+                      <span>Tags: {{ suggestedTags.join(', ') }}</span>
+                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
+                        Apply All
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              <form (ngSubmit)="onCreateTask()">
+                <div class="form-group">
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    placeholder="Task title"
+                    [(ngModel)]="newTaskTitle"
+                    name="title"
+                    (input)="onSmartInputChange()"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea 
+                    class="form-input"
+                    placeholder="Add more details about your task..."
+                    [(ngModel)]="newTaskDescription"
+                    name="description"
+                    rows="4"
+                    (input)="onSmartInputChange()"
+                  ></textarea>
+                </div>
+                
+                <!-- File Attachments -->
+                <div class="form-group">
+                  <label class="form-label">Attachments</label>
+                  <app-file-upload
+                    [taskId]="editingTaskId || undefined"
+                    (attachmentsChange)="onAttachmentsChange($event)"
+                  ></app-file-upload>
+                </div>
+                
+                <!-- Enhanced Category Dropdown -->
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskCategory"
+                    name="category"
+                  >
+                    <option value="">Select Category</option>
+                    @for (category of enhancedCategories; track category.name) {
+                      <option [value]="category.name">
+                        {{ category.icon }} {{ category.name }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Tag Input -->
+                <div class="form-group">
+                  <label class="form-label">Tags</label>
+                  <div class="tag-input-container">
+                    <input 
+                      type="text" 
+                      class="form-input"
+                      placeholder="Add tags (press Enter to add)"
+                      [(ngModel)]="newTaskTagInput"
+                      name="tagInput"
+                      (keydown)="onTagInputKeydown($event)"
+                    />
+                  </div>
+                  <div class="tag-preview">
+                    @for (tag of newTaskTags; track tag) {
+                      <span class="tag-badge">
+                        {{ tag }}
+                        <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Due Date</label>
+                  <input 
+                    type="date" 
+                    class="form-input"
+                    [(ngModel)]="newTaskDueDate"
+                    name="dueDate"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskPriority"
+                    name="priority"
+                  >
+                    <option [ngValue]="1">Low</option>
+                    <option [ngValue]="2">Medium</option>
+                    <option [ngValue]="3">High</option>
+                  </select>
+                </div>
+
+                <!-- Smart Task Properties -->
+                <div class="form-group">
+                  <label class="form-label">Estimated Duration (minutes)</label>
+                  <input 
+                    type="number" 
+                    class="form-input"
+                    placeholder="e.g., 30"
+                    [(ngModel)]="newTaskEstimatedDuration"
+                    name="estimatedDuration"
+                    min="1"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Difficulty</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskDifficulty"
+                    name="difficulty"
+                  >
+                    <option value="easy">😊 Easy</option>
+                    <option value="medium">😐 Medium</option>
+                    <option value="hard">😰 Hard</option>
+                  </select>
+                </div>
+
+                <!-- Parent Task Selection -->
+                <div class="form-group">
+                  <label class="form-label">Parent Task (optional)</label>
+                  <select 
+                    class="form-input"
+                    [(ngModel)]="newTaskParentTaskId"
+                    name="parentTaskId"
+                    (change)="onParentTaskChange()"
+                  >
+                    <option [value]="null">None (Top-level task)</option>
+                    @for (task of availableParentTasks; track task.id) {
+                      <option [value]="task.id">{{ task.title }}</option>
+                    }
+                  </select>
+                  <small class="form-help-text">Make this task a subtask of another task</small>
+                </div>
+
+                <!-- Subtasks Section -->
+                <div class="form-group">
+                  <label class="form-label">Subtasks</label>
+                  <div class="subtasks-form-container">
+                    <div class="subtask-input-container">
+                      <input 
+                        type="text" 
+                        class="form-input"
+                        placeholder="Add a subtask (press Enter to add)"
+                        [(ngModel)]="newSubtaskInput"
+                        name="subtaskInput"
+                        (keydown.enter)="addSubtaskToForm($event)"
+                      />
+                      <button type="button" class="btn btn-outline btn-sm" (click)="addSubtaskToForm()">
+                        Add
+                      </button>
+                    </div>
+                    @if (newTaskSubtasks.length > 0) {
+                      <ul class="subtasks-list-form">
+                        @for (subtask of newTaskSubtasks; track $index) {
+                          <li class="subtask-item-form">
+                            <span>{{ subtask }}</span>
+                            <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm($index)">
+                              ×
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Task Dependencies -->
+                <div class="form-group">
+                  <label class="form-label">Dependencies</label>
+                  <div class="dependencies-form-container">
+                    <select 
+                      class="form-input"
+                      [(ngModel)]="selectedDependencyTaskId"
+                      name="dependencyTask"
+                      (change)="addDependencyToForm()"
+                    >
+                      <option [value]="null">Select a task this depends on...</option>
+                      @for (task of availableDependencyTasks; track task.id) {
+                        <option [value]="task.id" [disabled]="newTaskDependsOnTaskIds.includes(task.id)">
+                          {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                        </option>
+                      }
+                    </select>
+                    @if (newTaskDependsOnTaskIds.length > 0) {
+                      <div class="dependencies-list-form">
+                        <label class="form-label-small">This task depends on:</label>
+                        <ul class="dependencies-list">
+                          @for (depTaskId of newTaskDependsOnTaskIds; track depTaskId) {
+                            @if (getTaskById(depTaskId)) {
+                              <li class="dependency-item-form">
+                                <span class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                                <span class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                                  {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                                </span>
+                                <button type="button" class="btn-icon-small" (click)="removeDependencyFromForm(depTaskId)">
+                                  ×
+                                </button>
+                              </li>
+                            }
+                          }
+                        </ul>
+                      </div>
+                    } @else {
+                      <p class="form-help-text">No dependencies. This task can be started immediately.</p>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-gradient">
+                    {{ editingTaskId ? 'Update Task' : 'Create Task' }}
+                  </button>
+                  <button type="button" class="btn btn-outline" (click)="showCreateForm = false; editingTaskId = null;">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          }
+
           <!-- Enhanced Filter Section (only show in list view) -->
           @if (activeView === 'list') {
             <!-- Quick Filter Presets -->
@@ -1301,331 +1626,6 @@ interface Category {
                 </div>
               </div>
             }
-          }
-
-          <!-- Create/Edit Task Form (only show in list view) -->
-          @if (showCreateForm && activeView === 'list') {
-            <div class="create-task-form glass-card">
-              <div class="form-header">
-                <h3>{{ editingTaskId ? 'Edit Task' : 'Create New Task' }}</h3>
-                @if (!editingTaskId) {
-                  <div class="form-header-actions">
-                    <button type="button" class="btn btn-outline btn-sm" (click)="showTemplatePicker = !showTemplatePicker">
-                      <span class="btn-icon">📋</span>
-                      Use Template
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" (click)="showSaveAsTemplateModal = true" [disabled]="!canSaveAsTemplate()">
-                      <span class="btn-icon">💾</span>
-                      Save as Template
-                    </button>
-                  </div>
-                }
-              </div>
-
-              <!-- Template Picker -->
-              @if (showTemplatePicker && !editingTaskId) {
-                <div class="template-picker">
-                  <div class="template-picker-header">
-                    <h4>Select a Template</h4>
-                    <button type="button" class="close-btn" (click)="showTemplatePicker = false">×</button>
-                  </div>
-                  @if (loadingTemplates) {
-                    <p>Loading templates...</p>
-                  } @else if (templates.length === 0) {
-                    <p class="no-templates">No templates available. Create one by saving a task as a template!</p>
-                  } @else {
-                    <div class="templates-grid">
-                      @for (template of templates; track template.id) {
-                        <div 
-                          class="template-card"
-                          [class.favorite]="template.isFavorite"
-                          (click)="loadTemplate(template)"
-                        >
-                          <div class="template-header">
-                            <h5>{{ template.name }}</h5>
-                            @if (template.isFavorite) {
-                              <span class="favorite-icon">⭐</span>
-                            }
-                          </div>
-                          <p class="template-title">{{ template.title }}</p>
-                          @if (template.description) {
-                            <p class="template-description">{{ template.description }}</p>
-                          }
-                          <div class="template-meta">
-                            <span class="template-category">{{ template.category }}</span>
-                            <span class="template-priority priority-{{ template.priority }}">
-                              {{ getPriorityText(template.priority.toString()) }}
-                            </span>
-                            @if (template.useCount > 0) {
-                              <span class="template-uses">Used {{ template.useCount }}x</span>
-                            }
-                          </div>
-                          @if (template.tags && template.tags.length > 0) {
-                            <div class="template-tags">
-                              @for (tag of template.tags.slice(0, 3); track tag) {
-                                <span class="template-tag">{{ tag }}</span>
-                              }
-                              @if (template.tags.length > 3) {
-                                <span class="template-tag">+{{ template.tags.length - 3 }}</span>
-                              }
-                            </div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-              
-              <!-- Smart Suggestions -->
-              @if (suggestedCategory || suggestedTags.length > 0) {
-                <div class="smart-suggestions glass-card">
-                  <h4>💡 Smart Suggestions</h4>
-                  
-                  @if (suggestedCategory) {
-                    <div class="suggestion-item">
-                      <span>Category: {{ suggestedCategory.icon }} {{ suggestedCategory.name }}</span>
-                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
-                        Apply
-                      </button>
-                    </div>
-                  }
-                  
-                  @if (suggestedTags.length > 0) {
-                    <div class="suggestion-item">
-                      <span>Tags: {{ suggestedTags.join(', ') }}</span>
-                      <button class="btn-suggestion" (click)="applySmartSuggestions()">
-                        Apply All
-                      </button>
-                    </div>
-                  }
-                </div>
-              }
-
-              <form (ngSubmit)="onCreateTask()">
-                <div class="form-group">
-                  <input 
-                    type="text" 
-                    class="form-input"
-                    placeholder="Task title"
-                    [(ngModel)]="newTaskTitle"
-                    name="title"
-                    (input)="onSmartInputChange()"
-                    required
-                  />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Description</label>
-                  <textarea 
-                    class="form-input"
-                    placeholder="Add more details about your task..."
-                    [(ngModel)]="newTaskDescription"
-                    name="description"
-                    rows="4"
-                    (input)="onSmartInputChange()"
-                  ></textarea>
-                </div>
-                
-                <!-- File Attachments -->
-                <div class="form-group">
-                  <label class="form-label">Attachments</label>
-                  <app-file-upload
-                    [taskId]="editingTaskId || undefined"
-                    (attachmentsChange)="onAttachmentsChange($event)"
-                  ></app-file-upload>
-                </div>
-                
-                <!-- Enhanced Category Dropdown -->
-                <div class="form-group">
-                  <label class="form-label">Category</label>
-                  <select 
-                    class="form-input"
-                    [(ngModel)]="newTaskCategory"
-                    name="category"
-                  >
-                    <option value="">Select Category</option>
-                    @for (category of enhancedCategories; track category.name) {
-                      <option [value]="category.name">
-                        {{ category.icon }} {{ category.name }}
-                      </option>
-                    }
-                  </select>
-                </div>
-
-                <!-- Tag Input -->
-                <div class="form-group">
-                  <label class="form-label">Tags</label>
-                  <div class="tag-input-container">
-                    <input 
-                      type="text" 
-                      class="form-input"
-                      placeholder="Add tags (press Enter to add)"
-                      [(ngModel)]="newTaskTagInput"
-                      name="tagInput"
-                      (keydown)="onTagInputKeydown($event)"
-                    />
-                  </div>
-                  <div class="tag-preview">
-                    @for (tag of newTaskTags; track tag) {
-                      <span class="tag-badge">
-                        {{ tag }}
-                        <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
-                      </span>
-                    }
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Due Date</label>
-                  <input 
-                    type="date" 
-                    class="form-input"
-                    [(ngModel)]="newTaskDueDate"
-                    name="dueDate"
-                  />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Priority</label>
-                  <select 
-                    class="form-input"
-                    [(ngModel)]="newTaskPriority"
-                    name="priority"
-                  >
-                    <option [ngValue]="1">Low</option>
-                    <option [ngValue]="2">Medium</option>
-                    <option [ngValue]="3">High</option>
-                  </select>
-                </div>
-
-                <!-- Smart Task Properties -->
-                <div class="form-group">
-                  <label class="form-label">Estimated Duration (minutes)</label>
-                  <input 
-                    type="number" 
-                    class="form-input"
-                    placeholder="e.g., 30"
-                    [(ngModel)]="newTaskEstimatedDuration"
-                    name="estimatedDuration"
-                    min="1"
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Difficulty</label>
-                  <select 
-                    class="form-input"
-                    [(ngModel)]="newTaskDifficulty"
-                    name="difficulty"
-                  >
-                    <option value="easy">😊 Easy</option>
-                    <option value="medium">😐 Medium</option>
-                    <option value="hard">😰 Hard</option>
-                  </select>
-                </div>
-
-                <!-- Parent Task Selection -->
-                <div class="form-group">
-                  <label class="form-label">Parent Task (optional)</label>
-                  <select 
-                    class="form-input"
-                    [(ngModel)]="newTaskParentTaskId"
-                    name="parentTaskId"
-                    (change)="onParentTaskChange()"
-                  >
-                    <option [value]="null">None (Top-level task)</option>
-                    @for (task of availableParentTasks; track task.id) {
-                      <option [value]="task.id">{{ task.title }}</option>
-                    }
-                  </select>
-                  <small class="form-help-text">Make this task a subtask of another task</small>
-                </div>
-
-                <!-- Subtasks Section -->
-                <div class="form-group">
-                  <label class="form-label">Subtasks</label>
-                  <div class="subtasks-form-container">
-                    <div class="subtask-input-container">
-                      <input 
-                        type="text" 
-                        class="form-input"
-                        placeholder="Add a subtask (press Enter to add)"
-                        [(ngModel)]="newSubtaskInput"
-                        name="subtaskInput"
-                        (keydown.enter)="addSubtaskToForm($event)"
-                      />
-                      <button type="button" class="btn btn-outline btn-sm" (click)="addSubtaskToForm()">
-                        Add
-                      </button>
-                    </div>
-                    @if (newTaskSubtasks.length > 0) {
-                      <ul class="subtasks-list-form">
-                        @for (subtask of newTaskSubtasks; track $index) {
-                          <li class="subtask-item-form">
-                            <span>{{ subtask }}</span>
-                            <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm($index)">
-                              ×
-                            </button>
-                          </li>
-                        }
-                      </ul>
-                    } @else {
-                      <p class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
-                    }
-                  </div>
-                </div>
-
-                <!-- Task Dependencies -->
-                <div class="form-group">
-                  <label class="form-label">Dependencies</label>
-                  <div class="dependencies-form-container">
-                    <select 
-                      class="form-input"
-                      [(ngModel)]="selectedDependencyTaskId"
-                      name="dependencyTask"
-                      (change)="addDependencyToForm()"
-                    >
-                      <option [value]="null">Select a task this depends on...</option>
-                      @for (task of availableDependencyTasks; track task.id) {
-                        <option [value]="task.id" [disabled]="newTaskDependsOnTaskIds.includes(task.id)">
-                          {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
-                        </option>
-                      }
-                    </select>
-                    @if (newTaskDependsOnTaskIds.length > 0) {
-                      <div class="dependencies-list-form">
-                        <label class="form-label-small">This task depends on:</label>
-                        <ul class="dependencies-list">
-                          @for (depTaskId of newTaskDependsOnTaskIds; track depTaskId) {
-                            @if (getTaskById(depTaskId)) {
-                              <li class="dependency-item-form">
-                                <span class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
-                                <span class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
-                                  {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
-                                </span>
-                                <button type="button" class="btn-icon-small" (click)="removeDependencyFromForm(depTaskId)">
-                                  ×
-                                </button>
-                              </li>
-                            }
-                          }
-                        </ul>
-                      </div>
-                    } @else {
-                      <p class="form-help-text">No dependencies. This task can be started immediately.</p>
-                    }
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <button type="submit" class="btn btn-gradient">
-                    {{ editingTaskId ? 'Update Task' : 'Create Task' }}
-                  </button>
-                  <button type="button" class="btn btn-outline" (click)="showCreateForm = false; editingTaskId = null;">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
           }
 
           <!-- Loading State -->
