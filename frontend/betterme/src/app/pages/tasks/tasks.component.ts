@@ -268,9 +268,13 @@ interface Category {
                   </div>
                 </div>
                 <div class="modal-actions">
-                  <button class="btn btn-outline" (click)="showSaveAsTemplateModal = false">Cancel</button>
+                  <button class="btn btn-outline" (click)="showSaveAsTemplateModal = false">
+                    <span class="btn-icon">✕</span>
+                    <span>Cancel</span>
+                  </button>
                   <button class="btn btn-gradient" (click)="saveCurrentTaskAsTemplate()" [disabled]="!templateName.trim()">
-                    Save Template
+                    <span class="btn-icon">💾</span>
+                    <span>Save Template</span>
                   </button>
                 </div>
               </div>
@@ -2228,6 +2232,9 @@ interface Category {
 
     .btn-icon {
       font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
     }
 
     /* View Toggle Styles */
@@ -4722,8 +4729,36 @@ interface Category {
       display: flex;
       gap: 1rem;
       margin-top: 2rem;
-      padding-top: 1rem;
+      padding-top: 1.5rem;
       border-top: 1px solid rgba(255, 255, 255, 0.2);
+      justify-content: flex-end;
+    }
+
+    .modal-actions .btn {
+      min-width: 140px;
+      justify-content: center;
+      padding: 0.875rem 1.75rem;
+    }
+
+    .modal-actions .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .modal-actions .btn:disabled:hover {
+      transform: none;
+      box-shadow: 0 4px 15px rgba(74, 222, 128, 0.2);
+    }
+
+    .modal-actions .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .modal-actions .btn-gradient:hover:not(:disabled) {
+      background: linear-gradient(135deg, #5ae890 0%, #33e3fe 100%);
+      box-shadow: 0 6px 20px rgba(74, 222, 128, 0.5);
     }
 
     /* Tag Manager Styles */
