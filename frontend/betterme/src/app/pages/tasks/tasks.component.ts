@@ -97,7 +97,7 @@ interface Category {
                 <span class="btn-icon">+</span>
                 Add New Task
               </button>
-              <button class="btn btn-outline" (click)="showTemplatesModal = true">
+              <button class="btn btn-outline" (click)="openTemplatesModal()">
                 <span class="btn-icon">📋</span>
                 Templates
               </button>
@@ -5559,6 +5559,7 @@ export class TasksComponent implements OnInit {
     this.loadAnalytics();
     this.initializeSmartFeatures();
     this.loadPresetsFromStorage();
+    this.loadTemplates();
   }
 
   // NEW: Initialize smart features
@@ -5975,6 +5976,11 @@ export class TasksComponent implements OnInit {
         this.loadingTemplates = false;
       }
     });
+  }
+
+  openTemplatesModal(): void {
+    this.loadTemplates();
+    this.showTemplatesModal = true;
   }
 
   loadTemplate(template: TaskTemplate): void {
