@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { TaskService } from '../../services/task.service';
-import { Task, UpdateTaskRequest } from '../../models/task.model';
+import { Task, UpdateTaskRequest, RecurrencePattern, TaskDifficulty } from '../../models/task.model';
+import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
 
 interface KanbanColumn {
   id: string;
@@ -17,7 +18,7 @@ interface KanbanColumn {
 @Component({
   selector: 'app-kanban-board',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, FileUploadComponent],
   template: `
     <div class="kanban-page">
       <div class="background-animation">
@@ -189,7 +190,7 @@ interface KanbanColumn {
 
       <!-- Add Task Modal -->
       <div *ngIf="showAddTaskModal" class="modal-overlay" (click)="closeAddTaskModal()">
-        <div class="modal-content glass-card" (click)="$event.stopPropagation()">
+        <div class="modal-content glass-card modal-content-large" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>Add New Task to {{ getColumnTitle(selectedColumn) }}</h3>
             <button class="close-btn" (click)="closeAddTaskModal()">×</button>
@@ -209,27 +210,62 @@ interface KanbanColumn {
                 />
               </div>
               <div class="form-group">
+                <label class="form-label">Description</label>
                 <textarea 
                   class="form-control"
-                  placeholder="Task description"
+                  placeholder="Add more details about your task..."
                   [(ngModel)]="newTaskDescription"
                   name="description"
-                  rows="3"
+                  rows="4"
                 ></textarea>
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">Priority</label>
-                  <select 
+              
+              <!-- File Attachments -->
+              <div class="form-group">
+                <label class="form-label">Attachments</label>
+                <app-file-upload
+                  [taskId]="undefined"
+                  (attachmentsChange)="onAttachmentsChange($event)"
+                ></app-file-upload>
+              </div>
+              
+              <!-- Enhanced Category Dropdown -->
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select 
+                  class="form-control"
+                  [(ngModel)]="newTaskCategory"
+                  name="category"
+                >
+                  <option value="">Select Category</option>
+                  <option *ngFor="let category of enhancedCategories" [value]="category.name">
+                    {{ category.icon }} {{ category.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Tag Input -->
+              <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="tag-input-container">
+                  <input 
+                    type="text" 
                     class="form-control"
-                    [(ngModel)]="newTaskPriority"
-                    name="priority"
-                  >
-                    <option [value]="1">Low</option>
-                    <option [value]="2">Medium</option>
-                    <option [value]="3">High</option>
-                  </select>
+                    placeholder="Add tags (press Enter to add)"
+                    [(ngModel)]="newTaskTagInput"
+                    name="tagInput"
+                    (keydown)="onTagInputKeydown($event)"
+                  />
                 </div>
+                <div class="tag-preview">
+                  <span *ngFor="let tag of newTaskTags" class="tag-badge">
+                    {{ tag }}
+                    <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">Due Date</label>
                   <input 
@@ -239,12 +275,413 @@ interface KanbanColumn {
                     name="dueDate"
                   />
                 </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskPriority"
+                    name="priority"
+                  >
+                    <option [ngValue]="1">Low</option>
+                    <option [ngValue]="2">Medium</option>
+                    <option [ngValue]="3">High</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- Smart Task Properties -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Estimated Duration (minutes)</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    placeholder="e.g., 30"
+                    [(ngModel)]="newTaskEstimatedDuration"
+                    name="estimatedDuration"
+                    min="1"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Difficulty</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskDifficulty"
+                    name="difficulty"
+                  >
+                    <option value="easy">😊 Easy</option>
+                    <option value="medium">😐 Medium</option>
+                    <option value="hard">😰 Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Parent Task Selection -->
+              <div class="form-group">
+                <label class="form-label">Parent Task (optional)</label>
+                <select 
+                  class="form-control"
+                  [(ngModel)]="newTaskParentTaskId"
+                  name="parentTaskId"
+                  (change)="onParentTaskChange()"
+                >
+                  <option [value]="null">None (Top-level task)</option>
+                  <option *ngFor="let task of availableParentTasks" [value]="task.id">{{ task.title }}</option>
+                </select>
+                <small class="form-help-text">Make this task a subtask of another task</small>
+              </div>
+
+              <!-- Subtasks Section -->
+              <div class="form-group">
+                <label class="form-label">Subtasks</label>
+                <div class="subtasks-form-container">
+                  <div class="subtask-input-container">
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Add a subtask (press Enter to add)"
+                      [(ngModel)]="newSubtaskInput"
+                      name="subtaskInput"
+                      (keydown.enter)="addSubtaskToForm($event)"
+                    />
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="addSubtaskToForm()">
+                      Add
+                    </button>
+                  </div>
+                  <ul *ngIf="newTaskSubtasks.length > 0" class="subtasks-list-form">
+                    <li *ngFor="let subtask of newTaskSubtasks; let i = index" class="subtask-item-form">
+                      <span>{{ subtask }}</span>
+                      <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm(i)">
+                        ×
+                      </button>
+                    </li>
+                  </ul>
+                  <p *ngIf="newTaskSubtasks.length === 0" class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                </div>
+              </div>
+
+              <!-- Task Dependencies -->
+              <div class="form-group">
+                <label class="form-label">Dependencies</label>
+                <div class="dependencies-form-container">
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="selectedDependencyTaskId"
+                    name="dependencyTask"
+                    (change)="addDependencyToForm()"
+                  >
+                    <option [value]="null">Select a task this depends on...</option>
+                    <option *ngFor="let task of availableDependencyTasks" [value]="task.id" [disabled]="newTaskDependsOnTaskIds.includes(task.id)">
+                      {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                    </option>
+                  </select>
+                  <div *ngIf="newTaskDependsOnTaskIds.length > 0" class="dependencies-list-form">
+                    <label class="form-label-small">This task depends on:</label>
+                    <ul class="dependencies-list">
+                      <li *ngFor="let depTaskId of newTaskDependsOnTaskIds" class="dependency-item-form">
+                        <span *ngIf="getTaskById(depTaskId)" class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                        <span *ngIf="getTaskById(depTaskId)" class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                          {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                        </span>
+                        <button type="button" class="btn-icon-small" (click)="removeDependencyFromForm(depTaskId)">
+                          ×
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                  <p *ngIf="newTaskDependsOnTaskIds.length === 0" class="form-help-text">No dependencies. This task can be started immediately.</p>
+                </div>
+              </div>
+
+              <!-- Recurrence -->
+              <div class="form-group">
+                <label class="form-label">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="newTaskIsRecurring"
+                    name="isRecurring"
+                    (change)="onRecurrenceToggle()"
+                  />
+                  Make this task recurring
+                </label>
+              </div>
+              <div *ngIf="newTaskIsRecurring" class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Recurrence Pattern</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskRecurrencePattern"
+                    name="recurrencePattern"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Interval</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    [(ngModel)]="newTaskRecurrenceInterval"
+                    name="recurrenceInterval"
+                    min="1"
+                  />
+                </div>
+              </div>
+
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" [disabled]="!newTaskTitle.trim()">
                   Create Task
                 </button>
                 <button type="button" class="btn btn-secondary" (click)="closeAddTaskModal()">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Task Modal -->
+      <div *ngIf="showEditTaskModal" class="modal-overlay" (click)="closeEditTaskModal()">
+        <div class="modal-content modal-content-large glass-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Edit Task</h3>
+            <button class="close-btn" (click)="closeEditTaskModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <form (ngSubmit)="updateTask()">
+              <div class="form-group">
+                <input 
+                  type="text" 
+                  class="form-control"
+                  placeholder="Task title"
+                  [(ngModel)]="editTaskTitle"
+                  name="editTitle"
+                  required
+                  #editTitleInput
+                  autofocus
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea 
+                  class="form-control"
+                  placeholder="Add more details about your task..."
+                  [(ngModel)]="editTaskDescription"
+                  name="editDescription"
+                  rows="4"
+                ></textarea>
+              </div>
+              
+              <!-- Enhanced Category Dropdown -->
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select 
+                  class="form-control"
+                  [(ngModel)]="editTaskCategory"
+                  name="editCategory"
+                >
+                  <option value="">Select Category</option>
+                  <option *ngFor="let category of enhancedCategories" [value]="category.name">
+                    {{ category.icon }} {{ category.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Tag Input -->
+              <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="tag-input-container">
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    placeholder="Add tags (press Enter to add)"
+                    [(ngModel)]="editTaskTagInput"
+                    name="editTagInput"
+                    (keydown)="onEditTagInputKeydown($event)"
+                  />
+                </div>
+                <div class="tag-preview">
+                  <span *ngFor="let tag of editTaskTags" class="tag-badge">
+                    {{ tag }}
+                    <button type="button" (click)="removeEditTag(tag)" class="tag-remove">×</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Due Date</label>
+                  <input 
+                    type="date" 
+                    class="form-control"
+                    [(ngModel)]="editTaskDueDate"
+                    name="editDueDate"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="editTaskPriority"
+                    name="editPriority"
+                  >
+                    <option [ngValue]="1">Low</option>
+                    <option [ngValue]="2">Medium</option>
+                    <option [ngValue]="3">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Smart Task Properties -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Estimated Duration (minutes)</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    placeholder="e.g., 30"
+                    [(ngModel)]="editTaskEstimatedDuration"
+                    name="editEstimatedDuration"
+                    min="1"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Difficulty</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="editTaskDifficulty"
+                    name="editDifficulty"
+                  >
+                    <option value="easy">😊 Easy</option>
+                    <option value="medium">😐 Medium</option>
+                    <option value="hard">😰 Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Parent Task Selection -->
+              <div class="form-group">
+                <label class="form-label">Parent Task (optional)</label>
+                <select 
+                  class="form-control"
+                  [(ngModel)]="editTaskParentTaskId"
+                  name="editParentTaskId"
+                  (change)="onParentTaskChange()"
+                >
+                  <option [value]="null">None (Top-level task)</option>
+                  <option *ngFor="let task of availableParentTasks" [value]="task.id">{{ task.title }}</option>
+                </select>
+                <small class="form-help-text">Make this task a subtask of another task</small>
+              </div>
+
+              <!-- Subtasks Section -->
+              <div class="form-group">
+                <label class="form-label">Subtasks</label>
+                <div class="subtasks-form-container">
+                  <div class="subtask-input-container">
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Add a subtask (press Enter to add)"
+                      [(ngModel)]="editSubtaskInput"
+                      name="editSubtaskInput"
+                      (keydown.enter)="addSubtaskToForm($event, true)"
+                    />
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="addSubtaskToForm(undefined, true)">
+                      Add
+                    </button>
+                  </div>
+                  <ul *ngIf="editTaskSubtasks.length > 0" class="subtasks-list-form">
+                    <li *ngFor="let subtask of editTaskSubtasks; let i = index" class="subtask-item-form">
+                      <span>{{ subtask }}</span>
+                      <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm(i, true)">
+                        ×
+                      </button>
+                    </li>
+                  </ul>
+                  <p *ngIf="editTaskSubtasks.length === 0" class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                </div>
+              </div>
+
+              <!-- Task Dependencies -->
+              <div class="form-group">
+                <label class="form-label">Dependencies</label>
+                <div class="dependencies-form-container">
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="selectedEditDependencyTaskId"
+                    name="editDependencyTask"
+                    (change)="addEditDependencyToForm()"
+                  >
+                    <option [value]="null">Select a task this depends on...</option>
+                    <option *ngFor="let task of availableDependencyTasks" [value]="task.id" [disabled]="editTaskDependsOnTaskIds.includes(task.id)">
+                      {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                    </option>
+                  </select>
+                  <div *ngIf="editTaskDependsOnTaskIds.length > 0" class="dependencies-list-form">
+                    <label class="form-label-small">This task depends on:</label>
+                    <ul class="dependencies-list">
+                      <li *ngFor="let depTaskId of editTaskDependsOnTaskIds" class="dependency-item-form">
+                        <span *ngIf="getTaskById(depTaskId)" class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                        <span *ngIf="getTaskById(depTaskId)" class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                          {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                        </span>
+                        <button type="button" class="btn-icon-small" (click)="removeEditDependencyFromForm(depTaskId)">
+                          ×
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                  <p *ngIf="editTaskDependsOnTaskIds.length === 0" class="form-help-text">No dependencies. This task can be started immediately.</p>
+                </div>
+              </div>
+
+              <!-- Recurrence -->
+              <div class="form-group">
+                <label class="form-label">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="editTaskIsRecurring"
+                    name="editIsRecurring"
+                  />
+                  Make this task recurring
+                </label>
+              </div>
+              <div *ngIf="editTaskIsRecurring" class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Recurrence Pattern</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="editTaskRecurrencePattern"
+                    name="editRecurrencePattern"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Interval</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    [(ngModel)]="editTaskRecurrenceInterval"
+                    name="editRecurrenceInterval"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="!editTaskTitle.trim() || updatingTaskIds.has(editingTask?.id || 0)">
+                  {{ updatingTaskIds.has(editingTask?.id || 0) ? 'Updating...' : 'Update Task' }}
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="closeEditTaskModal()" [disabled]="updatingTaskIds.has(editingTask?.id || 0)">
                   Cancel
                 </button>
               </div>
@@ -765,6 +1202,12 @@ interface KanbanColumn {
       width: 100%;
     }
 
+    .modal-content-large {
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -885,6 +1328,160 @@ interface KanbanColumn {
       transform: none !important;
     }
 
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .tag-input-container {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tag-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag-badge {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .tag-remove:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .form-help-text {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .subtasks-form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .subtask-input-container {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .subtasks-list-form {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .subtask-item-form {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .dependencies-form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .dependencies-list-form {
+      margin-top: 1rem;
+    }
+
+    .form-label-small {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    .dependencies-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .dependency-item-form {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      gap: 1rem;
+    }
+
+    .dependency-title {
+      flex: 1;
+      color: white;
+    }
+
+    .dependency-status {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+    }
+
+    .dependency-status.completed {
+      color: #4ade80;
+    }
+
+    .btn-icon-small {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .btn-icon-small:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -962,6 +1559,7 @@ export class KanbanBoardComponent implements OnInit {
 
   // Modal state
   showAddTaskModal = false;
+  showEditTaskModal = false;
   selectedColumn: string = '';
   
   // New task form
@@ -969,7 +1567,44 @@ export class KanbanBoardComponent implements OnInit {
   newTaskDescription = '';
   newTaskDueDate = '';
   newTaskPriority = 2;
-
+  newTaskCategory = '';
+  newTaskTagInput = '';
+  newTaskTags: string[] = [];
+  newTaskEstimatedDuration: number | null = null;
+  newTaskDifficulty: string = 'medium';
+  newTaskSubtasks: string[] = [];
+  newSubtaskInput = '';
+  newTaskParentTaskId: number | null = null;
+  newTaskDependsOnTaskIds: number[] = [];
+  selectedDependencyTaskId: number | null = null;
+  availableParentTasks: Task[] = [];
+  availableDependencyTasks: Task[] = [];
+  newTaskIsRecurring: boolean = false;
+  newTaskRecurrencePattern: string = 'daily';
+  newTaskRecurrenceInterval: number = 1;
+  newTaskAttachments: any[] = [];
+  
+  // Edit task form
+  editingTask: Task | null = null;
+  editTaskTitle = '';
+  editTaskDescription = '';
+  editTaskDueDate = '';
+  editTaskPriority = 2;
+  editTaskCategory = '';
+  editTaskTagInput = '';
+  editTaskTags: string[] = [];
+  editTaskAttachments: Attachment[] = [];
+  editTaskEstimatedDuration: number | null = null;
+  editTaskDifficulty: string = 'medium';
+  editTaskSubtasks: string[] = [];
+  editSubtaskInput = '';
+  editTaskParentTaskId: number | null = null;
+  editTaskDependsOnTaskIds: number[] = [];
+  selectedEditDependencyTaskId: number | null = null;
+  editTaskIsRecurring: boolean = false;
+  editTaskRecurrencePattern: string = 'daily';
+  editTaskRecurrenceInterval: number = 1;
+  
   // Loading state
   updatingTaskIds = new Set<number>();
 
@@ -1144,14 +1779,103 @@ export class KanbanBoardComponent implements OnInit {
 
   editTask(task: Task, event: Event): void {
     event.stopPropagation();
-    // Implement edit functionality
-    console.log('Edit task:', task);
-    // You can open a modal or navigate to edit page
+    this.editingTask = task;
+    this.editTaskTitle = task.title;
+    this.editTaskDescription = task.description || '';
+    this.editTaskDueDate = task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '';
+    this.editTaskPriority = task.priority || 2;
+    this.editTaskCategory = task.category || '';
+    this.editTaskTags = [...(task.tags || [])];
+    this.editTaskTagInput = '';
+    this.editTaskEstimatedDuration = (task as any).estimatedDuration || null;
+    this.editTaskDifficulty = (task as any).difficulty || 'medium';
+    this.editTaskSubtasks = task.subtasks?.map(st => st.title) || [];
+    this.editSubtaskInput = '';
+    this.editTaskParentTaskId = task.parentTaskId || null;
+    this.editTaskDependsOnTaskIds = [...(task.dependsOnTaskIds || [])];
+    this.selectedEditDependencyTaskId = null;
+    this.editTaskIsRecurring = task.isRecurring || false;
+    this.editTaskRecurrencePattern = task.recurrencePattern || 'daily';
+    this.editTaskRecurrenceInterval = task.recurrenceInterval || 1;
+    this.updateAvailableTasks();
+    this.showEditTaskModal = true;
   }
-
-  // Add task to column
+  
+  updateTask(): void {
+    if (!this.editingTask || !this.editTaskTitle.trim()) {
+      return;
+    }
+    
+    const priority = typeof this.editTaskPriority === 'string' 
+      ? parseInt(this.editTaskPriority, 10) 
+      : (this.editTaskPriority || 1);
+    
+    const updateData: any = {
+      title: this.editTaskTitle.trim(),
+      description: this.editTaskDescription.trim() || undefined,
+      dueDate: this.editTaskDueDate || undefined,
+      priority: priority,
+      category: this.editTaskCategory || undefined,
+      tags: this.editTaskTags,
+      estimatedDuration: this.editTaskEstimatedDuration || undefined,
+      difficulty: this.editTaskDifficulty as any,
+      parentTaskId: this.editTaskParentTaskId || undefined,
+      dependsOnTaskIds: this.editTaskDependsOnTaskIds.length > 0 ? this.editTaskDependsOnTaskIds : undefined,
+      isRecurring: this.editTaskIsRecurring || false,
+      recurrencePattern: this.editTaskRecurrencePattern as any || 'none',
+      recurrenceInterval: this.editTaskRecurrenceInterval || 1
+    };
+    
+    this.updatingTaskIds.add(this.editingTask.id);
+    
+    this.taskService.updateTask(this.editingTask.id, updateData).subscribe({
+      next: async () => {
+        // Handle subtasks - this is simplified, you might want to update existing ones
+        if (this.editTaskSubtasks.length > 0) {
+          for (const subtaskTitle of this.editTaskSubtasks) {
+            await this.taskService.createTask({ 
+              title: subtaskTitle, 
+              parentTaskId: this.editingTask!.id 
+            } as any).toPromise();
+          }
+        }
+        
+        this.loadTasks();
+        this.closeEditTaskModal();
+      },
+      error: (error: any) => {
+        console.error('Error updating task:', error);
+        alert('Failed to update task. Please try again.');
+        this.updatingTaskIds.delete(this.editingTask!.id);
+      }
+    });
+  }
+  
+  closeEditTaskModal(): void {
+    this.showEditTaskModal = false;
+    this.editingTask = null;
+    this.editTaskTitle = '';
+    this.editTaskDescription = '';
+    this.editTaskDueDate = '';
+    this.editTaskPriority = 2;
+    this.editTaskCategory = '';
+    this.editTaskTags = [];
+    this.editTaskTagInput = '';
+    this.editTaskEstimatedDuration = null;
+    this.editTaskDifficulty = 'medium';
+    this.editTaskSubtasks = [];
+    this.editSubtaskInput = '';
+    this.editTaskParentTaskId = null;
+    this.editTaskDependsOnTaskIds = [];
+    this.selectedEditDependencyTaskId = null;
+    this.editTaskIsRecurring = false;
+    this.editTaskRecurrencePattern = 'daily';
+    this.editTaskRecurrenceInterval = 1;
+  }
+  
   addTaskToColumn(columnId: string): void {
     this.selectedColumn = columnId;
+    this.updateAvailableTasks();
     this.showAddTaskModal = true;
     this.resetNewTaskForm();
   }
@@ -1161,27 +1885,212 @@ export class KanbanBoardComponent implements OnInit {
     this.newTaskDescription = '';
     this.newTaskDueDate = '';
     this.newTaskPriority = 2;
+    this.newTaskCategory = '';
+    this.newTaskTags = [];
+    this.newTaskTagInput = '';
+    this.newTaskEstimatedDuration = null;
+    this.newTaskDifficulty = 'medium';
+    this.newTaskSubtasks = [];
+    this.newSubtaskInput = '';
+    this.newTaskParentTaskId = null;
+    this.newTaskDependsOnTaskIds = [];
+    this.selectedDependencyTaskId = null;
+    this.newTaskIsRecurring = false;
+    this.newTaskRecurrencePattern = 'daily';
+    this.newTaskRecurrenceInterval = 1;
+    this.newTaskAttachments = [];
+  }
+  
+  onRecurrenceToggle(): void {
+    if (!this.newTaskIsRecurring) {
+      this.newTaskRecurrencePattern = 'daily';
+      this.newTaskRecurrenceInterval = 1;
+    }
+  }
+
+  onEditRecurrenceToggle(): void {
+    if (!this.editTaskIsRecurring) {
+      this.editTaskRecurrencePattern = 'daily';
+      this.editTaskRecurrenceInterval = 1;
+    }
+  }
+  
+  onParentTaskChange(): void {
+    this.updateAvailableTasks();
+  }
+
+  onEditParentTaskChange(): void {
+    this.updateAvailableTasks();
+  }
+  
+  onAttachmentsChange(attachments: Attachment[]): void {
+    this.newTaskAttachments = attachments;
+  }
+
+  onEditAttachmentsChange(attachments: Attachment[]): void {
+    this.editTaskAttachments = attachments;
+  }
+  
+  // Tag helpers
+  onTagInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      this.addTag();
+    }
+  }
+
+  onEditTagInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      this.addEditTag();
+    }
+  }
+  
+  addTag(): void {
+    const tag = this.newTaskTagInput.trim();
+    if (tag && !this.newTaskTags.includes(tag)) {
+      this.newTaskTags.push(tag);
+      this.newTaskTagInput = '';
+    }
+  }
+  
+  removeTag(tagToRemove: string): void {
+    this.newTaskTags = this.newTaskTags.filter(tag => tag !== tagToRemove);
+  }
+  
+  addEditTag(): void {
+    const tag = this.editTaskTagInput.trim();
+    if (tag && !this.editTaskTags.includes(tag)) {
+      this.editTaskTags.push(tag);
+      this.editTaskTagInput = '';
+    }
+  }
+  
+  removeEditTag(tagToRemove: string): void {
+    this.editTaskTags = this.editTaskTags.filter(tag => tag !== tagToRemove);
+  }
+  
+  // Subtask helpers
+  addSubtaskToForm(event?: Event, isEdit: boolean = false): void {
+    if (event) {
+      event.preventDefault();
+    }
+    if (isEdit) {
+      if (this.editSubtaskInput.trim()) {
+        this.editTaskSubtasks.push(this.editSubtaskInput.trim());
+        this.editSubtaskInput = '';
+      }
+    } else {
+      if (this.newSubtaskInput.trim()) {
+        this.newTaskSubtasks.push(this.newSubtaskInput.trim());
+        this.newSubtaskInput = '';
+      }
+    }
+  }
+  
+  removeSubtaskFromForm(index: number, isEdit: boolean = false): void {
+    if (isEdit) {
+      this.editTaskSubtasks.splice(index, 1);
+    } else {
+      this.newTaskSubtasks.splice(index, 1);
+    }
+  }
+  
+  // Dependency helpers
+  addDependencyToForm(): void {
+    if (this.selectedDependencyTaskId && !this.newTaskDependsOnTaskIds.includes(this.selectedDependencyTaskId)) {
+      this.newTaskDependsOnTaskIds.push(this.selectedDependencyTaskId);
+      this.selectedDependencyTaskId = null;
+    }
+  }
+
+  addEditDependencyToForm(): void {
+    if (this.selectedEditDependencyTaskId && !this.editTaskDependsOnTaskIds.includes(this.selectedEditDependencyTaskId)) {
+      if (this.editingTask && this.selectedEditDependencyTaskId === this.editingTask.id) {
+        alert('A task cannot depend on itself');
+        return;
+      }
+      this.editTaskDependsOnTaskIds.push(this.selectedEditDependencyTaskId);
+      this.selectedEditDependencyTaskId = null;
+    }
+  }
+  
+  removeDependencyFromForm(taskId: number): void {
+    this.newTaskDependsOnTaskIds = this.newTaskDependsOnTaskIds.filter(id => id !== taskId);
+  }
+
+  removeEditDependencyFromForm(taskId: number): void {
+    this.editTaskDependsOnTaskIds = this.editTaskDependsOnTaskIds.filter(id => id !== taskId);
+  }
+  
+  getTaskById(taskId: number): Task | undefined {
+    return this.tasks.find(t => t.id === taskId);
+  }
+  
+  updateAvailableTasks(): void {
+    this.availableParentTasks = this.tasks.filter(t => 
+      !t.parentTaskId &&
+      (!this.editingTask || t.id !== this.editingTask.id)
+    );
+    
+    this.availableDependencyTasks = this.tasks.filter(t => 
+      (!this.editingTask || t.id !== this.editingTask.id)
+    );
+  }
+  
+  get enhancedCategories(): Array<{name: string; icon: string; color: string}> {
+    return [
+      { name: 'Personal', icon: '🏠', color: '#4ade80' },
+      { name: 'Work', icon: '💼', color: '#3b82f6' },
+      { name: 'Shopping', icon: '🛒', color: '#f59e0b' },
+      { name: 'Health', icon: '🏥', color: '#ef4444' },
+      { name: 'Education', icon: '🎓', color: '#8b5cf6' },
+      { name: 'Finance', icon: '💰', color: '#10b981' },
+      { name: 'Travel', icon: '✈️', color: '#06b6d4' },
+      { name: 'Other', icon: '📦', color: '#6b7280' }
+    ];
   }
 
   createTask(): void {
     if (!this.newTaskTitle.trim()) return;
 
-    const taskData = {
+    const priority = typeof this.newTaskPriority === 'string' 
+      ? parseInt(this.newTaskPriority, 10) 
+      : (this.newTaskPriority || 1);
+
+    const taskData: any = {
       title: this.newTaskTitle.trim(),
-      description: this.newTaskDescription,
+      description: this.newTaskDescription || undefined,
       dueDate: this.newTaskDueDate || undefined,
-      priority: this.newTaskPriority,
-      tags: this.selectedColumn === 'in-progress' ? ['in-progress'] : []
+      priority: priority,
+      category: this.newTaskCategory || 'Other',
+      tags: [...(this.selectedColumn === 'in-progress' ? ['in-progress'] : []), ...this.newTaskTags],
+      parentTaskId: this.newTaskParentTaskId || undefined,
+      dependsOnTaskIds: this.newTaskDependsOnTaskIds.length > 0 ? this.newTaskDependsOnTaskIds : undefined,
+      isRecurring: this.newTaskIsRecurring || false,
+      recurrencePattern: this.newTaskRecurrencePattern as any || 'none',
+      recurrenceInterval: this.newTaskRecurrenceInterval || 1
     };
 
     this.taskService.createTask(taskData).subscribe({
-      next: (newTask: Task) => {
-        this.tasks.push(newTask);
+      next: async (newTask: Task) => {
+        // Create subtasks if any were added
+        if (this.newTaskSubtasks.length > 0) {
+          for (const subtaskTitle of this.newTaskSubtasks) {
+            await this.taskService.createTask({ 
+              title: subtaskTitle, 
+              parentTaskId: newTask.id 
+            } as any).toPromise();
+          }
+        }
+        
+        this.loadTasks(); // Reload to get updated subtasks
         this.organizeTasksIntoColumns();
         this.closeAddTaskModal();
       },
       error: (error: any) => {
         console.error('Error creating task:', error);
+        alert('Failed to create task. Please try again.');
       }
     });
   }
