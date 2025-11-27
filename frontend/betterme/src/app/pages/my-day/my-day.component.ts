@@ -412,9 +412,19 @@ import { Task } from '../../models/task.model';
       transition: all 0.2s;
     }
 
+    body.dark-mode .btn-add {
+      background: linear-gradient(135deg, #059669, #0891b2);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5);
+    }
+
     .btn-add:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+    }
+
+    body.dark-mode .btn-add:hover {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.7);
     }
 
     .tasks-list {
@@ -619,11 +629,22 @@ import { Task } from '../../models/task.model';
       background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
       color: white;
       box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
     }
 
     .btn-gradient:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(74, 222, 128, 0.4);
+    }
+
+    body.dark-mode .btn-gradient:hover {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
     }
 
     @media (max-width: 768px) {
