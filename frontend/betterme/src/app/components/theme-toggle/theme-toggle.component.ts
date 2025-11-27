@@ -68,6 +68,7 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
   styles: [`
     .theme-toggle-container {
       position: relative;
+      z-index: 10001;
     }
 
     .theme-toggle-btn {
@@ -101,14 +102,19 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
-      background: var(--bg-primary);
+      background: #ffffff !important;
       backdrop-filter: blur(10px);
-      border: 1px solid var(--border-color);
+      border: 2px solid rgba(102, 126, 234, 0.3);
       border-radius: 12px;
       padding: 1rem;
       min-width: 200px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
+      z-index: 10001;
+    }
+
+    body.dark-mode .theme-menu {
+      background: #1a1a1a !important;
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     .theme-menu-section {
@@ -120,12 +126,16 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
     }
 
     .menu-label {
-      color: var(--text-secondary);
+      color: #555555 !important;
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 0.75rem;
+    }
+
+    body.dark-mode .menu-label {
+      color: #e0e0e0 !important;
     }
 
     .theme-options {
@@ -138,9 +148,9 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
+      background: #f8f9fa !important;
+      border: 1px solid #e1e5e9 !important;
+      color: #333333 !important;
       padding: 0.75rem 1rem;
       border-radius: 8px;
       cursor: pointer;
@@ -149,15 +159,26 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
       text-align: left;
     }
 
+    body.dark-mode .theme-option {
+      background: #2d2d2d !important;
+      border-color: #404040 !important;
+      color: #ffffff !important;
+    }
+
     .theme-option:hover {
-      background: var(--bg-tertiary);
-      border-color: var(--accent-primary);
+      background: #e9ecef !important;
+      border-color: #667eea !important;
+    }
+
+    body.dark-mode .theme-option:hover {
+      background: #3a3a3a !important;
+      border-color: #667eea !important;
     }
 
     .theme-option.active {
-      background: var(--accent-primary);
-      border-color: var(--accent-primary);
-      color: white;
+      background: #667eea !important;
+      border-color: #667eea !important;
+      color: white !important;
     }
 
     .option-icon {

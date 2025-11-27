@@ -47,6 +47,8 @@ import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
   `,
   styles: [`
     .navbar {
+      position: relative;
+      z-index: 1000;
       background: var(--bg-gradient);
       box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
       backdrop-filter: blur(10px);
