@@ -192,9 +192,10 @@ interface UserStats {
   styles: [`
     .profile-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -210,6 +211,11 @@ interface UserStats {
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -257,6 +263,14 @@ interface UserStats {
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .header-content h1 {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
@@ -272,6 +286,13 @@ interface UserStats {
       border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 3rem;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .user-section {

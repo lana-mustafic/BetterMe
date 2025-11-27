@@ -85,9 +85,10 @@ import { AuthService, User } from '../../services/auth';
   styles: [`
     .home-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-animation {
@@ -104,6 +105,11 @@ import { AuthService, User } from '../../services/auth';
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 6s ease-in-out infinite;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -167,6 +173,13 @@ import { AuthService, User } from '../../services/auth';
       width: 100%;
       max-width: 1000px;
       margin-top: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
     }
 
     .hero-main {
@@ -183,6 +196,14 @@ import { AuthService, User } from '../../services/auth';
       -webkit-text-fill-color: transparent;
       background-clip: text;
       line-height: 1.1;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .hero-subtitle {
@@ -257,6 +278,12 @@ import { AuthService, User } from '../../services/auth';
       padding: 1.5rem;
       margin-top: 1.5rem;
       border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .welcome-message {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .welcome-message p {
@@ -291,11 +318,22 @@ import { AuthService, User } from '../../services/auth';
       backdrop-filter: blur(10px);
     }
 
+    body.dark-mode .feature-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .feature-card:hover {
       transform: translateY(-5px);
       background: rgba(255, 255, 255, 0.15);
       border-color: rgba(255, 255, 255, 0.3);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    body.dark-mode .feature-card:hover {
+      background: rgba(26, 26, 26, 0.6);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     }
 
     .feature-icon {

@@ -159,9 +159,10 @@ import { Task } from '../../models/task.model';
   styles: [`
     .my-day-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       padding: 2rem 1rem;
+      transition: background 0.3s ease;
     }
 
     .background-animation {
@@ -179,6 +180,11 @@ import { Task } from '../../models/task.model';
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 6s ease-in-out infinite;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -217,6 +223,13 @@ import { Task } from '../../models/task.model';
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
       padding: 2rem;
       margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .my-day-header {
@@ -230,6 +243,14 @@ import { Task } from '../../models/task.model';
       font-weight: 800;
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .header-content h1 {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;

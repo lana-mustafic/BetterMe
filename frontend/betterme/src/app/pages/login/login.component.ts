@@ -169,9 +169,10 @@ import { AuthService } from '../../services/auth';
   styles: [`
     .login-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -187,6 +188,11 @@ import { AuthService } from '../../services/auth';
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -233,6 +239,13 @@ import { AuthService } from '../../services/auth';
       border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 2.5rem;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .auth-header {
@@ -245,6 +258,14 @@ import { AuthService } from '../../services/auth';
       font-weight: 800;
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -281,6 +302,11 @@ import { AuthService } from '../../services/auth';
       font-size: 16px;
       color: white;
       transition: all 0.3s ease;
+    }
+
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.1);
     }
 
     .form-control::placeholder {
