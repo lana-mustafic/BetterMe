@@ -1275,6 +1275,42 @@ interface KanbanColumn {
       color: rgba(255, 255, 255, 0.5);
     }
 
+    /* Select dropdown styling - ensure text is visible for category, priority, and difficulty */
+    select.form-control {
+      color: #1a1a1a !important;
+      background: #ffffff !important;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    select.form-control:focus {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+      border-color: #667eea;
+    }
+
+    select.form-control:hover {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+    }
+
+    select.form-control option {
+      color: #1a1a1a !important;
+      background: white !important;
+      padding: 0.5rem;
+    }
+
+    select.form-control option:checked {
+      color: #1a1a1a !important;
+      background: #f0f4ff !important;
+      font-weight: 600;
+    }
+
+    select.form-control option:disabled {
+      color: #999 !important;
+      background: #f5f5f5 !important;
+    }
+
     textarea.form-control {
       resize: vertical;
       min-height: 100px;
@@ -1582,7 +1618,7 @@ export class KanbanBoardComponent implements OnInit {
   newTaskIsRecurring: boolean = false;
   newTaskRecurrencePattern: string = 'daily';
   newTaskRecurrenceInterval: number = 1;
-  newTaskAttachments: any[] = [];
+  newTaskAttachments: Attachment[] = [];
   
   // Edit task form
   editingTask: Task | null = null;
@@ -1840,6 +1876,8 @@ export class KanbanBoardComponent implements OnInit {
           }
         }
         
+        // Remove from updating set before closing
+        this.updatingTaskIds.delete(this.editingTask!.id);
         this.loadTasks();
         this.closeEditTaskModal();
       },
@@ -1852,6 +1890,10 @@ export class KanbanBoardComponent implements OnInit {
   }
   
   closeEditTaskModal(): void {
+    // Clear any loading state when closing modal
+    if (this.editingTask) {
+      this.updatingTaskIds.delete(this.editingTask.id);
+    }
     this.showEditTaskModal = false;
     this.editingTask = null;
     this.editTaskTitle = '';
