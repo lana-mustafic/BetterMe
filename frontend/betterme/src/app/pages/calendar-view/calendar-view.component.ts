@@ -2,8 +2,10 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
-import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern } from '../../models/task.model';
+import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern, TaskDifficulty } from '../../models/task.model';
 import { CdkDrag, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
+import { firstValueFrom } from 'rxjs';
 
 // Productivity Interfaces
 interface EisenhowerCategory {
@@ -64,7 +66,8 @@ interface EditModalData {
     CommonModule, 
     FormsModule,
     CdkDrag,
-    CdkDropList
+    CdkDropList,
+    FileUploadComponent
   ],
   template: `
     <div class="calendar-page">
@@ -232,20 +235,21 @@ interface EditModalData {
                       <!-- Action buttons -->
                       <div class="day-actions" *ngIf="day.isCurrentMonth">
                         <button class="action-btn view-tasks-btn" 
-                                (click)="selectDay(day)"
+                                (click)="selectDay(day); $event.stopPropagation()"
                                 [disabled]="day.tasks.length === 0"
                                 title="View tasks">
                           <span class="action-icon">👁️</span>
                         </button>
                         
                         <button class="action-btn add-task-btn" 
-                                (click)="onDayClick(day, $event)"
-                                title="Add task">
+                                (click)="onDayClick(day, $event); $event.stopPropagation()"
+                                title="Add task"
+                                type="button">
                           <span class="action-icon">+</span>
                         </button>
 
                         <button class="action-btn time-block-btn" 
-                                (click)="addTimeBlockToDay(day)"
+                                (click)="addTimeBlockToDay(day); $event.stopPropagation()"
                                 title="Add time block">
                           <span class="action-icon">⏰</span>
                         </button>
@@ -616,15 +620,26 @@ interface EditModalData {
                   />
                 </div>
                 <div class="form-group">
+                  <label class="form-label">Description</label>
                   <textarea 
                     class="form-control"
-                    placeholder="Task description"
+                    placeholder="Add more details about your task..."
                     [(ngModel)]="newTaskDescription"
                     name="description"
-                    rows="3"
+                    rows="4"
                   ></textarea>
                 </div>
                 
+                <!-- File Attachments -->
+                <div class="form-group">
+                  <label class="form-label">Attachments</label>
+                  <app-file-upload
+                    [taskId]="undefined"
+                    (attachmentsChange)="onAttachmentsChange($event)"
+                  ></app-file-upload>
+                </div>
+                
+                <!-- Enhanced Category Dropdown -->
                 <div class="form-group">
                   <label class="form-label">Category</label>
                   <select 
@@ -633,7 +648,7 @@ interface EditModalData {
                     name="category"
                   >
                     <option value="">Select Category</option>
-                    @for (category of categories; track category.name) {
+                    @for (category of enhancedCategories; track category.name) {
                       <option [value]="category.name">
                         {{ category.icon }} {{ category.name }}
                       </option>
@@ -641,18 +656,40 @@ interface EditModalData {
                   </select>
                 </div>
 
+                <!-- Tag Input -->
                 <div class="form-group">
-                  <label class="form-label">Due Date</label>
-                  <input 
-                    type="date" 
-                    class="form-control"
-                    [value]="getFormattedDueDate()"
-                    (change)="onDueDateChange($event)"
-                    name="dueDate"
-                  />
+                  <label class="form-label">Tags</label>
+                  <div class="tag-input-container">
+                    <input 
+                      type="text" 
+                      class="form-control"
+                      placeholder="Add tags (press Enter to add)"
+                      [(ngModel)]="newTaskTagInput"
+                      name="tagInput"
+                      (keydown)="onTagInputKeydown($event)"
+                    />
+                  </div>
+                  <div class="tag-preview">
+                    @for (tag of newTaskTags; track tag) {
+                      <span class="tag-badge">
+                        {{ tag }}
+                        <button type="button" (click)="removeTag(tag)" class="tag-remove">×</button>
+                      </span>
+                    }
+                  </div>
                 </div>
-                
+
                 <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input 
+                      type="date" 
+                      class="form-control"
+                      [value]="getFormattedDueDate()"
+                      (change)="onDueDateChange($event)"
+                      name="dueDate"
+                    />
+                  </div>
                   <div class="form-group">
                     <label class="form-label">Priority</label>
                     <select 
@@ -660,25 +697,174 @@ interface EditModalData {
                       [(ngModel)]="newTaskPriority"
                       name="priority"
                     >
-                      <option [value]="1">Low</option>
-                      <option [value]="2">Medium</option>
-                      <option [value]="3">High</option>
-                    </select>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label class="form-label">Eisenhower Category</label>
-                    <select 
-                      class="form-control"
-                      [(ngModel)]="newTaskEisenhowerCategory"
-                      name="eisenhower"
-                    >
-                      @for (category of eisenhowerMatrix; track category.id) {
-                        <option [value]="category.id">{{ category.icon }} {{ category.name }}</option>
-                      }
+                      <option [ngValue]="1">Low</option>
+                      <option [ngValue]="2">Medium</option>
+                      <option [ngValue]="3">High</option>
                     </select>
                   </div>
                 </div>
+
+                <!-- Smart Task Properties -->
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Estimated Duration (minutes)</label>
+                    <input 
+                      type="number" 
+                      class="form-control"
+                      placeholder="e.g., 30"
+                      [(ngModel)]="newTaskEstimatedDuration"
+                      name="estimatedDuration"
+                      min="1"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Difficulty</label>
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="newTaskDifficulty"
+                      name="difficulty"
+                    >
+                      <option value="easy">😊 Easy</option>
+                      <option value="medium">😐 Medium</option>
+                      <option value="hard">😰 Hard</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Parent Task Selection -->
+                <div class="form-group">
+                  <label class="form-label">Parent Task (optional)</label>
+                  <select 
+                    class="form-control"
+                    [(ngModel)]="newTaskParentTaskId"
+                    name="parentTaskId"
+                    (change)="onParentTaskChange()"
+                  >
+                    <option [value]="null">None (Top-level task)</option>
+                    @for (task of availableParentTasks; track task.id) {
+                      <option [value]="task.id">{{ task.title }}</option>
+                    }
+                  </select>
+                  <small class="form-help-text">Make this task a subtask of another task</small>
+                </div>
+
+                <!-- Subtasks Section -->
+                <div class="form-group">
+                  <label class="form-label">Subtasks</label>
+                  <div class="subtasks-form-container">
+                    <div class="subtask-input-container">
+                      <input 
+                        type="text" 
+                        class="form-control"
+                        placeholder="Add a subtask (press Enter to add)"
+                        [(ngModel)]="newSubtaskInput"
+                        name="subtaskInput"
+                        (keydown.enter)="addSubtaskToForm($event)"
+                      />
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="addSubtaskToForm()">
+                        Add
+                      </button>
+                    </div>
+                    @if (newTaskSubtasks.length > 0) {
+                      <ul class="subtasks-list-form">
+                        @for (subtask of newTaskSubtasks; track $index) {
+                          <li class="subtask-item-form">
+                            <span>{{ subtask }}</span>
+                            <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm($index)">
+                              ×
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    }
+                    @if (newTaskSubtasks.length === 0) {
+                      <p class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Task Dependencies -->
+                <div class="form-group">
+                  <label class="form-label">Dependencies</label>
+                  <div class="dependencies-form-container">
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="selectedDependencyTaskId"
+                      name="dependencyTask"
+                      (change)="addDependencyToForm()"
+                    >
+                      <option [value]="null">Select a task this depends on...</option>
+                      @for (task of availableDependencyTasks; track task.id) {
+                        <option [value]="task.id" [disabled]="newTaskDependsOnTaskIds.includes(task.id)">
+                          {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                        </option>
+                      }
+                    </select>
+                    @if (newTaskDependsOnTaskIds.length > 0) {
+                      <div class="dependencies-list-form">
+                        <label class="form-label-small">This task depends on:</label>
+                        <ul class="dependencies-list">
+                          @for (depTaskId of newTaskDependsOnTaskIds; track depTaskId) {
+                            <li class="dependency-item-form">
+                              @if (getTaskById(depTaskId)) {
+                                <span class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                                <span class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                                  {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                                </span>
+                              }
+                              <button type="button" class="btn-icon-small" (click)="removeDependencyFromForm(depTaskId)">
+                                ×
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    @if (newTaskDependsOnTaskIds.length === 0) {
+                      <p class="form-help-text">No dependencies. This task can be started immediately.</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Recurrence -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="newTaskIsRecurring"
+                      name="isRecurring"
+                      (change)="onRecurrenceToggle()"
+                    />
+                    Make this task recurring
+                  </label>
+                </div>
+                @if (newTaskIsRecurring) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Recurrence Pattern</label>
+                      <select 
+                        class="form-control"
+                        [(ngModel)]="newTaskRecurrencePattern"
+                        name="recurrencePattern"
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Interval</label>
+                      <input 
+                        type="number" 
+                        class="form-control"
+                        [(ngModel)]="newTaskRecurrenceInterval"
+                        name="recurrenceInterval"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+                }
                 
                 <div class="form-actions">
                   <button type="submit" class="btn btn-primary" [disabled]="!newTaskTitle.trim()">
@@ -718,28 +904,70 @@ interface EditModalData {
               @if (editModalData.task || !isEditing) {
                 <form (ngSubmit)="onUpdateTask()">
                   <div class="form-group">
-                    <label class="form-label">Title</label>
                     <input 
                       type="text" 
                       class="form-control"
                       placeholder="Task title"
                       [(ngModel)]="editFormData.title"
-                      name="title"
+                      name="editTitle"
                       required
+                      #editTitleInput
+                      autofocus
                       [disabled]="isEditing"
                     />
                   </div>
-
                   <div class="form-group">
                     <label class="form-label">Description</label>
                     <textarea 
                       class="form-control"
-                      placeholder="Task description"
+                      placeholder="Add more details about your task..."
                       [(ngModel)]="editFormData.description"
-                      name="description"
-                      rows="3"
+                      name="editDescription"
+                      rows="4"
                       [disabled]="isEditing"
                     ></textarea>
+                  </div>
+                  
+                  <!-- Enhanced Category Dropdown -->
+                  <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="editFormData.category"
+                      name="editCategory"
+                      [disabled]="isEditing"
+                    >
+                      <option value="">Select Category</option>
+                      @for (category of enhancedCategories; track category.name) {
+                        <option [value]="category.name">
+                          {{ category.icon }} {{ category.name }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Tag Input -->
+                  <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <div class="tag-input-container">
+                      <input 
+                        type="text" 
+                        class="form-control"
+                        placeholder="Add tags (press Enter to add)"
+                        [(ngModel)]="editTaskTagInput"
+                        name="editTagInput"
+                        (keydown)="onEditTagInputKeydown($event)"
+                        [disabled]="isEditing"
+                      />
+                    </div>
+                    <div class="tag-preview">
+                      @for (tag of editTaskTags; track tag) {
+                        <span class="tag-badge">
+                          {{ tag }}
+                          <button type="button" (click)="removeEditTag(tag)" class="tag-remove" [disabled]="isEditing">×</button>
+                        </span>
+                      }
+                    </div>
                   </div>
 
                   <div class="form-row">
@@ -750,17 +978,16 @@ interface EditModalData {
                         class="form-control"
                         [value]="editFormData.dueDate"
                         (input)="editFormData.dueDate = $any($event.target).value"
-                        name="dueDate"
+                        name="editDueDate"
                         [disabled]="isEditing"
                       />
                     </div>
-
                     <div class="form-group">
                       <label class="form-label">Priority</label>
                       <select 
                         class="form-control"
                         [(ngModel)]="editFormData.priority"
-                        name="priority"
+                        name="editPriority"
                         [disabled]="isEditing"
                       >
                         <option [ngValue]="1">Low</option>
@@ -770,24 +997,180 @@ interface EditModalData {
                     </div>
                   </div>
 
-                  <div class="form-group">
-                    <label class="checkbox-label">
+                  <!-- Smart Task Properties -->
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Estimated Duration (minutes)</label>
                       <input 
-                        type="checkbox"
-                        [(ngModel)]="editFormData.completed"
-                        name="completed"
+                        type="number" 
+                        class="form-control"
+                        placeholder="e.g., 30"
+                        [(ngModel)]="editFormData.estimatedDuration"
+                        name="editEstimatedDuration"
+                        min="1"
                         [disabled]="isEditing"
                       />
-                      <span class="checkmark"></span>
-                      Mark as completed
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Difficulty</label>
+                      <select 
+                        class="form-control"
+                        [(ngModel)]="editFormData.difficulty"
+                        name="editDifficulty"
+                        [disabled]="isEditing"
+                      >
+                        <option value="easy">😊 Easy</option>
+                        <option value="medium">😐 Medium</option>
+                        <option value="hard">😰 Hard</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Parent Task Selection -->
+                  <div class="form-group">
+                    <label class="form-label">Parent Task (optional)</label>
+                    <select 
+                      class="form-control"
+                      [(ngModel)]="editFormData.parentTaskId"
+                      name="editParentTaskId"
+                      (change)="onParentTaskChange()"
+                      [disabled]="isEditing"
+                    >
+                      <option [value]="null">None (Top-level task)</option>
+                      @for (task of availableParentTasks; track task.id) {
+                        <option [value]="task.id">{{ task.title }}</option>
+                      }
+                    </select>
+                    <small class="form-help-text">Make this task a subtask of another task</small>
+                  </div>
+
+                  <!-- Subtasks Section -->
+                  <div class="form-group">
+                    <label class="form-label">Subtasks</label>
+                    <div class="subtasks-form-container">
+                      <div class="subtask-input-container">
+                        <input 
+                          type="text" 
+                          class="form-control"
+                          placeholder="Add a subtask (press Enter to add)"
+                          [(ngModel)]="editSubtaskInput"
+                          name="editSubtaskInput"
+                          (keydown.enter)="addSubtaskToForm($event, true)"
+                          [disabled]="isEditing"
+                        />
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="addSubtaskToForm(undefined, true)" [disabled]="isEditing">
+                          Add
+                        </button>
+                      </div>
+                      @if (editTaskSubtasks.length > 0) {
+                        <ul class="subtasks-list-form">
+                          @for (subtask of editTaskSubtasks; track $index) {
+                            <li class="subtask-item-form">
+                              <span>{{ subtask }}</span>
+                              <button type="button" class="btn-icon-small" (click)="removeSubtaskFromForm($index, true)" [disabled]="isEditing">
+                                ×
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                      @if (editTaskSubtasks.length === 0) {
+                        <p class="form-help-text">No subtasks yet. Add subtasks to break down this task into smaller steps.</p>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Task Dependencies -->
+                  <div class="form-group">
+                    <label class="form-label">Dependencies</label>
+                    <div class="dependencies-form-container">
+                      <select 
+                        class="form-control"
+                        [(ngModel)]="selectedEditDependencyTaskId"
+                        name="editDependencyTask"
+                        (change)="addEditDependencyToForm()"
+                        [disabled]="isEditing"
+                      >
+                        <option [value]="null">Select a task this depends on...</option>
+                        @for (task of availableDependencyTasks; track task.id) {
+                          <option [value]="task.id" [disabled]="editTaskDependsOnTaskIds.includes(task.id)">
+                            {{ task.title }} {{ task.completed ? '(Completed)' : '(Pending)' }}
+                          </option>
+                        }
+                      </select>
+                      @if (editTaskDependsOnTaskIds.length > 0) {
+                        <div class="dependencies-list-form">
+                          <label class="form-label-small">This task depends on:</label>
+                          <ul class="dependencies-list">
+                            @for (depTaskId of editTaskDependsOnTaskIds; track depTaskId) {
+                              <li class="dependency-item-form">
+                                @if (getTaskById(depTaskId)) {
+                                  <span class="dependency-title">{{ getTaskById(depTaskId)!.title }}</span>
+                                  <span class="dependency-status" [class.completed]="getTaskById(depTaskId)!.completed">
+                                    {{ getTaskById(depTaskId)!.completed ? '✓ Completed' : '○ Pending' }}
+                                  </span>
+                                }
+                                <button type="button" class="btn-icon-small" (click)="removeEditDependencyFromForm(depTaskId)" [disabled]="isEditing">
+                                  ×
+                                </button>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                      @if (editTaskDependsOnTaskIds.length === 0) {
+                        <p class="form-help-text">No dependencies. This task can be started immediately.</p>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Recurrence -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <input 
+                        type="checkbox" 
+                        [(ngModel)]="editFormData.isRecurring"
+                        name="editIsRecurring"
+                        [disabled]="isEditing"
+                      />
+                      Make this task recurring
                     </label>
                   </div>
+                  @if (editFormData.isRecurring) {
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label">Recurrence Pattern</label>
+                        <select 
+                          class="form-control"
+                          [(ngModel)]="editFormData.recurrencePattern"
+                          name="editRecurrencePattern"
+                          [disabled]="isEditing"
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="yearly">Yearly</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Interval</label>
+                        <input 
+                          type="number" 
+                          class="form-control"
+                          [(ngModel)]="editFormData.recurrenceInterval"
+                          name="editRecurrenceInterval"
+                          min="1"
+                          [disabled]="isEditing"
+                        />
+                      </div>
+                    </div>
+                  }
 
                   <div class="form-actions">
                     <button 
                       type="submit" 
                       class="btn btn-primary"
-                      [disabled]="isEditing"
+                      [disabled]="isEditing || !editFormData.title.trim()"
                     >
                       {{ isEditing ? 'Updating...' : 'Update Task' }}
                     </button>
@@ -1809,6 +2192,42 @@ interface EditModalData {
       color: rgba(255, 255, 255, 0.5);
     }
 
+    /* Select dropdown styling - ensure text is visible for category, priority, and difficulty */
+    select.form-control {
+      color: #1a1a1a !important;
+      background: #ffffff !important;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    select.form-control:focus {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+      border-color: #667eea;
+    }
+
+    select.form-control:hover {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+    }
+
+    select.form-control option {
+      color: #1a1a1a !important;
+      background: white !important;
+      padding: 0.5rem;
+    }
+
+    select.form-control option:checked {
+      color: #1a1a1a !important;
+      background: #f0f4ff !important;
+      font-weight: 600;
+    }
+
+    select.form-control option:disabled {
+      color: #999 !important;
+      background: #f5f5f5 !important;
+    }
+
     textarea.form-control {
       resize: vertical;
       min-height: 100px;
@@ -1885,6 +2304,176 @@ interface EditModalData {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none !important;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .tag-input-container {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .tag-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag-badge {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tag-remove {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .tag-remove:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .tag-remove:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-help-text {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .subtasks-form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .subtask-input-container {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .subtasks-list-form {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .subtask-item-form {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .dependencies-form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .dependencies-list-form {
+      margin-top: 1rem;
+    }
+
+    .form-label-small {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    .dependencies-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .dependency-item-form {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      gap: 1rem;
+    }
+
+    .dependency-title {
+      flex: 1;
+      color: white;
+    }
+
+    .dependency-status {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+    }
+
+    .dependency-status.completed {
+      color: #4ade80;
+    }
+
+    .btn-icon-small {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: white;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .btn-icon-small:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-icon-small:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .modal-content-large {
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     /* Day Details Modal */
@@ -2191,6 +2780,16 @@ export class CalendarViewComponent implements OnInit {
   newTaskEisenhowerCategory: string = 'urgent-important';
   newTaskTagInput: string = '';
   newTaskTags: string[] = [];
+  newTaskEstimatedDuration: number | null = null;
+  newTaskDifficulty: string = 'medium';
+  newTaskSubtasks: string[] = [];
+  newSubtaskInput = '';
+  newTaskParentTaskId: number | null = null;
+  newTaskDependsOnTaskIds: number[] = [];
+  selectedDependencyTaskId: number | null = null;
+  availableParentTasks: Task[] = [];
+  availableDependencyTasks: Task[] = [];
+  newTaskAttachments: Attachment[] = [];
   newTaskIsRecurring: boolean = false;
   newTaskRecurrencePattern: string = 'daily';
   newTaskRecurrenceInterval: number = 1;
@@ -2228,11 +2827,23 @@ export class CalendarViewComponent implements OnInit {
     description: '',
     dueDate: '',
     priority: 2,
+    category: '',
     completed: false,
     isRecurring: false,
     recurrencePattern: 'daily' as 'daily' | 'weekly' | 'monthly' | 'yearly',
-    recurrenceInterval: 1
+    recurrenceInterval: 1,
+    estimatedDuration: null as number | null,
+    difficulty: 'medium' as TaskDifficulty,
+    parentTaskId: null as number | null
   };
+  
+  editTaskTags: string[] = [];
+  editTaskTagInput: string = '';
+  editTaskSubtasks: string[] = [];
+  editSubtaskInput = '';
+  editTaskDependsOnTaskIds: number[] = [];
+  selectedEditDependencyTaskId: number | null = null;
+  editTaskAttachments: Attachment[] = [];
 
   isEditing = false;
   editError = '';
@@ -2544,9 +3155,18 @@ getFormattedBlockDate(dateString: string): string {
     this.newTaskCategory = 'Other';
     this.newTaskTags = [];
     this.newTaskTagInput = '';
+    this.newTaskEstimatedDuration = null;
+    this.newTaskDifficulty = 'medium';
+    this.newTaskSubtasks = [];
+    this.newSubtaskInput = '';
+    this.newTaskParentTaskId = null;
+    this.newTaskDependsOnTaskIds = [];
+    this.selectedDependencyTaskId = null;
+    this.newTaskAttachments = [];
     this.newTaskIsRecurring = false;
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
+    this.updateAvailableTasks();
   }
 
   getFormattedDueDate(): string {
@@ -2574,6 +3194,126 @@ getFormattedBlockDate(dateString: string): string {
 
   removeTag(tagToRemove: string): void {
     this.newTaskTags = this.newTaskTags.filter(tag => tag !== tagToRemove);
+  }
+
+  // Edit tag helpers
+  onEditTagInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      this.addEditTag();
+    }
+  }
+
+  addEditTag(): void {
+    const tag = this.editTaskTagInput.trim();
+    if (tag && !this.editTaskTags.includes(tag)) {
+      this.editTaskTags.push(tag);
+      this.editTaskTagInput = '';
+    }
+  }
+
+  removeEditTag(tagToRemove: string): void {
+    this.editTaskTags = this.editTaskTags.filter(tag => tag !== tagToRemove);
+  }
+
+  // Subtask helpers
+  addSubtaskToForm(event?: Event, isEdit: boolean = false): void {
+    if (event) {
+      event.preventDefault();
+    }
+    if (isEdit) {
+      if (this.editSubtaskInput.trim()) {
+        this.editTaskSubtasks.push(this.editSubtaskInput.trim());
+        this.editSubtaskInput = '';
+      }
+    } else {
+      if (this.newSubtaskInput.trim()) {
+        this.newTaskSubtasks.push(this.newSubtaskInput.trim());
+        this.newSubtaskInput = '';
+      }
+    }
+  }
+
+  removeSubtaskFromForm(index: number, isEdit: boolean = false): void {
+    if (isEdit) {
+      this.editTaskSubtasks.splice(index, 1);
+    } else {
+      this.newTaskSubtasks.splice(index, 1);
+    }
+  }
+
+  // Dependency helpers
+  addDependencyToForm(): void {
+    if (this.selectedDependencyTaskId && !this.newTaskDependsOnTaskIds.includes(this.selectedDependencyTaskId)) {
+      this.newTaskDependsOnTaskIds.push(this.selectedDependencyTaskId);
+      this.selectedDependencyTaskId = null;
+    }
+  }
+
+  addEditDependencyToForm(): void {
+    if (this.selectedEditDependencyTaskId && !this.editTaskDependsOnTaskIds.includes(this.selectedEditDependencyTaskId)) {
+      if (this.editModalData.task && this.selectedEditDependencyTaskId === this.editModalData.task.id) {
+        alert('A task cannot depend on itself');
+        return;
+      }
+      this.editTaskDependsOnTaskIds.push(this.selectedEditDependencyTaskId);
+      this.selectedEditDependencyTaskId = null;
+    }
+  }
+
+  removeDependencyFromForm(taskId: number): void {
+    this.newTaskDependsOnTaskIds = this.newTaskDependsOnTaskIds.filter(id => id !== taskId);
+  }
+
+  removeEditDependencyFromForm(taskId: number): void {
+    this.editTaskDependsOnTaskIds = this.editTaskDependsOnTaskIds.filter(id => id !== taskId);
+  }
+
+  getTaskById(taskId: number): Task | undefined {
+    return this.tasks.find(t => t.id === taskId);
+  }
+
+  updateAvailableTasks(): void {
+    this.availableParentTasks = this.tasks.filter(t => 
+      !t.parentTaskId &&
+      (!this.editModalData.task || t.id !== this.editModalData.task.id)
+    );
+    
+    this.availableDependencyTasks = this.tasks.filter(t => 
+      (!this.editModalData.task || t.id !== this.editModalData.task.id)
+    );
+  }
+
+  onParentTaskChange(): void {
+    this.updateAvailableTasks();
+  }
+
+  onRecurrenceToggle(): void {
+    if (!this.newTaskIsRecurring) {
+      this.newTaskRecurrencePattern = 'daily';
+      this.newTaskRecurrenceInterval = 1;
+    }
+  }
+
+  onAttachmentsChange(attachments: Attachment[]): void {
+    this.newTaskAttachments = attachments;
+  }
+
+  onEditAttachmentsChange(attachments: Attachment[]): void {
+    this.editTaskAttachments = attachments;
+  }
+
+  get enhancedCategories(): Array<{name: string; icon: string; color: string}> {
+    return [
+      { name: 'Personal', icon: '🏠', color: '#4ade80' },
+      { name: 'Work', icon: '💼', color: '#3b82f6' },
+      { name: 'Shopping', icon: '🛒', color: '#f59e0b' },
+      { name: 'Health', icon: '🏥', color: '#ef4444' },
+      { name: 'Education', icon: '🎓', color: '#8b5cf6' },
+      { name: 'Finance', icon: '💰', color: '#10b981' },
+      { name: 'Travel', icon: '✈️', color: '#06b6d4' },
+      { name: 'Other', icon: '📦', color: '#6b7280' }
+    ];
   }
 
   formatDateForModal(date: Date): string {
@@ -2760,11 +3500,22 @@ getFormattedBlockDate(dateString: string): string {
           description: task.description || '',
           dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
           priority: task.priority,
+          category: task.category || '',
           completed: task.completed,
           isRecurring: task.isRecurring || false,
           recurrencePattern: (task.recurrencePattern as 'daily' | 'weekly' | 'monthly' | 'yearly') || 'daily',
-          recurrenceInterval: task.recurrenceInterval || 1
+          recurrenceInterval: task.recurrenceInterval || 1,
+          estimatedDuration: (task as any).estimatedDuration || null,
+          difficulty: (task as any).difficulty || 'medium',
+          parentTaskId: task.parentTaskId || null
         };
+        this.editTaskTags = [...(task.tags || [])];
+        this.editTaskTagInput = '';
+        this.editTaskSubtasks = task.subtasks?.map(st => st.title) || [];
+        this.editSubtaskInput = '';
+        this.editTaskDependsOnTaskIds = [...(task.dependsOnTaskIds || [])];
+        this.selectedEditDependencyTaskId = null;
+        this.updateAvailableTasks();
         this.isEditing = false;
       },
       error: (error: any) => {
@@ -2784,19 +3535,39 @@ getFormattedBlockDate(dateString: string): string {
     this.isEditing = true;
     this.editError = '';
 
-    const updateData: UpdateTaskRequest = {
+    const priority = typeof this.editFormData.priority === 'string' 
+      ? parseInt(this.editFormData.priority, 10) 
+      : (this.editFormData.priority || 1);
+
+    const updateData: any = {
       title: this.editFormData.title.trim(),
-      description: this.editFormData.description,
-      dueDate: this.editFormData.dueDate || null,
-      priority: this.editFormData.priority,
+      description: this.editFormData.description.trim() || undefined,
+      dueDate: this.editFormData.dueDate || undefined,
+      priority: priority,
+      category: this.editFormData.category || undefined,
+      tags: this.editTaskTags,
+      estimatedDuration: this.editFormData.estimatedDuration || undefined,
+      difficulty: this.editFormData.difficulty as any,
+      parentTaskId: this.editFormData.parentTaskId || undefined,
+      dependsOnTaskIds: this.editTaskDependsOnTaskIds.length > 0 ? this.editTaskDependsOnTaskIds : undefined,
       completed: this.editFormData.completed,
-      isRecurring: this.editFormData.isRecurring,
-      recurrencePattern: this.editFormData.isRecurring ? this.editFormData.recurrencePattern : 'none',
+      isRecurring: this.editFormData.isRecurring || false,
+      recurrencePattern: this.editFormData.isRecurring ? (this.editFormData.recurrencePattern as any) : 'none',
       recurrenceInterval: this.editFormData.isRecurring ? this.editFormData.recurrenceInterval : 1
     };
 
     this.taskService.updateTask(this.editModalData.taskId, updateData).subscribe({
-      next: (updatedTask: Task) => {
+      next: async (updatedTask: Task) => {
+        // Handle subtasks - this is simplified, you might want to update existing ones
+        if (this.editTaskSubtasks.length > 0) {
+          for (const subtaskTitle of this.editTaskSubtasks) {
+            await firstValueFrom(this.taskService.createTask({ 
+              title: subtaskTitle, 
+              parentTaskId: this.editModalData.taskId 
+            } as any));
+          }
+        }
+        
         const index = this.tasks.findIndex(t => t.id === this.editModalData.taskId);
         if (index !== -1) {
           this.tasks[index] = updatedTask;
@@ -2805,18 +3576,18 @@ getFormattedBlockDate(dateString: string): string {
         this.isEditing = false;
         this.closeEditModal();
         
+        this.loadTasks(); // Reload to get updated subtasks
         this.generateCalendar();
         
         if (this.selectedDay) {
           this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
         }
-        
-        this.tasks = [...this.tasks];
       },
       error: (error: any) => {
         this.editError = 'Failed to update task. Please try again.';
         this.isEditing = false;
         console.error('Error updating task:', error);
+        alert(`Failed to update task: ${error?.message || 'Unknown error'}`);
       }
     });
   }
@@ -2862,16 +3633,27 @@ getFormattedBlockDate(dateString: string): string {
       description: '',
       dueDate: '',
       priority: 2,
+      category: '',
       completed: false,
       isRecurring: false,
       recurrencePattern: 'daily',
-      recurrenceInterval: 1
+      recurrenceInterval: 1,
+      estimatedDuration: null,
+      difficulty: 'medium',
+      parentTaskId: null
     };
+    this.editTaskTags = [];
+    this.editTaskTagInput = '';
+    this.editTaskSubtasks = [];
+    this.editSubtaskInput = '';
+    this.editTaskDependsOnTaskIds = [];
+    this.selectedEditDependencyTaskId = null;
+    this.editTaskAttachments = [];
     this.editError = '';
     this.isEditing = false;
   }
 
-  onRecurrenceToggle(): void {
+  onEditRecurrenceToggle(): void {
     if (!this.editFormData.isRecurring) {
       this.editFormData.recurrencePattern = 'daily';
       this.editFormData.recurrenceInterval = 1;
@@ -2883,26 +3665,45 @@ getFormattedBlockDate(dateString: string): string {
       return;
     }
 
-    const newTask: CreateTaskRequest = {
+    const priority = typeof this.newTaskPriority === 'string' 
+      ? parseInt(this.newTaskPriority, 10) 
+      : (this.newTaskPriority || 1);
+
+    const newTask: any = {
       title: this.newTaskTitle.trim(),
-      description: this.newTaskDescription,
-      dueDate: this.newTaskDueDate,
-      priority: this.newTaskPriority,
+      description: this.newTaskDescription || '',
+      dueDate: this.newTaskDueDate || undefined,
+      priority: priority,
       category: this.newTaskCategory || 'Other',
-      tags: this.newTaskTags,
-      isRecurring: this.newTaskIsRecurring,
-      recurrencePattern: this.newTaskIsRecurring ? this.newTaskRecurrencePattern as RecurrencePattern : 'none',
+      tags: this.newTaskTags || [],
+      estimatedDuration: this.newTaskEstimatedDuration || undefined,
+      difficulty: this.newTaskDifficulty as any,
+      parentTaskId: this.newTaskParentTaskId || undefined,
+      dependsOnTaskIds: this.newTaskDependsOnTaskIds.length > 0 ? this.newTaskDependsOnTaskIds : undefined,
+      isRecurring: this.newTaskIsRecurring || false,
+      recurrencePattern: this.newTaskIsRecurring ? (this.newTaskRecurrencePattern as RecurrencePattern) : 'none',
       recurrenceInterval: this.newTaskIsRecurring ? this.newTaskRecurrenceInterval : 1
     };
 
     this.taskService.createTask(newTask).subscribe({
-      next: (createdTask) => {
+      next: async (createdTask) => {
+        // Create subtasks if any were added
+        if (this.newTaskSubtasks.length > 0) {
+          for (const subtaskTitle of this.newTaskSubtasks) {
+            await firstValueFrom(this.taskService.createTask({ 
+              title: subtaskTitle, 
+              parentTaskId: createdTask.id 
+            } as any));
+          }
+        }
+        
         this.tasks.push(createdTask);
         this.generateCalendar();
         this.closeCreateTaskModal();
       },
       error: (error) => {
         console.error('Error creating task:', error);
+        alert(`Failed to create task: ${error?.message || 'Unknown error'}`);
       }
     });
   }
@@ -2917,6 +3718,14 @@ getFormattedBlockDate(dateString: string): string {
     this.newTaskCategory = '';
     this.newTaskTags = [];
     this.newTaskTagInput = '';
+    this.newTaskEstimatedDuration = null;
+    this.newTaskDifficulty = 'medium';
+    this.newTaskSubtasks = [];
+    this.newSubtaskInput = '';
+    this.newTaskParentTaskId = null;
+    this.newTaskDependsOnTaskIds = [];
+    this.selectedDependencyTaskId = null;
+    this.newTaskAttachments = [];
     this.newTaskIsRecurring = false;
     this.newTaskRecurrencePattern = 'daily';
     this.newTaskRecurrenceInterval = 1;
