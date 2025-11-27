@@ -37,6 +37,8 @@ export class ThemeService {
     effect(() => {
       const theme = this.currentTheme();
       const accent = this.currentAccent();
+      const isDark = this.isDarkMode();
+      // Re-apply theme when any of these change
       this.applyTheme(theme, accent);
       this.saveTheme(theme, accent);
     });
@@ -123,8 +125,17 @@ export class ThemeService {
     root.style.setProperty('--accent-primary', colors.primary);
     root.style.setProperty('--accent-secondary', colors.secondary);
     root.style.setProperty('--accent-hover', this.darkenColor(colors.primary, 10));
-    root.style.setProperty('--bg-gradient', `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`);
-    root.style.setProperty('--bg-gradient-reverse', `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.primary} 100%)`);
+    
+    // Use darker gradient in dark mode for better contrast
+    if (isDark) {
+      const darkPrimary = this.darkenColor(colors.primary, 30);
+      const darkSecondary = this.darkenColor(colors.secondary, 30);
+      root.style.setProperty('--bg-gradient', `linear-gradient(135deg, ${darkPrimary} 0%, ${darkSecondary} 100%)`);
+      root.style.setProperty('--bg-gradient-reverse', `linear-gradient(135deg, ${darkSecondary} 0%, ${darkPrimary} 100%)`);
+    } else {
+      root.style.setProperty('--bg-gradient', `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`);
+      root.style.setProperty('--bg-gradient-reverse', `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.primary} 100%)`);
+    }
 
     // Update body class
     if (isDark) {

@@ -55,6 +55,16 @@ body {
   background: var(--bg-gradient);
   min-height: 100vh;
   color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode body styles */
+body.dark-mode {
+  background: var(--bg-gradient);
+}
+
+body.light-mode {
+  background: var(--bg-gradient);
 }
 
 .container {

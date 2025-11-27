@@ -101,9 +101,9 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
-      background: rgba(30, 30, 30, 0.95);
+      background: var(--bg-primary);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 1rem;
       min-width: 200px;
@@ -120,7 +120,7 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
     }
 
     .menu-label {
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--text-secondary);
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -138,9 +138,9 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
       padding: 0.75rem 1rem;
       border-radius: 8px;
       cursor: pointer;
@@ -150,13 +150,14 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
     }
 
     .theme-option:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: var(--bg-tertiary);
+      border-color: var(--accent-primary);
     }
 
     .theme-option.active {
-      background: rgba(102, 126, 234, 0.2);
-      border-color: rgba(102, 126, 234, 0.4);
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
     }
 
     .option-icon {
@@ -191,8 +192,8 @@ import { ThemeService, Theme, AccentColor } from '../../services/theme.service';
     }
 
     .accent-option.active {
-      border-color: white;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+      border-color: var(--text-primary);
+      box-shadow: 0 0 0 2px var(--accent-primary);
     }
 
     .accent-check {
