@@ -704,7 +704,7 @@ import { Task } from '../../models/task.model';
 
     body.dark-mode .btn-gradient {
       background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
-      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
     }
 
     .btn-gradient:hover {

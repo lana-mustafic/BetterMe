@@ -545,7 +545,7 @@ type SessionType = 'work' | 'break';
 
     body.dark-mode .btn-gradient {
       background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
     }
 
     .btn-gradient:hover {
@@ -555,7 +555,7 @@ type SessionType = 'work' | 'break';
 
     body.dark-mode .btn-gradient:hover {
       background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.7);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
     }
 
     .btn-outline {
@@ -565,7 +565,7 @@ type SessionType = 'work' | 'break';
     }
 
     body.dark-mode .btn-outline {
-      border-color: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
     .btn-outline:hover {
@@ -573,7 +573,8 @@ type SessionType = 'work' | 'break';
     }
 
     body.dark-mode .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
     }
 
     .btn-danger {

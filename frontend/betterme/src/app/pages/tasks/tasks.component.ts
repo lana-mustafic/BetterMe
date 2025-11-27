@@ -2112,6 +2112,11 @@ interface Category {
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 6s ease-in-out infinite;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -2168,6 +2173,13 @@ interface Category {
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .tasks-header {
@@ -2183,6 +2195,14 @@ interface Category {
       font-weight: 800;
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .header-content h1 {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -2218,6 +2238,11 @@ interface Category {
       box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
     }
 
+    body.dark-mode .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+    }
+
     .btn-outline {
       background: transparent;
       color: white;
@@ -2225,9 +2250,27 @@ interface Category {
       backdrop-filter: blur(10px);
     }
 
+    body.dark-mode .btn-outline {
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .btn:hover {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    body.dark-mode .btn-gradient:hover {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
+    }
+
+    body.dark-mode .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
     }
 
     .btn-icon {
@@ -2249,6 +2292,12 @@ interface Category {
       padding: 0.5rem;
       border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .view-toggle {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .toggle-btn {
