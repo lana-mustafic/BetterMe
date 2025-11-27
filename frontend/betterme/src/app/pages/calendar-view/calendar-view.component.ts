@@ -3123,6 +3123,19 @@ getFormattedBlockDate(dateString: string): string {
   onYearMonthClick(monthData: { month: string, year: number, tasks: Task[] }, event: Event): void {
     event.stopPropagation();
     
+    // If the month has no tasks, directly open the add task modal with the first day of that month
+    if (monthData.tasks.length === 0) {
+      const monthIndex = this.months.findIndex(m => m === monthData.month);
+      if (monthIndex !== -1) {
+        // Set the date to the first day of the selected month
+        this.selectedDateForNewTask = new Date(monthData.year, monthIndex, 1);
+        this.initializeTaskForm();
+        this.showCreateTaskModal = true;
+        return;
+      }
+    }
+    
+    // If the month has tasks, show the month selection modal
     const monthIndex = this.months.findIndex(m => m === monthData.month);
     this.selectedYearMonth = {
       month: monthData.month,
