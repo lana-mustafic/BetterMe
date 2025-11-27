@@ -430,6 +430,7 @@ export class QuickAddTaskComponent implements OnDestroy {
         // Create a simple task from the input text
         const taskData: CreateTaskRequest = {
           title: this.inputText.trim(),
+          description: '', // Backend requires description field
           priority: 1,
           category: 'Other',
           tags: []
@@ -466,6 +467,7 @@ export class QuickAddTaskComponent implements OnDestroy {
       if (this.inputText.trim()) {
         const taskData: CreateTaskRequest = {
           title: this.inputText.trim(),
+          description: '', // Backend requires description field
           priority: 1,
           category: 'Other',
           tags: []
@@ -539,14 +541,26 @@ export class QuickAddTaskComponent implements OnDestroy {
       }
     }
 
-    const taskData: CreateTaskRequest = {
+    // Build task data and clean up undefined values
+    const taskData: any = {
       title: this.parsedData.title.trim(),
-      description: this.parsedData.description?.trim() || undefined,
-      dueDate: dueDateString,
       priority: this.parsedData.priority || 1,
       category: this.parsedData.category || 'Other',
       tags: this.parsedData.tags || []
     };
+
+    // Only include description if it exists and is not empty
+    if (this.parsedData.description?.trim()) {
+      taskData.description = this.parsedData.description.trim();
+    } else {
+      // Send empty string instead of undefined to satisfy backend validation
+      taskData.description = '';
+    }
+
+    // Only include dueDate if it exists
+    if (dueDateString) {
+      taskData.dueDate = dueDateString;
+    }
 
     console.log('Creating task with data:', taskData);
 
