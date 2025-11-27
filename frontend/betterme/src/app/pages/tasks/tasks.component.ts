@@ -2159,6 +2159,11 @@ interface Category {
     .container {
       position: relative;
       z-index: 1;
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .container {
+      /* Container styling matches dark mode theme like glass-card */
     }
 
     .tasks-container {
