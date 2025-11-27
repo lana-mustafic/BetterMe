@@ -492,6 +492,7 @@ export class QuickAddTaskComponent implements OnDestroy {
   private createTaskFromParsedData() {
     if (!this.parsedData || !this.parsedData.title) {
       console.error('Cannot create task: no parsed data or title');
+      this.isCreating = false;
       return;
     }
 
@@ -500,53 +501,70 @@ export class QuickAddTaskComponent implements OnDestroy {
     // Handle date conversion properly to avoid timezone issues
     let dueDateString: string | undefined = undefined;
     if (this.parsedData.dueDate) {
-      // Parse the date string - extract components manually to avoid timezone conversion
-      const dateStr = this.parsedData.dueDate.toString();
-      const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
-      const match = dateStr.match(isoPattern);
-      
-      if (match) {
-        // It's an ISO string - extract components directly
-        const year = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
-        const day = parseInt(match[3], 10);
-        const hours = parseInt(match[4], 10);
-        const minutes = parseInt(match[5], 10);
-        const seconds = parseInt(match[6], 10);
+      try {
+        // Parse the date string - extract components manually to avoid timezone conversion
+        const dateStr = this.parsedData.dueDate;
+        const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
+        const match = dateStr.match(isoPattern);
         
-        // Create date in local time and convert to ISO string
-        const localDate = new Date(year, month, day, hours, minutes, seconds);
-        dueDateString = localDate.toISOString();
-      } else {
-        // Not an ISO string - use standard parsing
-        const parsedDate = new Date(this.parsedData.dueDate);
-        const year = parsedDate.getFullYear();
-        const month = parsedDate.getMonth();
-        const day = parsedDate.getDate();
-        const hours = parsedDate.getHours();
-        const minutes = parsedDate.getMinutes();
-        const seconds = parsedDate.getSeconds();
-        const localDate = new Date(year, month, day, hours, minutes, seconds);
-        dueDateString = localDate.toISOString();
+        if (match) {
+          // It's an ISO string - extract components directly
+          const year = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+          const day = parseInt(match[3], 10);
+          const hours = parseInt(match[4], 10);
+          const minutes = parseInt(match[5], 10);
+          const seconds = parseInt(match[6], 10);
+          
+          // Create date in local time and convert to ISO string
+          const localDate = new Date(year, month, day, hours, minutes, seconds);
+          dueDateString = localDate.toISOString();
+        } else {
+          // Not an ISO string - use standard parsing
+          const parsedDate = new Date(dateStr);
+          if (!isNaN(parsedDate.getTime())) {
+            const year = parsedDate.getFullYear();
+            const month = parsedDate.getMonth();
+            const day = parsedDate.getDate();
+            const hours = parsedDate.getHours();
+            const minutes = parsedDate.getMinutes();
+            const seconds = parsedDate.getSeconds();
+            const localDate = new Date(year, month, day, hours, minutes, seconds);
+            dueDateString = localDate.toISOString();
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing due date:', error);
+        // Continue without due date if parsing fails
       }
     }
 
     const taskData: CreateTaskRequest = {
-      title: this.parsedData.title,
-      description: this.parsedData.description,
+      title: this.parsedData.title.trim(),
+      description: this.parsedData.description?.trim() || undefined,
       dueDate: dueDateString,
-      priority: this.parsedData.priority,
+      priority: this.parsedData.priority || 1,
       category: this.parsedData.category || 'Other',
       tags: this.parsedData.tags || []
     };
 
+    console.log('Creating task with data:', taskData);
+
     this.taskService.createTask(taskData).subscribe({
       next: (task) => {
+        console.log('Task created successfully:', task);
         this.taskCreated.emit(task);
         this.clearInput();
       },
       error: (error) => {
         console.error('Error creating task:', error);
+        console.error('Error details:', {
+          status: error?.originalError?.status,
+          statusText: error?.originalError?.statusText,
+          message: error?.message,
+          error: error?.originalError?.error
+        });
+        alert(`Failed to create task: ${error?.message || 'Unknown error'}`);
         this.isCreating = false;
       }
     });
