@@ -74,7 +74,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subject 
           </div>
           <div class="preview-actions">
             <button class="btn btn-outline" (click)="clearInput()">Cancel</button>
-            <button class="btn btn-gradient" (click)="createTaskFromPreview()" [disabled]="(!parsedData && !inputText.trim()) || isCreating">
+            <button class="btn btn-gradient" (click)="createTaskFromPreview($event)" [disabled]="isCreating">
               @if (isCreating) {
                 Creating...
               } @else {
@@ -454,7 +454,12 @@ export class QuickAddTaskComponent implements OnDestroy {
     this.createTaskFromParsedData();
   }
 
-  createTaskFromPreview() {
+  createTaskFromPreview(event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     // This method is called from the preview modal button
     if (!this.parsedData || !this.parsedData.title) {
       // Fallback to simple task creation
@@ -486,6 +491,7 @@ export class QuickAddTaskComponent implements OnDestroy {
 
   private createTaskFromParsedData() {
     if (!this.parsedData || !this.parsedData.title) {
+      console.error('Cannot create task: no parsed data or title');
       return;
     }
 
@@ -494,21 +500,35 @@ export class QuickAddTaskComponent implements OnDestroy {
     // Handle date conversion properly to avoid timezone issues
     let dueDateString: string | undefined = undefined;
     if (this.parsedData.dueDate) {
-      // Parse the date string and create a date object
-      const parsedDate = new Date(this.parsedData.dueDate);
+      // Parse the date string - extract components manually to avoid timezone conversion
+      const dateStr = this.parsedData.dueDate.toString();
+      const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
+      const match = dateStr.match(isoPattern);
       
-      // Get the local date components to preserve the intended time
-      const year = parsedDate.getFullYear();
-      const month = parsedDate.getMonth();
-      const day = parsedDate.getDate();
-      const hours = parsedDate.getHours();
-      const minutes = parsedDate.getMinutes();
-      const seconds = parsedDate.getSeconds();
-      
-      // Create a new date in local time and convert to ISO string
-      // This ensures the time is preserved as intended
-      const localDate = new Date(year, month, day, hours, minutes, seconds);
-      dueDateString = localDate.toISOString();
+      if (match) {
+        // It's an ISO string - extract components directly
+        const year = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+        const day = parseInt(match[3], 10);
+        const hours = parseInt(match[4], 10);
+        const minutes = parseInt(match[5], 10);
+        const seconds = parseInt(match[6], 10);
+        
+        // Create date in local time and convert to ISO string
+        const localDate = new Date(year, month, day, hours, minutes, seconds);
+        dueDateString = localDate.toISOString();
+      } else {
+        // Not an ISO string - use standard parsing
+        const parsedDate = new Date(this.parsedData.dueDate);
+        const year = parsedDate.getFullYear();
+        const month = parsedDate.getMonth();
+        const day = parsedDate.getDate();
+        const hours = parsedDate.getHours();
+        const minutes = parsedDate.getMinutes();
+        const seconds = parsedDate.getSeconds();
+        const localDate = new Date(year, month, day, hours, minutes, seconds);
+        dueDateString = localDate.toISOString();
+      }
     }
 
     const taskData: CreateTaskRequest = {
@@ -549,28 +569,27 @@ export class QuickAddTaskComponent implements OnDestroy {
     if (!dateString) return '';
     
     // Parse the date string carefully to avoid timezone conversion issues
-    // If it's an ISO string without timezone, treat it as local time
+    // JavaScript's Date constructor treats ISO strings without timezone as UTC
+    // We need to extract the time components and use them as local time
     let date: Date;
-    const isoWithoutTzPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?$/;
-    const hasTimezone = dateString.includes('Z') || dateString.includes('+') || /[+-]\d{2}:\d{2}$/.test(dateString);
     
-    if (dateString.includes('T') && !hasTimezone && isoWithoutTzPattern.test(dateString)) {
-      // ISO format without timezone (e.g., "2024-01-01T10:00:00")
-      // Parse manually to treat as local time to avoid timezone conversion
-      const match = dateString.match(isoWithoutTzPattern);
-      if (match) {
-        const year = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
-        const day = parseInt(match[3], 10);
-        const hours = parseInt(match[4], 10);
-        const minutes = parseInt(match[5], 10);
-        const seconds = parseInt(match[6], 10);
-        date = new Date(year, month, day, hours, minutes, seconds);
-      } else {
-        date = new Date(dateString);
-      }
+    // Check if it's an ISO string (with or without timezone)
+    const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/;
+    const match = dateString.match(isoPattern);
+    
+    if (match) {
+      // It's an ISO string - parse manually to avoid timezone conversion
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+      const day = parseInt(match[3], 10);
+      const hours = parseInt(match[4], 10);
+      const minutes = parseInt(match[5], 10);
+      const seconds = parseInt(match[6], 10);
+      // Create date in local time using the extracted components
+      // This preserves the intended time regardless of timezone
+      date = new Date(year, month, day, hours, minutes, seconds);
     } else {
-      // Has timezone info or other format - use standard parsing
+      // Not an ISO string - use standard parsing
       date = new Date(dateString);
     }
     
