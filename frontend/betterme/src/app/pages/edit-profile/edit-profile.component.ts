@@ -163,6 +163,11 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -215,9 +220,18 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       backdrop-filter: blur(10px);
     }
 
+    body.dark-mode .back-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .back-btn:hover {
       background: rgba(255, 255, 255, 0.15);
       transform: translateX(-5px);
+    }
+
+    body.dark-mode .back-btn:hover {
+      background: rgba(26, 26, 26, 0.5);
     }
 
     .back-icon {
@@ -235,6 +249,13 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 3rem;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .card-header {
@@ -247,6 +268,14 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       font-weight: 800;
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -302,6 +331,11 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       backdrop-filter: blur(10px);
     }
 
+    body.dark-mode .form-input {
+      background: rgba(26, 26, 26, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
     .form-input::placeholder {
       color: rgba(255, 255, 255, 0.6);
     }
@@ -311,6 +345,12 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       border-color: rgba(255, 255, 255, 0.5);
       background: rgba(255, 255, 255, 0.15);
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .form-input:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
     }
 
     .form-input.input-error {
@@ -377,6 +417,11 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       overflow: hidden;
     }
 
+    body.dark-mode .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+    }
+
     .btn-gradient:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -393,13 +438,26 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
+    body.dark-mode .btn-outline {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     .btn-outline:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .btn-outline:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .btn-gradient:hover:not(:disabled) {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
     }
 
     .btn-content {
@@ -437,10 +495,20 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       color: #fecaca;
     }
 
+    body.dark-mode .error-card {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
     .success-card {
       background: rgba(34, 197, 94, 0.1);
       border: 1px solid rgba(34, 197, 94, 0.3);
       color: #bbf7d0;
+    }
+
+    body.dark-mode .success-card {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.4);
     }
 
     .error-icon, .success-icon {

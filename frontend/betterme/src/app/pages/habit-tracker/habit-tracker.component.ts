@@ -640,6 +640,11 @@ interface MonthMarker {
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 6s ease-in-out infinite;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 { width: 200px; height: 200px; top: 10%; left: 5%; animation-delay: 0s; }
@@ -668,6 +673,13 @@ interface MonthMarker {
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .habit-header {
@@ -683,6 +695,14 @@ interface MonthMarker {
       font-weight: 800;
       margin-bottom: 0.5rem;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .header-content h1 {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -715,15 +735,29 @@ interface MonthMarker {
       color: white;
     }
 
+    body.dark-mode .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5);
+    }
+
     .btn-outline {
       background: transparent;
       color: white;
       border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
+    body.dark-mode .btn-outline {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .btn-gradient:hover {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
     }
 
     .btn:disabled {
@@ -782,6 +816,10 @@ interface MonthMarker {
       margin-bottom: 1rem;
     }
 
+    body.dark-mode .progress-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     .progress-fill {
       height: 100%;
       background: linear-gradient(90deg, #4ade80, #22d3ee);
@@ -812,6 +850,11 @@ interface MonthMarker {
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    body.dark-mode .view-toggle {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .toggle-btn {
       display: flex;
       align-items: center;
@@ -826,10 +869,19 @@ interface MonthMarker {
       transition: all 0.3s ease;
     }
 
+    body.dark-mode .toggle-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .toggle-btn.active {
       background: rgba(255, 255, 255, 0.15);
       color: white;
       box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .toggle-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
 
     /* Activity Calendar Styles */
@@ -1058,6 +1110,11 @@ interface MonthMarker {
       border-radius: 8px;
     }
 
+    body.dark-mode .completed-habit {
+      background: rgba(26, 26, 26, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .completed-habit .habit-name {
       color: white;
       font-weight: 500;
@@ -1113,9 +1170,18 @@ interface MonthMarker {
       border-color: rgba(74, 222, 128, 0.5);
     }
 
+    body.dark-mode .habit-card.completed {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.4) 0%, rgba(5, 150, 105, 0.3) 100%);
+      border-color: rgba(5, 150, 105, 0.4);
+    }
+
     .habit-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    body.dark-mode .habit-card:hover {
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
     }
 
     .habit-header {
@@ -1148,6 +1214,10 @@ interface MonthMarker {
       margin: 0 0 0.5rem 0;
     }
 
+    body.dark-mode .habit-name {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .habit-meta {
       display: flex;
       gap: 0.75rem;
@@ -1166,9 +1236,19 @@ interface MonthMarker {
       color: rgba(255, 255, 255, 0.9);
     }
 
+    body.dark-mode .habit-frequency {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .habit-difficulty.easy {
       background: rgba(34, 197, 94, 0.3);
       color: #bbf7d0;
+    }
+
+    body.dark-mode .habit-difficulty.easy {
+      background: rgba(34, 197, 94, 0.4);
+      border: 1px solid rgba(34, 197, 94, 0.3);
     }
 
     .habit-difficulty.medium {
@@ -1176,9 +1256,19 @@ interface MonthMarker {
       color: #fed7aa;
     }
 
+    body.dark-mode .habit-difficulty.medium {
+      background: rgba(245, 158, 11, 0.4);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
     .habit-difficulty.hard {
       background: rgba(239, 68, 68, 0.3);
       color: #fecaca;
+    }
+
+    body.dark-mode .habit-difficulty.hard {
+      background: rgba(239, 68, 68, 0.4);
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .habit-status.active {
@@ -1186,9 +1276,19 @@ interface MonthMarker {
       color: #bbf7d0;
     }
 
+    body.dark-mode .habit-status.active {
+      background: rgba(34, 197, 94, 0.4);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
     .habit-status.inactive {
       background: rgba(100, 116, 139, 0.3);
       color: #cbd5e1;
+    }
+
+    body.dark-mode .habit-status.inactive {
+      background: rgba(100, 116, 139, 0.4);
+      border: 1px solid rgba(100, 116, 139, 0.3);
     }
 
     .habit-points {
@@ -1198,6 +1298,11 @@ interface MonthMarker {
       border-radius: 12px;
       font-weight: 700;
       font-size: 0.9rem;
+    }
+
+    body.dark-mode .habit-points {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .habit-progress {
@@ -1217,11 +1322,19 @@ interface MonthMarker {
       font-weight: 600;
     }
 
+    body.dark-mode .streak-count, body.dark-mode .best-streak {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .progress-text {
       text-align: center;
       color: rgba(255, 255, 255, 0.7);
       font-size: 0.9rem;
       margin-top: 0.5rem;
+    }
+
+    body.dark-mode .progress-text {
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .habit-actions {
@@ -1236,11 +1349,25 @@ interface MonthMarker {
       flex: 1;
     }
 
+    body.dark-mode .complete-btn {
+      background: linear-gradient(135deg, #059669, #0891b2);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5);
+    }
+
+    body.dark-mode .complete-btn:hover {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.7);
+    }
+
     .undo-btn {
       background: transparent;
       color: white;
       border: 2px solid rgba(255, 255, 255, 0.3);
       flex: 1;
+    }
+
+    body.dark-mode .undo-btn {
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     /* Statistics View */
@@ -1300,6 +1427,11 @@ interface MonthMarker {
       border-radius: 8px;
       position: relative;
       overflow: hidden;
+    }
+
+    body.dark-mode .chart-bar-container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .chart-bar {
@@ -1418,10 +1550,20 @@ interface MonthMarker {
       transition: all 0.3s ease;
     }
 
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .form-control:focus {
       outline: none;
       border-color: #667eea;
       background: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     .form-control::placeholder {
@@ -1468,6 +1610,11 @@ interface MonthMarker {
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.3);
       flex: 1;
+    }
+
+    body.dark-mode .btn-secondary {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .error-message {

@@ -293,6 +293,11 @@ type SessionType = 'work' | 'break';
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 20s infinite ease-in-out;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -355,6 +360,13 @@ type SessionType = 'work' | 'break';
       margin-bottom: 1.5rem;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
     .task-selection {
@@ -379,6 +391,11 @@ type SessionType = 'work' | 'break';
       margin-bottom: 1rem;
     }
 
+    body.dark-mode .task-select {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .task-select option {
       background: #1a1a2e;
       color: white;
@@ -391,11 +408,20 @@ type SessionType = 'work' | 'break';
       margin-top: 1rem;
     }
 
+    body.dark-mode .selected-task-info {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .task-title {
       font-weight: 600;
       color: white;
       display: block;
       margin-bottom: 0.5rem;
+    }
+
+    body.dark-mode .task-title {
+      color: rgba(255, 255, 255, 0.95);
     }
 
     .task-description {
@@ -404,12 +430,21 @@ type SessionType = 'work' | 'break';
       margin: 0;
     }
 
+    body.dark-mode .task-description {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     .current-task-display {
       text-align: center;
       margin-bottom: 2rem;
       padding: 1rem;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
+    }
+
+    body.dark-mode .current-task-display {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .timer-container {
@@ -450,6 +485,10 @@ type SessionType = 'work' | 'break';
       font-variant-numeric: tabular-nums;
     }
 
+    body.dark-mode .timer-time {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .timer-label {
       font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.8);
@@ -457,10 +496,18 @@ type SessionType = 'work' | 'break';
       letter-spacing: 2px;
     }
 
+    body.dark-mode .timer-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .pomodoro-count {
       font-size: 0.9rem;
       color: rgba(255, 255, 255, 0.6);
       margin-top: 0.5rem;
+    }
+
+    body.dark-mode .pomodoro-count {
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .timer-circle.work .timer-progress {
@@ -496,9 +543,19 @@ type SessionType = 'work' | 'break';
       color: white;
     }
 
+    body.dark-mode .btn-gradient {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5);
+    }
+
     .btn-gradient:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    body.dark-mode .btn-gradient:hover {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.7);
     }
 
     .btn-outline {
@@ -507,8 +564,16 @@ type SessionType = 'work' | 'break';
       border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
+    body.dark-mode .btn-outline {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     .btn-outline:hover {
       background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .btn-danger {
@@ -516,8 +581,17 @@ type SessionType = 'work' | 'break';
       color: white;
     }
 
+    body.dark-mode .btn-danger {
+      background: rgba(239, 68, 68, 0.8);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
     .btn-danger:hover {
       background: #dc2626;
+    }
+
+    body.dark-mode .btn-danger:hover {
+      background: rgba(220, 38, 38, 0.9);
     }
 
     .btn-large {
@@ -538,6 +612,10 @@ type SessionType = 'work' | 'break';
       border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    body.dark-mode .session-stats {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
     .stat-item {
       display: flex;
       flex-direction: column;
@@ -549,10 +627,18 @@ type SessionType = 'work' | 'break';
       color: rgba(255, 255, 255, 0.7);
     }
 
+    body.dark-mode .stat-label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     .stat-value {
       font-size: 1.2rem;
       font-weight: 600;
       color: white;
+    }
+
+    body.dark-mode .stat-value {
+      color: rgba(255, 255, 255, 0.95);
     }
 
     .actions-bar {
@@ -599,6 +685,16 @@ type SessionType = 'work' | 'break';
       font-size: 1rem;
     }
 
+    body.dark-mode .setting-item input[type="number"] {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .setting-item input[type="number"]:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     .setting-item.checkbox {
       flex-direction: row;
       align-items: center;
@@ -622,6 +718,11 @@ type SessionType = 'work' | 'break';
       padding: 1.5rem;
       border-radius: 10px;
       text-align: center;
+    }
+
+    body.dark-mode .stat-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .stat-card .stat-value {
@@ -654,6 +755,11 @@ type SessionType = 'work' | 'break';
       margin-bottom: 0.5rem;
     }
 
+    body.dark-mode .task-stat-item {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .task-name {
       color: white;
       font-weight: 500;
@@ -665,6 +771,14 @@ type SessionType = 'work' | 'break';
 
     .gradient-text {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;

@@ -373,6 +373,11 @@ import { Task } from '../../models/task.model';
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    body.dark-mode .suggested-task-item {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .task-info {
       flex: 1;
     }
@@ -446,6 +451,10 @@ import { Task } from '../../models/task.model';
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
     }
 
+    body.dark-mode .task-item:hover {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
     .task-item.completed {
       opacity: 0.7;
     }
@@ -472,9 +481,18 @@ import { Task } from '../../models/task.model';
       transition: all 0.3s;
     }
 
+    body.dark-mode .checkmark {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
     .task-checkbox:checked + .checkmark {
       background: #4ade80;
       border-color: #4ade80;
+    }
+
+    body.dark-mode .task-checkbox:checked + .checkmark {
+      background: #059669;
+      border-color: #059669;
     }
 
     .task-checkbox:checked + .checkmark::after {
@@ -495,15 +513,27 @@ import { Task } from '../../models/task.model';
       margin: 0 0 0.5rem 0;
     }
 
+    body.dark-mode .task-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .task-title.completed {
       text-decoration: line-through;
       opacity: 0.8;
+    }
+
+    body.dark-mode .task-title.completed {
+      opacity: 0.6;
     }
 
     .task-description {
       color: rgba(255, 255, 255, 0.8);
       font-size: 0.9rem;
       margin: 0.5rem 0;
+    }
+
+    body.dark-mode .task-description {
+      color: rgba(255, 255, 255, 0.7);
     }
 
     .task-meta {
@@ -521,9 +551,19 @@ import { Task } from '../../models/task.model';
       color: rgba(255, 255, 255, 0.9);
     }
 
+    body.dark-mode .meta-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .meta-item.overdue {
       background: rgba(239, 68, 68, 0.3);
       color: #fecaca;
+    }
+
+    body.dark-mode .meta-item.overdue {
+      background: rgba(239, 68, 68, 0.4);
+      border-color: rgba(239, 68, 68, 0.3);
     }
 
     .meta-item.priority.high {
@@ -531,9 +571,19 @@ import { Task } from '../../models/task.model';
       color: #fecaca;
     }
 
+    body.dark-mode .meta-item.priority.high {
+      background: rgba(239, 68, 68, 0.4);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
     .meta-item.priority.medium {
       background: rgba(245, 158, 11, 0.3);
       color: #fed7aa;
+    }
+
+    body.dark-mode .meta-item.priority.medium {
+      background: rgba(245, 158, 11, 0.4);
+      border-color: rgba(245, 158, 11, 0.3);
     }
 
     .task-actions {
@@ -559,8 +609,18 @@ import { Task } from '../../models/task.model';
       color: #fecaca;
     }
 
+    body.dark-mode .btn-remove {
+      background: rgba(239, 68, 68, 0.4);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
     .btn-remove:hover {
       background: rgba(239, 68, 68, 0.5);
+    }
+
+    body.dark-mode .btn-remove:hover {
+      background: rgba(239, 68, 68, 0.6);
+      border-color: rgba(239, 68, 68, 0.5);
     }
 
     .btn-view {
@@ -568,8 +628,18 @@ import { Task } from '../../models/task.model';
       color: #93c5fd;
     }
 
+    body.dark-mode .btn-view {
+      background: rgba(59, 130, 246, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
     .btn-view:hover {
       background: rgba(59, 130, 246, 0.5);
+    }
+
+    body.dark-mode .btn-view:hover {
+      background: rgba(59, 130, 246, 0.6);
+      border-color: rgba(59, 130, 246, 0.5);
     }
 
     .loading {
