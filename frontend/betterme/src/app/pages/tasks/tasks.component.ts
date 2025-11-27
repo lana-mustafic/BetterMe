@@ -85,7 +85,7 @@ interface Category {
       </div>
 
       <div class="container">
-        <div class="tasks-container">
+        <div class="tasks-container glass-card">
           <!-- Header Section -->
           <div class="tasks-header glass-card">
             <div class="header-content">
