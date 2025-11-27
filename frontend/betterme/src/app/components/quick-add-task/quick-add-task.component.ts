@@ -21,11 +21,6 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subject 
           (keydown.escape)="clearInput()"
           placeholder="Quick add task... (e.g., 'Call mom tomorrow at 3pm high priority')"
         />
-        @if (inputText.trim() && !isCreating) {
-          <button class="quick-add-btn" (click)="createTask()" [disabled]="isCreating">
-            Add Task
-          </button>
-        }
         @if (isProcessing && !inputText.trim()) {
           <div class="loading-spinner"></div>
         }
@@ -79,7 +74,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subject 
           </div>
           <div class="preview-actions">
             <button class="btn btn-outline" (click)="clearInput()">Cancel</button>
-            <button class="btn btn-gradient" (click)="createTask()" [disabled]="(!parsedData && !inputText.trim()) || isCreating">
+            <button class="btn btn-gradient" (click)="createTaskFromPreview()" [disabled]="(!parsedData && !inputText.trim()) || isCreating">
               @if (isCreating) {
                 Creating...
               } @else {
@@ -103,7 +98,6 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of, Subject 
     .quick-add-input {
       width: 100%;
       padding: 1rem 1.25rem;
-      padding-right: 120px;
       font-size: 1rem;
       border: 2px solid rgba(255, 255, 255, 0.2);
       border-radius: 12px;
@@ -457,11 +451,70 @@ export class QuickAddTaskComponent implements OnDestroy {
       return;
     }
 
+    this.createTaskFromParsedData();
+  }
+
+  createTaskFromPreview() {
+    // This method is called from the preview modal button
+    if (!this.parsedData || !this.parsedData.title) {
+      // Fallback to simple task creation
+      if (this.inputText.trim()) {
+        const taskData: CreateTaskRequest = {
+          title: this.inputText.trim(),
+          priority: 1,
+          category: 'Other',
+          tags: []
+        };
+
+        this.isCreating = true;
+        this.taskService.createTask(taskData).subscribe({
+          next: (task) => {
+            this.taskCreated.emit(task);
+            this.clearInput();
+          },
+          error: (error) => {
+            console.error('Error creating task:', error);
+            this.isCreating = false;
+          }
+        });
+      }
+      return;
+    }
+
+    this.createTaskFromParsedData();
+  }
+
+  private createTaskFromParsedData() {
+    if (!this.parsedData || !this.parsedData.title) {
+      return;
+    }
+
     this.isCreating = true;
+    
+    // Handle date conversion properly to avoid timezone issues
+    let dueDateString: string | undefined = undefined;
+    if (this.parsedData.dueDate) {
+      // Parse the date string and create a date object
+      const parsedDate = new Date(this.parsedData.dueDate);
+      
+      // Get the local date components to preserve the intended time
+      const year = parsedDate.getFullYear();
+      const month = parsedDate.getMonth();
+      const day = parsedDate.getDate();
+      const hours = parsedDate.getHours();
+      const minutes = parsedDate.getMinutes();
+      const seconds = parsedDate.getSeconds();
+      
+      // Create a new date in local time and convert to ISO string
+      // This ensures the time is preserved as intended
+      const localDate = new Date(year, month, day, hours, minutes, seconds);
+      dueDateString = localDate.toISOString();
+    }
+
     const taskData: CreateTaskRequest = {
       title: this.parsedData.title,
       description: this.parsedData.description,
-      dueDate: this.parsedData.dueDate ? new Date(this.parsedData.dueDate).toISOString() : undefined,
+      dueDate: dueDateString,
       priority: this.parsedData.priority,
       category: this.parsedData.category || 'Other',
       tags: this.parsedData.tags || []
@@ -494,12 +547,39 @@ export class QuickAddTaskComponent implements OnDestroy {
 
   formatDate(dateString: string | null): string {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    
+    // Parse the date string carefully to avoid timezone conversion issues
+    // If it's an ISO string without timezone, treat it as local time
+    let date: Date;
+    const isoWithoutTzPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?$/;
+    const hasTimezone = dateString.includes('Z') || dateString.includes('+') || /[+-]\d{2}:\d{2}$/.test(dateString);
+    
+    if (dateString.includes('T') && !hasTimezone && isoWithoutTzPattern.test(dateString)) {
+      // ISO format without timezone (e.g., "2024-01-01T10:00:00")
+      // Parse manually to treat as local time to avoid timezone conversion
+      const match = dateString.match(isoWithoutTzPattern);
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; // Month is 0-indexed
+        const day = parseInt(match[3], 10);
+        const hours = parseInt(match[4], 10);
+        const minutes = parseInt(match[5], 10);
+        const seconds = parseInt(match[6], 10);
+        date = new Date(year, month, day, hours, minutes, seconds);
+      } else {
+        date = new Date(dateString);
+      }
+    } else {
+      // Has timezone info or other format - use standard parsing
+      date = new Date(dateString);
+    }
+    
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    // Create date objects for comparison (date only, no time)
     const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     if (taskDate.getTime() === today.getTime()) {
@@ -512,6 +592,7 @@ export class QuickAddTaskComponent implements OnDestroy {
   }
 
   private formatTime(date: Date): string {
+    // Use local time methods to avoid timezone issues
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
