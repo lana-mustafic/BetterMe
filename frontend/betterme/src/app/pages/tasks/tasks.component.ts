@@ -2049,9 +2049,10 @@ interface Category {
   styles: [`
     .tasks-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-animation {
@@ -2118,14 +2119,11 @@ interface Category {
       transition: all 0.3s ease;
     }
 
-    body.dark-mode .container {
-      /* Container styling matches dark mode theme like glass-card */
-    }
-
     .tasks-container {
       max-width: 1400px;
       margin: 0 auto;
       padding: 2rem 1rem;
+      transition: all 0.3s ease;
     }
 
     .glass-card {
@@ -2138,6 +2136,12 @@ interface Category {
     }
 
     body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    body.dark-mode .tasks-container.glass-card {
       background: rgba(26, 26, 26, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
