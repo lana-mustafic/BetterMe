@@ -38,6 +38,19 @@ builder.Services.AddCors(options =>
             .AllowCredentials()
             .WithExposedHeaders("Content-Disposition"); // Optional: for file downloads
     });
+    
+    // Add a named policy for better control
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "https://betterme-frontend.onrender.com",
+                "http://localhost:4200"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition");
+    });
 });
 
 // Database (PostgreSQL)
@@ -103,7 +116,7 @@ var app = builder.Build();
 
 app.UseRouting();
 
-
+// CORS must be before Authentication/Authorization
 app.UseCors(); // This applies the default policy
 
 // Swagger UI only in development

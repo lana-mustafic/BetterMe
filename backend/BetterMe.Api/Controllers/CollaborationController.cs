@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BetterMe.Api.DTOs.Collaboration;
@@ -10,6 +11,7 @@ namespace BetterMe.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [EnableCors("AllowFrontend")]
     public class CollaborationController : ControllerBase
     {
         private readonly ICollaborationService _collaborationService;
