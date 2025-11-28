@@ -260,11 +260,20 @@ import { AuthService } from '../../services/auth';
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    body.dark-mode .password-instructions {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .password-instructions h4 {
       color: rgba(255, 255, 255, 0.9);
       margin-bottom: 12px;
       font-size: 0.9rem;
       font-weight: 600;
+    }
+
+    body.dark-mode .password-instructions h4 {
+      color: rgba(255, 255, 255, 0.95);
     }
 
     .instruction-list {
@@ -282,8 +291,16 @@ import { AuthService } from '../../services/auth';
       transition: all 0.3s ease;
     }
 
+    body.dark-mode .instruction {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     .instruction.completed {
       color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .instruction.completed {
+      color: rgba(255, 255, 255, 0.95);
     }
 
     .instruction-icon {
@@ -319,6 +336,10 @@ import { AuthService } from '../../services/auth';
       margin-bottom: 8px;
     }
 
+    body.dark-mode .strength-meter {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     .strength-bar {
       height: 100%;
       transition: all 0.3s ease;
@@ -352,6 +373,14 @@ import { AuthService } from '../../services/auth';
       font-weight: 600;
     }
 
+    body.dark-mode .strength-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .password-hint {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     /* Field Errors */
     .field-error {
       color: #ef4444;
@@ -362,14 +391,28 @@ import { AuthService } from '../../services/auth';
       gap: 5px;
     }
 
+    body.dark-mode .field-error {
+      color: rgba(239, 68, 68, 0.9);
+    }
+
     .form-control.error {
       border-color: #ef4444 !important;
       background: rgba(239, 68, 68, 0.1) !important;
     }
 
+    body.dark-mode .form-control.error {
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+    }
+
     .form-control.success {
       border-color: #4ade80 !important;
       background: rgba(74, 222, 128, 0.1) !important;
+    }
+
+    body.dark-mode .form-control.success {
+      border-color: #4ade80 !important;
+      background: rgba(74, 222, 128, 0.15) !important;
     }
 
     .field-success {
@@ -382,6 +425,10 @@ import { AuthService } from '../../services/auth';
       font-weight: 500;
     }
 
+    body.dark-mode .field-success {
+      color: rgba(74, 222, 128, 0.9);
+    }
+
     /* Enhanced Button */
     .btn-primary:not(:disabled) {
       background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
@@ -391,9 +438,10 @@ import { AuthService } from '../../services/auth';
 
     .register-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -409,6 +457,11 @@ import { AuthService } from '../../services/auth';
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -435,6 +488,11 @@ import { AuthService } from '../../services/auth';
     .container {
       position: relative;
       z-index: 1;
+      background: transparent;
+    }
+
+    body.dark-mode .container {
+      background: transparent;
     }
 
     .register-container {
@@ -446,6 +504,11 @@ import { AuthService } from '../../services/auth';
       gap: 2rem;
       align-items: center;
       min-height: 100vh;
+      background: transparent;
+    }
+
+    body.dark-mode .register-container {
+      background: transparent;
     }
 
     .glass-card {
@@ -455,11 +518,22 @@ import { AuthService } from '../../services/auth';
       border: 1px solid rgba(255, 255, 255, 0.2);
       padding: 2.5rem;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .auth-header {
       text-align: center;
       margin-bottom: 2rem;
+    }
+
+    body.dark-mode .auth-header {
+      background: transparent;
     }
 
     .gradient-text {
@@ -470,12 +544,24 @@ import { AuthService } from '../../services/auth';
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
       color: rgba(255, 255, 255, 0.8);
       font-size: 1.1rem;
       font-weight: 500;
+    }
+
+    body.dark-mode .subtitle {
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .auth-form {
@@ -494,6 +580,10 @@ import { AuthService } from '../../services/auth';
       font-size: 0.95rem;
     }
 
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
     .form-control {
       width: 100%;
       padding: 14px 16px;
@@ -505,8 +595,17 @@ import { AuthService } from '../../services/auth';
       transition: all 0.3s ease;
     }
 
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
     .form-control::placeholder {
       color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .form-control:focus {
@@ -514,6 +613,12 @@ import { AuthService } from '../../services/auth';
       border-color: rgba(255, 255, 255, 0.5);
       background: rgba(255, 255, 255, 0.15);
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
     }
 
     /* Password Input Container */
@@ -543,6 +648,10 @@ import { AuthService } from '../../services/auth';
 
     .password-toggle:hover {
       background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .password-toggle:hover {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .password-toggle:active {
@@ -590,10 +699,30 @@ import { AuthService } from '../../services/auth';
       box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
     }
 
+    body.dark-mode .btn-primary:not(:disabled) {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+    }
+
+    body.dark-mode .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
+    }
+
     .btn-secondary {
       background: rgba(255, 255, 255, 0.1);
       color: white;
       border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .btn-secondary {
+      background: rgba(26, 26, 26, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .btn-secondary:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
     .btn:hover:not(:disabled) {
@@ -634,6 +763,11 @@ import { AuthService } from '../../services/auth';
       margin-bottom: 1.5rem;
     }
 
+    body.dark-mode .error-card {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
     .error-icon {
       font-size: 1.2rem;
       flex-shrink: 0;
@@ -645,10 +779,18 @@ import { AuthService } from '../../services/auth';
       margin-bottom: 0.25rem;
     }
 
+    body.dark-mode .error-content h3 {
+      color: rgba(254, 202, 202, 0.95);
+    }
+
     .error-content p {
       color: rgba(255, 255, 255, 0.8);
       font-size: 0.85rem;
       margin: 0;
+    }
+
+    body.dark-mode .error-content p {
+      color: rgba(254, 202, 202, 0.85);
     }
 
     /* Success Card */
@@ -705,10 +847,22 @@ import { AuthService } from '../../services/auth';
       background: rgba(255, 255, 255, 0.2);
     }
 
+    body.dark-mode .divider::before {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
     .divider span {
       background: rgba(255, 255, 255, 0.1);
       padding: 0 1rem;
       position: relative;
+    }
+
+    body.dark-mode .divider span {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .divider {
+      color: rgba(255, 255, 255, 0.6);
     }
 
     /* Terms Notice */
@@ -726,6 +880,14 @@ import { AuthService } from '../../services/auth';
       font-weight: 500;
     }
 
+    body.dark-mode .text-link {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .terms-notice {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     /* Features Card */
     .features-card {
       height: fit-content;
@@ -737,6 +899,10 @@ import { AuthService } from '../../services/auth';
       font-weight: 700;
       margin-bottom: 1.5rem;
       text-align: center;
+    }
+
+    body.dark-mode .features-title {
+      color: rgba(255, 255, 255, 0.95);
     }
 
     .features-list {
@@ -762,10 +928,18 @@ import { AuthService } from '../../services/auth';
       margin-bottom: 0.25rem;
     }
 
+    body.dark-mode .feature-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .feature-description {
       color: rgba(255, 255, 255, 0.7);
       font-size: 0.9rem;
       line-height: 1.4;
+    }
+
+    body.dark-mode .feature-description {
+      color: rgba(255, 255, 255, 0.7);
     }
 
     @keyframes spin {
