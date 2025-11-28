@@ -39,33 +39,69 @@ import { PriorityDistribution } from '../../services/analytics.service';
       width: 100%;
       height: 100%;
       padding: 16px;
+      background: transparent;
+      transition: background 0.3s ease;
     }
+
+    body.dark-mode .chart-container {
+      background: transparent;
+    }
+
     .chart-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      background: transparent;
     }
+
+    body.dark-mode .chart-header {
+      background: transparent;
+    }
+
     .chart-header h4 {
       margin: 0;
       color: rgba(255, 255, 255, 0.9);
       font-size: 1.1rem;
+      transition: color 0.3s ease;
     }
+
+    body.dark-mode .chart-header h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .chart-legend {
       display: flex;
       gap: 12px;
+      background: transparent;
     }
+
+    body.dark-mode .chart-legend {
+      background: transparent;
+    }
+
     .legend-item {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 0.85rem;
       color: rgba(255, 255, 255, 0.7);
+      transition: color 0.3s ease;
     }
+
+    body.dark-mode .legend-item {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
     .legend-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
+      transition: opacity 0.3s ease;
+    }
+
+    body.dark-mode .legend-dot {
+      opacity: 1;
     }
   `]
 })
@@ -79,42 +115,46 @@ export class PriorityBarChartComponent implements OnInit, OnChanges {
     datasets: []
   };
 
-  chartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1
-      }
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)'
+  get chartOptions(): ChartConfiguration['options'] {
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
         },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)'
+        tooltip: {
+          backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)',
+          borderWidth: 1
         }
       },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          stepSize: 1
+      scales: {
+        x: {
+          ticks: {
+            color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.7)'
+          },
+          grid: {
+            color: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.1)'
+          }
         },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)'
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.7)',
+            stepSize: 1
+          },
+          grid: {
+            color: isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.1)'
+          }
         }
       }
-    }
-  };
+    };
+  }
 
   ngOnInit() {
     this.updateChart();
