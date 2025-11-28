@@ -19,7 +19,7 @@ import { environment } from '../../environments/environment';
 export class CollaborationService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private apiUrl = `${environment.apiUrl}/api/collaboration`;
+  private apiUrl = `${environment.apiUrl}/collaboration`;
 
   // Sharing methods
   shareTask(request: ShareTaskRequest): Observable<{ message: string; shareId: number }> {
