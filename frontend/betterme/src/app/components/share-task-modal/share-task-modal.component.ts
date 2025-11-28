@@ -149,9 +149,76 @@ import { AuthService } from '../../services/auth';
     }
   `,
   styles: [`
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+      animation: fadeInOverlay 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, backdrop-filter;
+    }
+
+    @keyframes fadeInOverlay {
+      from {
+        opacity: 0;
+        backdrop-filter: blur(0px) saturate(100%);
+        -webkit-backdrop-filter: blur(0px) saturate(100%);
+      }
+      to {
+        opacity: 1;
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
+      }
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    body.dark-mode .modal-overlay {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+    }
+
+    @keyframes fadeInOverlayDark {
+      from {
+        opacity: 0;
+        backdrop-filter: blur(0px) saturate(100%);
+        -webkit-backdrop-filter: blur(0px) saturate(100%);
+      }
+      to {
+        opacity: 1;
+        backdrop-filter: blur(16px) saturate(180%);
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+      }
+    }
+
+    body.dark-mode .modal-overlay {
+      animation: fadeInOverlayDark 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .share-modal {
       max-width: 600px;
       width: 90%;
+      animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform, opacity;
     }
 
     .user-results {
