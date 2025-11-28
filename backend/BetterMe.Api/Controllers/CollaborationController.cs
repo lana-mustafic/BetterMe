@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BetterMe.Api.DTOs.Collaboration;
 using BetterMe.Api.Services.Interfaces;
+using BetterMe.Api.Models;
 
 namespace BetterMe.Api.Controllers
 {
