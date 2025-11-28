@@ -268,7 +268,7 @@ type SessionType = 'work' | 'break';
   styles: [`
     .focus-mode-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       padding: 2rem 1rem;
       transition: all 0.3s ease;
@@ -276,6 +276,10 @@ type SessionType = 'work' | 'break';
 
     .focus-mode-page.focus-active {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+
+    body.dark-mode .focus-mode-page.focus-active {
+      background: linear-gradient(135deg, #0a0a1a 0%, #0d1321 100%);
     }
 
     .background-animation {
@@ -394,11 +398,28 @@ type SessionType = 'work' | 'break';
     body.dark-mode .task-select {
       background: rgba(26, 26, 26, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .task-select:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
     }
 
     .task-select option {
       background: #1a1a2e;
       color: white;
+    }
+
+    body.dark-mode .task-select option {
+      background: rgba(26, 26, 26, 0.95) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body.dark-mode .task-select option:checked {
+      background: rgba(102, 126, 234, 0.6) !important;
+      color: rgba(255, 255, 255, 0.95) !important;
     }
 
     .selected-task-info {
@@ -784,6 +805,144 @@ type SessionType = 'work' | 'break';
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+
+    /* ============================================
+       COMPREHENSIVE DARK MODE STYLES
+       ============================================ */
+
+    /* Timer Container Dark Mode */
+    body.dark-mode .timer-container.glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Task Selection Dark Mode */
+    body.dark-mode .task-selection {
+      background: transparent;
+    }
+
+    body.dark-mode .label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Settings Panel Dark Mode */
+    body.dark-mode .settings-panel {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .settings-panel h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .setting-item label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .setting-item input[type="checkbox"] {
+      accent-color: rgba(102, 126, 234, 0.8);
+    }
+
+    /* Stats Panel Dark Mode */
+    body.dark-mode .stats-panel {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .stats-panel h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .task-stats h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .task-name {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .task-count {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Timer Circle Dark Mode */
+    body.dark-mode .timer-background {
+      stroke: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Actions Bar Dark Mode */
+    body.dark-mode .actions-bar {
+      background: transparent;
+    }
+
+    /* Settings Grid Dark Mode */
+    body.dark-mode .settings-grid {
+      background: transparent;
+    }
+
+    /* Stats Grid Dark Mode */
+    body.dark-mode .stats-grid {
+      background: transparent;
+    }
+
+    /* Task Stats Dark Mode */
+    body.dark-mode .task-stats {
+      background: transparent;
+    }
+
+    /* Current Task Display Dark Mode */
+    body.dark-mode .current-task-display .label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Timer Controls Dark Mode */
+    body.dark-mode .timer-controls {
+      background: transparent;
+    }
+
+    /* Timer Circle Wrapper Dark Mode */
+    body.dark-mode .timer-circle-wrapper {
+      background: transparent;
+    }
+
+    /* Session Stats - already has dark mode but ensure consistency */
+    body.dark-mode .session-stats .stat-item {
+      background: transparent;
+    }
+
+    /* Stat Card Dark Mode - additional styling */
+    body.dark-mode .stat-card .stat-value {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .stat-card .stat-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Subtitle Dark Mode */
+    body.dark-mode .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Focus Header Dark Mode */
+    body.dark-mode .focus-header {
+      background: transparent;
+    }
+
+    /* Container Dark Mode */
+    body.dark-mode .container {
+      background: transparent;
+    }
+
+    /* Loading Stats Dark Mode */
+    body.dark-mode .stats-panel p {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ============================================
+       END DARK MODE STYLES
+       ============================================ */
 
     @media (max-width: 768px) {
       .timer-circle {
