@@ -12,7 +12,7 @@ namespace BetterMe.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [EnableCors]
+    [EnableCors("AllowFrontend")]
     public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
