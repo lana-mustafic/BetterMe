@@ -116,6 +116,7 @@ var app = builder.Build();
 app.UseRouting();
 
 // CORS must be after routing but before authentication/authorization
+// Apply CORS to all requests, including preflight OPTIONS
 app.UseCors();
 
 // Swagger UI only in development

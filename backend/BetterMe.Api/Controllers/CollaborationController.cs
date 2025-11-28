@@ -130,11 +130,15 @@ namespace BetterMe.Api.Controllers
             {
                 var userId = GetUserId();
                 var comment = await _collaborationService.CreateCommentAsync(taskId, userId, request);
-                return CreatedAtAction(nameof(GetComment), new { taskId, commentId = comment.Id }, comment);
+                return Ok(comment);
             }
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 
