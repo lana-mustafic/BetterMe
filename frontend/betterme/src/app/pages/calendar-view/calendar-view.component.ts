@@ -1202,9 +1202,10 @@ interface EditModalData {
   styles: [`
     .calendar-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -1220,6 +1221,11 @@ interface EditModalData {
       position: absolute;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -1247,11 +1253,21 @@ interface EditModalData {
       position: relative;
       z-index: 1;
       padding: 2rem 1rem;
+      background: transparent;
+    }
+
+    body.dark-mode .container {
+      background: transparent;
     }
 
     .calendar-container {
       max-width: 1400px;
       margin: 0 auto;
+      background: transparent;
+    }
+
+    body.dark-mode .calendar-container {
+      background: transparent;
     }
 
     .glass-card {
@@ -1260,6 +1276,13 @@ interface EditModalData {
       border-radius: 24px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .calendar-header {
@@ -1318,6 +1341,14 @@ interface EditModalData {
       min-width: 300px;
       text-align: center;
       background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .calendar-title {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -2625,6 +2656,611 @@ interface EditModalData {
       text-align: center;
       border: 1px solid rgba(231, 76, 60, 0.3);
     }
+
+    /* ============================================
+       COMPREHENSIVE DARK MODE STYLES
+       ============================================ */
+
+    /* Header Dark Mode */
+    body.dark-mode .calendar-header {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .header-content {
+      background: transparent;
+    }
+
+    /* Navigation Dark Mode */
+    body.dark-mode .nav-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .nav-btn:hover {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    /* View Options Dark Mode */
+    body.dark-mode .view-options {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .view-option {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .view-option.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .view-option:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Stats Badges Dark Mode */
+    body.dark-mode .stat-badge {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Calendar Grid Dark Mode */
+    body.dark-mode .calendar-grid {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .weekday-header {
+      background: rgba(26, 26, 26, 0.4);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .calendar-day {
+      background: rgba(26, 26, 26, 0.3);
+      border-color: transparent;
+    }
+
+    body.dark-mode .calendar-day.current-month {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .calendar-day:not(.current-month) {
+      background: rgba(26, 26, 26, 0.2);
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    body.dark-mode .calendar-day.today {
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 211, 238, 0.3));
+      border-color: rgba(74, 222, 128, 0.5);
+    }
+
+    body.dark-mode .calendar-day.has-tasks {
+      border-bottom-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .calendar-day.has-completed-tasks {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.4) 0%, rgba(74, 222, 128, 0.15) 100%);
+    }
+
+    body.dark-mode .calendar-day.has-time-blocks {
+      border-bottom-color: rgba(52, 152, 219, 0.6);
+    }
+
+    body.dark-mode .day-number {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Productivity Features Dark Mode */
+    body.dark-mode .productivity-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .productivity-btn:hover {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .frog-banner {
+      background: linear-gradient(135deg, rgba(39, 174, 96, 0.3), rgba(46, 204, 113, 0.3));
+      border-color: rgba(39, 174, 96, 0.5);
+    }
+
+    body.dark-mode .frog-text {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .frog-priority {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Year View Dark Mode */
+    body.dark-mode .year-month {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .year-month:hover {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .year-month.has-completed-tasks {
+      border-left-color: rgba(74, 222, 128, 0.6);
+    }
+
+    body.dark-mode .year-month.all-tasks-completed {
+      border-color: rgba(74, 222, 128, 0.6);
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.4) 0%, rgba(74, 222, 128, 0.2) 100%);
+    }
+
+    body.dark-mode .month-header h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .month-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .progress-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .completion-text {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .more-tasks-year {
+      background: rgba(26, 26, 26, 0.3);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .empty-month {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .empty-month-hint {
+      color: rgba(102, 126, 255, 0.8);
+    }
+
+    body.dark-mode .month-completion-summary {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Modal Dark Mode */
+    body.dark-mode .modal-overlay {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    body.dark-mode .modal-content {
+      background: rgba(26, 26, 26, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .close-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Form Controls Dark Mode */
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .form-control:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Select dropdowns - keep white background for visibility */
+    body.dark-mode select.form-control {
+      color: #1a1a1a !important;
+      background: #ffffff !important;
+    }
+
+    body.dark-mode select.form-control:focus {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+    }
+
+    body.dark-mode select.form-control option {
+      color: #1a1a1a !important;
+      background: white !important;
+    }
+
+    /* Buttons Dark Mode */
+    body.dark-mode .btn-primary {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+    }
+
+    body.dark-mode .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
+    }
+
+    body.dark-mode .btn-secondary {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-secondary:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .btn-danger {
+      background: rgba(231, 76, 60, 0.8);
+      color: white;
+    }
+
+    body.dark-mode .btn-danger:hover:not(:disabled) {
+      background: rgba(192, 57, 43, 0.9);
+    }
+
+    body.dark-mode .btn-small {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-small:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    /* Eisenhower Matrix Dark Mode */
+    body.dark-mode .eisenhower-quadrant {
+      border-color: inherit;
+    }
+
+    body.dark-mode .quadrant-content {
+      background: rgba(26, 26, 26, 0.3);
+    }
+
+    body.dark-mode .quadrant-description {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .quadrant-task {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .quadrant-task:hover {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    body.dark-mode .quadrant-task-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .quadrant-task-meta {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .empty-quadrant {
+      color: rgba(255, 255, 255, 0.5);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .eisenhower-legend {
+      background: rgba(26, 26, 26, 0.3);
+    }
+
+    body.dark-mode .legend-item {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Time Block Dark Mode */
+    body.dark-mode .time-block-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-left-color: rgba(52, 152, 219, 0.6);
+    }
+
+    body.dark-mode .time-block-card.completed {
+      border-left-color: rgba(74, 222, 128, 0.6);
+    }
+
+    body.dark-mode .time-range {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .time-block-status {
+      background: rgba(26, 26, 26, 0.4);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .time-block-status.completed {
+      background: rgba(74, 222, 128, 0.8);
+      color: white;
+    }
+
+    body.dark-mode .time-block-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .time-block-item {
+      background: rgba(26, 26, 26, 0.3);
+    }
+
+    body.dark-mode .time-block-info strong {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .time-block-info span {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .existing-time-blocks {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .existing-time-blocks h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Day Details Modal Dark Mode */
+    body.dark-mode .day-summary {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .completed-summary {
+      color: rgba(74, 222, 128, 0.9);
+    }
+
+    body.dark-mode .time-block-summary {
+      color: rgba(52, 152, 219, 0.9);
+    }
+
+    body.dark-mode .day-task-item {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .day-task-item.completed {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.4) 0%, rgba(74, 222, 128, 0.15) 100%);
+    }
+
+    body.dark-mode .day-task-item:hover:not(.loading) {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    body.dark-mode .task-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .task-category {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .eisenhower-category {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .no-tasks {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .time-blocks-section {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .time-blocks-section h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Tags Dark Mode */
+    body.dark-mode .tag-badge {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .tag-remove:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .form-help-text {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Subtasks Dark Mode */
+    body.dark-mode .subtask-item-form {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .subtask-item-form span {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Dependencies Dark Mode */
+    body.dark-mode .dependency-item-form {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .dependency-title {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .dependency-status {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .dependency-status.completed {
+      color: rgba(74, 222, 128, 0.9);
+    }
+
+    body.dark-mode .btn-icon-small {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-icon-small:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    /* Error Message Dark Mode */
+    body.dark-mode .error-message {
+      background: rgba(231, 76, 60, 0.2);
+      border-color: rgba(231, 76, 60, 0.4);
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    /* Loading Dark Mode */
+    body.dark-mode .loading {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Checkbox Dark Mode */
+    body.dark-mode .task-checkbox input {
+      accent-color: rgba(102, 126, 234, 0.8);
+    }
+
+    body.dark-mode .checkbox-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .checkbox-label input[type="checkbox"] {
+      accent-color: rgba(102, 126, 234, 0.8);
+    }
+
+    /* Selected Date Dark Mode */
+    body.dark-mode .selected-date {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Form Row Dark Mode */
+    body.dark-mode .form-row {
+      background: transparent;
+    }
+
+    /* Action Buttons Dark Mode */
+    body.dark-mode .action-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .action-btn:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    body.dark-mode .view-tasks-btn {
+      background: rgba(102, 126, 234, 0.8);
+    }
+
+    body.dark-mode .add-task-btn {
+      background: rgba(74, 222, 128, 0.8);
+    }
+
+    body.dark-mode .time-block-btn {
+      background: rgba(52, 152, 219, 0.8);
+    }
+
+    /* Calendar Navigation Section Dark Mode */
+    body.dark-mode .calendar-nav-section {
+      background: transparent;
+    }
+
+    body.dark-mode .calendar-nav {
+      background: transparent;
+    }
+
+    /* Productivity Actions Dark Mode */
+    body.dark-mode .productivity-actions {
+      background: transparent;
+    }
+
+    /* Calendar Stats Dark Mode */
+    body.dark-mode .calendar-stats {
+      background: transparent;
+    }
+
+    /* Calendar Content Dark Mode */
+    body.dark-mode .calendar-content {
+      background: transparent;
+    }
+
+    /* Month View Dark Mode */
+    body.dark-mode .month-view {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Year View Dark Mode */
+    body.dark-mode .year-view {
+      background: transparent;
+    }
+
+    /* Day Header Dark Mode */
+    body.dark-mode .day-header {
+      background: transparent;
+    }
+
+    /* Day Actions Dark Mode */
+    body.dark-mode .day-actions {
+      background: transparent;
+    }
+
+    /* Time Block Indicators Dark Mode */
+    body.dark-mode .time-block-indicators {
+      background: transparent;
+    }
+
+    /* Task Indicators Dark Mode */
+    body.dark-mode .task-indicators {
+      background: transparent;
+    }
+
+    /* More Tasks Dark Mode */
+    body.dark-mode .more-tasks {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ============================================
+       END DARK MODE STYLES
+       ============================================ */
 
     /* Responsive Design */
     @media (max-width: 1200px) {
