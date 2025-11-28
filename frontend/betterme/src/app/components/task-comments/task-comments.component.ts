@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { CollaborationService } from '../../services/collaboration.service';
 import { TaskComment, CreateCommentRequest } from '../../models/collaboration.model';
 import { AuthService, User } from '../../services/auth';
@@ -321,9 +322,10 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
 
     this.loading = true;
     try {
-      this.comments = await this.collaborationService.getComments(this.taskId).toPromise() || [];
+      this.comments = await firstValueFrom(this.collaborationService.getComments(this.taskId));
     } catch (error) {
       console.error('Failed to load comments', error);
+      this.comments = [];
     } finally {
       this.loading = false;
     }
@@ -337,12 +339,13 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
       const request: CreateCommentRequest = {
         content: this.newComment.trim()
       };
-      await this.collaborationService.createComment(this.taskId, request).toPromise();
+      await firstValueFrom(this.collaborationService.createComment(this.taskId, request));
       this.newComment = '';
-      this.loadComments();
+      await this.loadComments();
       this.commentAdded.emit();
     } catch (error) {
       console.error('Failed to add comment', error);
+      alert('Failed to post comment. Please try again.');
     } finally {
       this.isSubmitting = false;
     }
@@ -362,12 +365,13 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
     if (!this.editCommentText.trim()) return;
 
     try {
-      await this.collaborationService.updateComment(commentId, this.editCommentText.trim()).toPromise();
+      await firstValueFrom(this.collaborationService.updateComment(commentId, this.editCommentText.trim()));
       this.editingCommentId = null;
       this.editCommentText = '';
-      this.loadComments();
+      await this.loadComments();
     } catch (error) {
       console.error('Failed to update comment', error);
+      alert('Failed to update comment. Please try again.');
     }
   }
 
@@ -375,11 +379,12 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
     if (!confirm('Delete this comment?')) return;
 
     try {
-      await this.collaborationService.deleteComment(commentId).toPromise();
-      this.loadComments();
+      await firstValueFrom(this.collaborationService.deleteComment(commentId));
+      await this.loadComments();
       this.commentAdded.emit();
     } catch (error) {
       console.error('Failed to delete comment', error);
+      alert('Failed to delete comment. Please try again.');
     }
   }
 
