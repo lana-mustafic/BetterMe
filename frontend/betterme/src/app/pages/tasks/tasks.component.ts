@@ -8,7 +8,7 @@ import { TaskTemplateService, TaskTemplate, CreateTaskTemplateRequest } from '..
 import { environment } from '../../../environments/environment';
 import { CalendarViewComponent } from '../calendar-view/calendar-view.component';
 import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
-import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
+import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
 import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
 import { ShareTaskModalComponent } from '../../components/share-task-modal/share-task-modal.component';
@@ -24,7 +24,8 @@ import {
   CreateTaskRequest,  
   UpdateTaskRequest,  
   RecurrencePattern,  
-  TaskDifficulty      
+  TaskDifficulty,
+  Attachment
 } from '../../models/task.model';
 
 interface TagWithCount {
@@ -1657,6 +1658,7 @@ interface Category {
                     <div 
                       class="task-card glass-card" 
                       [class.completed]="task.completed"
+                      [class.newly-created]="isNewlyCreated(task.id)"
                       (contextmenu)="showTaskContextMenu($event, task)"
                     >
                       <!-- Task Header -->
@@ -1785,10 +1787,12 @@ interface Category {
                                 [href]="getAttachmentUrl(task.id, attachment.id)" 
                                 target="_blank"
                                 class="attachment-link"
+                                (click)="$event.stopPropagation()"
                               >
-                                <span class="attachment-icon">{{ getFileIcon(attachment.type) }}</span>
+                                <span class="attachment-icon">{{ getFileIcon(attachment.type || '') }}</span>
                                 <span class="attachment-name">{{ attachment.filename }}</span>
-                                <span class="attachment-size">({{ formatFileSize(attachment.size) }})</span>
+                                <span class="attachment-size">{{ formatFileSize(attachment.size) }}</span>
+                                <span class="attachment-download-icon">⬇️</span>
                               </a>
                             }
                           </div>
@@ -2417,12 +2421,52 @@ interface Category {
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.15);
       cursor: pointer;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .task-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
     .task-card:hover {
       transform: translateY(-8px) scale(1.02);
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
       border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .task-card:hover::after {
+      opacity: 1;
+    }
+
+    .task-card.newly-created {
+      animation: pulseGlow 2s ease-in-out;
+      border-color: rgba(74, 222, 128, 0.5);
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+
+    .task-card.newly-created::after {
+      background: linear-gradient(90deg, rgba(74, 222, 128, 0.8), rgba(34, 211, 238, 0.8));
+      opacity: 1;
+      height: 4px;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
+      }
     }
 
     .task-card.completed {
@@ -2438,6 +2482,7 @@ interface Category {
       right: 0;
       height: 3px;
       background: linear-gradient(90deg, #4ade80, #22d3ee);
+      z-index: 1;
     }
 
     /* Task Header */
@@ -2774,50 +2819,143 @@ interface Category {
     
     /* Task Attachments */
     .task-attachments {
-      margin-top: 12px;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
+      margin-top: 1.25rem;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border-radius: 14px;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      position: relative;
+      overflow: hidden;
     }
+
+    .task-attachments::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    }
+
     .attachments-header {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 8px;
-      font-weight: 500;
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
+
+    .attachments-header::before {
+      content: '📎';
+      font-size: 1.2rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
     .attachments-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0.75rem;
     }
+
     .attachment-link {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
       text-decoration: none;
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 0.85rem;
-      transition: all 0.2s;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 0.9rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+
+    .attachment-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      transition: left 0.5s;
+    }
+
     .attachment-link:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.2);
       color: #fff;
+      transform: translateX(6px) scale(1.02);
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
     }
+
+    .attachment-link:hover::before {
+      left: 100%;
+    }
+
     .attachment-icon {
-      font-size: 16px;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 0.5rem;
     }
+
     .attachment-name {
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
+
     .attachment-size {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .attachment-download-icon {
+      font-size: 1rem;
+      opacity: 0.7;
+      transition: all 0.3s;
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(74, 222, 128, 0.2);
+      border-radius: 8px;
+    }
+
+    .attachment-link:hover .attachment-download-icon {
+      opacity: 1;
+      transform: translateY(-2px) scale(1.1);
+      background: rgba(74, 222, 128, 0.4);
     }
 
     /* Task Meta Grid */
@@ -5150,6 +5288,7 @@ export class TasksComponent implements OnInit {
   showShareModal: boolean = false;
   selectedTaskForShare: Task | null = null;
   expandedTasks: Set<number> = new Set();
+  newlyCreatedTasks: Set<number> = new Set();
   activeView: 'list' | 'stats' | 'calendar' | 'kanban' = 'list';
   editingTaskId: number | null = null;
   availableTags: string[] = [];
@@ -6437,6 +6576,8 @@ export class TasksComponent implements OnInit {
   }
   
   onQuickAddTaskCreated(task: Task): void {
+    // Mark task as newly created
+    this.markTaskAsNewlyCreated(task.id);
     // Add the task to the beginning of the list
     this.tasks.unshift(task);
     // Refresh the tasks to ensure proper sorting/filtering
@@ -6686,6 +6827,9 @@ export class TasksComponent implements OnInit {
             }
           }
           
+          // Mark task as newly created
+          this.markTaskAsNewlyCreated(newTask.id);
+          
           this.loadTasks(); // Reload to get updated subtasks
           this.resetForm();
           this.showCreateForm = false;
@@ -6790,6 +6934,19 @@ export class TasksComponent implements OnInit {
         }
       }
     }
+  }
+
+  // Newly created task tracking
+  markTaskAsNewlyCreated(taskId: number): void {
+    this.newlyCreatedTasks.add(taskId);
+    // Remove the "newly created" status after 5 seconds
+    setTimeout(() => {
+      this.newlyCreatedTasks.delete(taskId);
+    }, 5000);
+  }
+
+  isNewlyCreated(taskId: number): boolean {
+    return this.newlyCreatedTasks.has(taskId);
   }
 
   // Subtask and Dependency Form Helpers
@@ -6925,8 +7082,15 @@ export class TasksComponent implements OnInit {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
 
-  onAttachmentsChange(attachments: Attachment[]): void {
-    this.newTaskAttachments = attachments;
+  onAttachmentsChange(attachments: any[]): void {
+    // Map FileUploadComponent attachments to task.model Attachment type
+    this.newTaskAttachments = attachments.map(att => ({
+      id: att.id,
+      filename: att.filename,
+      url: att.url || '',
+      type: att.type || att.contentType || '',
+      size: att.size
+    })) as Attachment[];
   }
 
   // Analytics loading
