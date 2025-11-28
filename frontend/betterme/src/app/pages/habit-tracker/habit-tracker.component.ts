@@ -621,9 +621,10 @@ interface MonthMarker {
   styles: [`
     .habit-tracker-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-animation {
@@ -665,6 +666,7 @@ interface MonthMarker {
     .habit-container {
       max-width: 1200px;
       margin: 0 auto;
+      transition: all 0.3s ease;
     }
 
     .glass-card {
@@ -1658,6 +1660,413 @@ interface MonthMarker {
       color: rgba(255, 255, 255, 0.8);
       margin-bottom: 2rem;
     }
+
+    /* ============================================
+       COMPREHENSIVE DARK MODE STYLES
+       ============================================ */
+
+    /* Habit Container Dark Mode */
+    body.dark-mode .habit-container.glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Modal Dark Mode */
+    body.dark-mode .modal-overlay {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    body.dark-mode .modal-content {
+      background: rgba(26, 26, 26, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .modal-body {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .close-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Form Controls Dark Mode */
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+
+    body.dark-mode .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode select.form-control {
+      background-color: rgba(26, 26, 26, 0.4) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body.dark-mode select.form-control option {
+      background: rgba(26, 26, 26, 0.95) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body.dark-mode select.form-control option:checked {
+      background: rgba(102, 126, 234, 0.6) !important;
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    body.dark-mode textarea.form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode textarea.form-control:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Error Message Dark Mode */
+    body.dark-mode .error-message {
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    /* Empty State Dark Mode */
+    body.dark-mode .empty-state {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .empty-state h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .empty-state p {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Daily Stats Dark Mode */
+    body.dark-mode .daily-stats {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .stat-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .stat-number {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .stat-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Level Progress Dark Mode */
+    body.dark-mode .level-progress {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .level-header {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .level-badge {
+      background: rgba(102, 126, 234, 0.3);
+      color: rgba(255, 255, 255, 0.95);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    body.dark-mode .level-points {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .next-level {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .level-rewards {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .level-rewards strong {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .rewards-list {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Activity Calendar Dark Mode */
+    body.dark-mode .activity-calendar-section {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .calendar-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .activity-subtitle {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .month-marker {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .day-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .legend-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Selected Day Details Dark Mode */
+    body.dark-mode .selected-day-details {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .selected-day-details h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .selected-day-details p {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .selected-day-details strong {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Stats View Dark Mode */
+    body.dark-mode .stat-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .stat-content {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .stat-icon {
+      opacity: 0.9;
+    }
+
+    /* Chart Section Dark Mode */
+    body.dark-mode .chart-section {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .chart-section h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .chart-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .chart-value {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Category Section Dark Mode */
+    body.dark-mode .category-section {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .category-section h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .category-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .category-header {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .category-name {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .category-stats {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Form Row Dark Mode */
+    body.dark-mode .form-row {
+      border-color: transparent;
+    }
+
+    body.dark-mode .form-actions {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .color-value {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .color-input-container {
+      background: transparent;
+    }
+
+    body.dark-mode .btn-primary {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    body.dark-mode .btn-primary:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+    }
+
+    /* Habit Card Dark Mode (additional) */
+    body.dark-mode .habit-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Habit Meta Dark Mode */
+    body.dark-mode .habit-category {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Button Icon Dark Mode */
+    body.dark-mode .btn-icon {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-icon:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Weekly Chart Dark Mode */
+    body.dark-mode .weekly-chart {
+      background: transparent;
+    }
+
+    body.dark-mode .chart-day {
+      background: transparent;
+    }
+
+    /* Category List Dark Mode */
+    body.dark-mode .category-list {
+      background: transparent;
+    }
+
+    /* Form Actions Dark Mode */
+    body.dark-mode .form-actions {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Modal Actions Dark Mode */
+    body.dark-mode .modal-actions {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Activity Legend Dark Mode */
+    body.dark-mode .activity-legend {
+      background: transparent;
+    }
+
+    body.dark-mode .legend-text {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Contribution Day Dark Mode - adjust outline colors */
+    body.dark-mode .contribution-day {
+      outline-color: rgba(255, 255, 255, 0.03);
+    }
+
+    body.dark-mode .contribution-day:hover:not(.future-day) {
+      outline-color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .contribution-day.today {
+      outline-color: rgba(5, 150, 105, 0.8);
+    }
+
+    body.dark-mode .contribution-day.future-day {
+      opacity: 0.15;
+    }
+
+    /* Legend Squares Dark Mode - maintain GitHub colors but adjust outlines */
+    body.dark-mode .legend-square {
+      outline-color: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Stats Grid Dark Mode */
+    body.dark-mode .stats-grid {
+      background: transparent;
+    }
+
+    /* Today View Dark Mode */
+    body.dark-mode .today-view {
+      background: transparent;
+    }
+
+    body.dark-mode .all-habits-view {
+      background: transparent;
+    }
+
+    body.dark-mode .activity-view {
+      background: transparent;
+    }
+
+    body.dark-mode .stats-view {
+      background: transparent;
+    }
+
+    /* Habits List Dark Mode */
+    body.dark-mode .habits-list {
+      background: transparent;
+    }
+
+    /* Level Progress - additional dark mode support */
+    body.dark-mode .progress-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .progress-fill {
+      background: linear-gradient(90deg, rgba(5, 150, 105, 0.8), rgba(8, 145, 178, 0.8));
+    }
+
+    /* ============================================
+       END DARK MODE STYLES
+       ============================================ */
 
     /* Responsive Design */
     @media (max-width: 768px) {
