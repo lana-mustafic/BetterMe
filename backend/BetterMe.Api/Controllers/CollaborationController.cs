@@ -122,6 +122,9 @@ namespace BetterMe.Api.Controllers
 
         // Comment endpoints
         [HttpPost("tasks/{taskId}/comments")]
+        [ProducesResponseType(typeof(TaskComment), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
         public async Task<IActionResult> CreateComment(int taskId, [FromBody] CreateCommentRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
