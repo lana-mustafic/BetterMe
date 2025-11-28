@@ -123,22 +123,32 @@ namespace BetterMe.Api.Controllers
 
         // Comment endpoints
         [HttpPost("tasks/{taskId}/comments")]
-        [ProducesResponseType(typeof(TaskComment), 200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
+        [ProducesResponseType(typeof(TaskComment), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> CreateComment(int taskId, [FromBody] CreateCommentRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (request == null || string.IsNullOrWhiteSpace(request.Content))
+            {
+                return BadRequest(new { message = "Comment content is required" });
+            }
+
+            if (!ModelState.IsValid) 
+            {
+                return BadRequest(ModelState);
+            }
 
             try
             {
                 var userId = GetUserId();
                 var comment = await _collaborationService.CreateCommentAsync(taskId, userId, request);
+                
+                // Return 200 OK to match frontend expectations
                 return Ok(comment);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Forbid(ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (ArgumentException ex)
             {
