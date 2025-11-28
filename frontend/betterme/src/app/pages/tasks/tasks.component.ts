@@ -1902,7 +1902,7 @@ interface Category {
                           <div class="collab-section">
                             <app-task-comments 
                               [taskId]="task.id"
-                              (commentAdded)="onTaskShared()"
+                              (commentAdded)="onCommentAdded()"
                             ></app-task-comments>
                           </div>
                           <div class="collab-section">
@@ -7051,7 +7051,12 @@ export class TasksComponent implements OnInit {
   }
 
   onTaskShared(): void {
-    // Reload tasks to get updated sharing info
+    // Reload tasks to get updated sharing info and comment counts
+    this.loadTasks();
+  }
+
+  onCommentAdded(): void {
+    // Reload tasks to get updated comment counts
     this.loadTasks();
   }
 

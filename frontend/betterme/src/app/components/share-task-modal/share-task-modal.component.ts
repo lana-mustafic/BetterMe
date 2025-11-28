@@ -317,9 +317,15 @@ export class ShareTaskModalComponent implements OnInit, OnChanges {
     }
   }
 
-  ngOnChanges() {
-    if (this.isOpen && this.taskId) {
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['isOpen']?.currentValue && this.taskId) {
       this.loadCurrentShares();
+      // Reset form when modal opens
+      this.selectedUser = null;
+      this.searchQuery = '';
+      this.searchResults = [];
+      this.errorMessage = '';
+      this.selectedPermission = SharePermission.View;
     }
   }
 
@@ -333,10 +339,15 @@ export class ShareTaskModalComponent implements OnInit, OnChanges {
     this.errorMessage = '';
 
     try {
-      const response = await this.http.get<any[]>(`${this.apiUrl}/api/users/search?query=${encodeURIComponent(this.searchQuery)}`).toPromise();
+      // Use the correct API endpoint for user search (apiUrl already includes /api)
+      const response = await this.http.get<any[]>(`${this.apiUrl}/users/search?query=${encodeURIComponent(this.searchQuery)}`).toPromise();
       this.searchResults = response || [];
+      if (this.searchResults.length === 0 && this.searchQuery.length >= 2) {
+        // Don't show error for no results, just empty list
+      }
     } catch (error: any) {
-      this.errorMessage = 'Failed to search users';
+      console.error('Error searching users:', error);
+      this.errorMessage = 'Failed to search users. Please try again.';
       this.searchResults = [];
     } finally {
       this.isSearching = false;
@@ -349,7 +360,10 @@ export class ShareTaskModalComponent implements OnInit, OnChanges {
   }
 
   async shareTask() {
-    if (!this.selectedUser || !this.taskId) return;
+    if (!this.selectedUser || !this.taskId) {
+      this.errorMessage = 'Please select a user to share with';
+      return;
+    }
 
     this.isSharing = true;
     this.errorMessage = '';
@@ -363,12 +377,14 @@ export class ShareTaskModalComponent implements OnInit, OnChanges {
 
       await this.collaborationService.shareTask(request).toPromise();
       this.shared.emit();
-      this.loadCurrentShares();
+      await this.loadCurrentShares();
       this.selectedUser = null;
       this.searchQuery = '';
       this.searchResults = [];
+      this.errorMessage = '';
     } catch (error: any) {
-      this.errorMessage = error.message || 'Failed to share task';
+      console.error('Error sharing task:', error);
+      this.errorMessage = error?.error?.message || error?.message || 'Failed to share task. Please try again.';
     } finally {
       this.isSharing = false;
     }
@@ -379,17 +395,21 @@ export class ShareTaskModalComponent implements OnInit, OnChanges {
 
     try {
       await this.collaborationService.unshareTask(this.taskId, userId).toPromise();
-      this.loadCurrentShares();
+      await this.loadCurrentShares();
+      this.errorMessage = '';
     } catch (error: any) {
-      this.errorMessage = 'Failed to remove share';
+      console.error('Error removing share:', error);
+      this.errorMessage = error?.error?.message || error?.message || 'Failed to remove share. Please try again.';
     }
   }
 
   async loadCurrentShares() {
+    if (!this.taskId) return;
     try {
       this.currentShares = await this.collaborationService.getTaskShares(this.taskId).toPromise() || [];
     } catch (error) {
       console.error('Failed to load shares', error);
+      this.currentShares = [];
     }
   }
 

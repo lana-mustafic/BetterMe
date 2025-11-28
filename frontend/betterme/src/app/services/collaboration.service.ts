@@ -23,9 +23,16 @@ export class CollaborationService {
 
   // Sharing methods
   shareTask(request: ShareTaskRequest): Observable<{ message: string; shareId: number }> {
+    // Send only the necessary fields in the body (taskId is in the URL)
+    const body = {
+      taskId: request.taskId,
+      sharedWithUserId: request.sharedWithUserId,
+      permission: request.permission,
+      expiresAt: request.expiresAt
+    };
     return this.http.post<{ message: string; shareId: number }>(
       `${this.apiUrl}/tasks/${request.taskId}/share`,
-      request
+      body
     ).pipe(
       catchError(this.handleError)
     );

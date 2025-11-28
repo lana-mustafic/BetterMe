@@ -312,27 +312,33 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['taskId'] && this.taskId) {
+    if (changes['taskId'] && this.taskId && changes['taskId'].currentValue !== changes['taskId'].previousValue) {
       this.loadComments();
     }
   }
 
   async loadComments() {
-    if (!this.taskId) return;
+    if (!this.taskId || this.taskId <= 0) {
+      this.comments = [];
+      return;
+    }
 
     this.loading = true;
     try {
       this.comments = await firstValueFrom(this.collaborationService.getComments(this.taskId));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load comments', error);
       this.comments = [];
+      // Don't show alert for loading errors, just log
     } finally {
       this.loading = false;
     }
   }
 
   async addComment() {
-    if (!this.newComment.trim() || !this.taskId) return;
+    if (!this.newComment.trim() || !this.taskId || this.taskId <= 0) {
+      return;
+    }
 
     this.isSubmitting = true;
     try {
@@ -343,9 +349,10 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
       this.newComment = '';
       await this.loadComments();
       this.commentAdded.emit();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add comment', error);
-      alert('Failed to post comment. Please try again.');
+      const errorMessage = error?.error?.message || error?.message || 'Failed to post comment. Please try again.';
+      alert(errorMessage);
     } finally {
       this.isSubmitting = false;
     }
@@ -369,9 +376,11 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
       this.editingCommentId = null;
       this.editCommentText = '';
       await this.loadComments();
-    } catch (error) {
+      this.commentAdded.emit();
+    } catch (error: any) {
       console.error('Failed to update comment', error);
-      alert('Failed to update comment. Please try again.');
+      const errorMessage = error?.error?.message || error?.message || 'Failed to update comment. Please try again.';
+      alert(errorMessage);
     }
   }
 
@@ -382,9 +391,10 @@ export class TaskCommentsComponent implements OnInit, OnChanges {
       await firstValueFrom(this.collaborationService.deleteComment(commentId));
       await this.loadComments();
       this.commentAdded.emit();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete comment', error);
-      alert('Failed to delete comment. Please try again.');
+      const errorMessage = error?.error?.message || error?.message || 'Failed to delete comment. Please try again.';
+      alert(errorMessage);
     }
   }
 
