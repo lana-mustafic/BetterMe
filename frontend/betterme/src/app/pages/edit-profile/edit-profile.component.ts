@@ -145,9 +145,10 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
   styles: [`
     .edit-profile-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -194,12 +195,22 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
     .container {
       position: relative;
       z-index: 1;
+      background: transparent;
+    }
+
+    body.dark-mode .container {
+      background: transparent;
     }
 
     .edit-profile-container {
       max-width: 500px;
       margin: 0 auto;
       padding: 2rem 1rem;
+      background: transparent;
+    }
+
+    body.dark-mode .edit-profile-container {
+      background: transparent;
     }
 
     .header-nav {
@@ -263,6 +274,10 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       margin-bottom: 3rem;
     }
 
+    body.dark-mode .card-header {
+      background: transparent;
+    }
+
     .gradient-text {
       font-size: 2.5rem;
       font-weight: 800;
@@ -284,6 +299,10 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
     .subtitle {
       color: rgba(255, 255, 255, 0.8);
       font-size: 1.1rem;
+    }
+
+    body.dark-mode .subtitle {
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .profile-form {
@@ -309,6 +328,14 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
 
     .label-text {
       color: white;
+    }
+
+    body.dark-mode .label-text {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .required-indicator {
@@ -353,14 +380,28 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
     }
 
+    body.dark-mode .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     .form-input.input-error {
       border-color: #f87171;
       background: rgba(248, 113, 113, 0.1);
     }
 
+    body.dark-mode .form-input.input-error {
+      border-color: #f87171;
+      background: rgba(248, 113, 113, 0.15);
+    }
+
     .form-input.input-success {
       border-color: #4ade80;
       background: rgba(74, 222, 128, 0.1);
+    }
+
+    body.dark-mode .form-input.input-success {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.15);
     }
 
     .input-icon {
@@ -370,6 +411,10 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       transform: translateY(-50%);
       font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .input-icon {
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .validation-messages {
@@ -388,8 +433,16 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
       color: #fecaca;
     }
 
+    body.dark-mode .error-message {
+      color: rgba(254, 202, 202, 0.9);
+    }
+
     .success-message {
       color: #bbf7d0;
+    }
+
+    body.dark-mode .success-message {
+      color: rgba(187, 247, 208, 0.9);
     }
 
     .form-actions {
@@ -519,12 +572,30 @@ import { AuthService, UpdateProfileRequest, User } from '../../services/auth';
     .error-content h4, .success-content h4 {
       margin: 0 0 0.25rem 0;
       font-size: 1rem;
+      color: inherit;
+    }
+
+    body.dark-mode .error-content h4 {
+      color: rgba(254, 202, 202, 0.95);
+    }
+
+    body.dark-mode .success-content h4 {
+      color: rgba(187, 247, 208, 0.95);
     }
 
     .error-content p, .success-content p {
       margin: 0;
       font-size: 0.9rem;
       opacity: 0.9;
+      color: inherit;
+    }
+
+    body.dark-mode .error-content p {
+      color: rgba(254, 202, 202, 0.85);
+    }
+
+    body.dark-mode .success-content p {
+      color: rgba(187, 247, 208, 0.85);
     }
 
     @keyframes spin {
