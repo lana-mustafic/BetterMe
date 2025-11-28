@@ -11,13 +11,10 @@ import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
 import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
 import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
-import { ShareTaskModalComponent } from '../../components/share-task-modal/share-task-modal.component';
-import { TaskCommentsComponent } from '../../components/task-comments/task-comments.component';
 import { TaskActivityFeedComponent } from '../../components/task-activity-feed/task-activity-feed.component';
 import { QuickAddTaskComponent } from '../../components/quick-add-task/quick-add-task.component';
 import { TaskSubtasksComponent } from '../../components/task-subtasks/task-subtasks.component';
 import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
-import { CollaborationService } from '../../services/collaboration.service';
 import { TaskCategory, TagGroup, RecurrenceTemplate } from '../../models/task.model';
 import { 
   Task, 
@@ -69,8 +66,6 @@ interface Category {
     FileUploadComponent,
     CategoryPieChartComponent,
     WeeklyCompletionChartComponent,
-    ShareTaskModalComponent,
-    TaskCommentsComponent,
     TaskActivityFeedComponent,
     QuickAddTaskComponent,
     TaskSubtasksComponent
@@ -1729,14 +1724,6 @@ interface Category {
                             📋
                           </button>
                           
-                          <button 
-                            class="btn-share" 
-                            (click)="openShareModal(task); $event.stopPropagation()"
-                            title="Share task"
-                          >
-                            🔗
-                          </button>
-                          
                           @if (!task.isInMyDay) {
                             <button 
                               class="btn-my-day" 
@@ -1758,16 +1745,10 @@ interface Category {
                       </div>
                       
                       <!-- Collaboration Info -->
-                      @if (task.isShared || task.assignedToUserId) {
+                      @if (task.assignedToUserId) {
                         <div class="collaboration-info">
-                          @if (task.isShared) {
-                            <span class="collab-badge shared">🔗 Shared</span>
-                          }
                           @if (task.assignedToUserId) {
                             <span class="collab-badge assigned">👤 Assigned to {{ task.assignedToUserName || 'User' }}</span>
-                          }
-                          @if (task.commentCount && task.commentCount > 0) {
-                            <span class="collab-badge comments">💬 {{ task.commentCount }} comment{{ task.commentCount > 1 ? 's' : '' }}</span>
                           }
                         </div>
                       }
@@ -1867,16 +1848,9 @@ interface Category {
                         
                         <div class="task-actions">
                           <button 
-                            class="btn-action btn-share" 
-                            (click)="openShareModal(task); $event.stopPropagation()"
-                            title="Share task"
-                          >
-                            🔗 Share
-                          </button>
-                          <button 
                             class="btn-action btn-collab" 
                             (click)="toggleTaskDetails(task.id); $event.stopPropagation()"
-                            [title]="expandedTasks.has(task.id) ? 'Hide details' : 'Show comments & activity'"
+                            [title]="expandedTasks.has(task.id) ? 'Hide details' : 'Show activity'"
                           >
                             {{ expandedTasks.has(task.id) ? '▼' : '▶' }} Details
                           </button>
@@ -1899,12 +1873,6 @@ interface Category {
                       <!-- Expandable Collaboration Details -->
                       @if (expandedTasks.has(task.id)) {
                         <div class="task-collaboration-details">
-                          <div class="collab-section">
-                            <app-task-comments 
-                              [taskId]="task.id"
-                              (commentAdded)="onCommentAdded()"
-                            ></app-task-comments>
-                          </div>
                           <div class="collab-section">
                             <app-task-activity-feed [taskId]="task.id"></app-task-activity-feed>
                           </div>
@@ -1950,14 +1918,6 @@ interface Category {
         </div>
       </div>
       
-      <!-- Share Task Modal -->
-      <app-share-task-modal
-        [isOpen]="showShareModal"
-        [taskId]="selectedTaskForShare?.id || 0"
-        [taskTitle]="selectedTaskForShare?.title || ''"
-        (closed)="showShareModal = false; selectedTaskForShare = null"
-        (shared)="onTaskShared()"
-      ></app-share-task-modal>
 
       <!-- Reschedule Modal -->
       @if (showRescheduleModal && selectedTaskForReschedule) {
@@ -2075,14 +2035,6 @@ interface Category {
             <span class="context-menu-icon">✏️</span>
             <span>Edit</span>
           </button>
-          <button 
-            class="context-menu-item"
-            (click)="openShareModal(contextMenuTask); hideContextMenu()"
-          >
-            <span class="context-menu-icon">🔗</span>
-            <span>Share</span>
-          </button>
-          <div class="context-menu-divider"></div>
           <button 
             class="context-menu-item danger"
             (click)="onDeleteTask(contextMenuTask.id); hideContextMenu()"
@@ -2685,29 +2637,6 @@ interface Category {
       box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4), 0 0 12px rgba(59, 130, 246, 0.3);
     }
 
-    .btn-share {
-      width: 38px;
-      height: 38px;
-      border: none;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 1.1rem;
-      background: linear-gradient(135deg, rgba(74, 222, 128, 0.4), rgba(34, 197, 94, 0.4));
-      border: 1px solid rgba(74, 222, 128, 0.6);
-      color: #86efac;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 8px rgba(74, 222, 128, 0.2);
-    }
-
-    .btn-share:hover {
-      background: linear-gradient(135deg, rgba(74, 222, 128, 0.6), rgba(34, 197, 94, 0.6));
-      transform: scale(1.1) translateY(-2px);
-      box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4), 0 0 12px rgba(74, 222, 128, 0.3);
-    }
 
     .btn-my-day {
       width: 38px;
@@ -2815,13 +2744,6 @@ interface Category {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .collab-badge.shared {
-      background: linear-gradient(135deg, rgba(74, 222, 128, 0.3), rgba(34, 197, 94, 0.3));
-      color: #86efac;
-      border: 1px solid rgba(74, 222, 128, 0.4);
-      box-shadow: 0 2px 8px rgba(74, 222, 128, 0.2);
-    }
-
     .collab-badge.assigned {
       background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(6, 182, 212, 0.3));
       color: #67e8f9;
@@ -2829,25 +2751,6 @@ interface Category {
       box-shadow: 0 2px 8px rgba(34, 211, 238, 0.2);
     }
 
-    .collab-badge.comments {
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3));
-      color: #c4b5fd;
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
-    }
-
-    .btn-action.btn-share {
-      background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.2));
-      border: 1px solid rgba(74, 222, 128, 0.4);
-      color: #86efac;
-      box-shadow: 0 2px 8px rgba(74, 222, 128, 0.15);
-    }
-
-    .btn-action.btn-share:hover {
-      background: linear-gradient(135deg, rgba(74, 222, 128, 0.4), rgba(34, 197, 94, 0.4));
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(74, 222, 128, 0.3), 0 0 12px rgba(74, 222, 128, 0.2);
-    }
 
     .btn-action.btn-collab {
       background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.2));
@@ -5410,7 +5313,6 @@ export class TasksComponent implements OnInit {
   private taskService = inject(TaskService);
   private templateService = inject(TaskTemplateService);
   private analyticsService = inject(AnalyticsService);
-  private collaborationService = inject(CollaborationService);
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
 
@@ -5419,8 +5321,6 @@ export class TasksComponent implements OnInit {
   errorMessage: string = '';
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
-  showShareModal: boolean = false;
-  selectedTaskForShare: Task | null = null;
   expandedTasks: Set<number> = new Set();
   newlyCreatedTasks: Set<number> = new Set();
   activeView: 'list' | 'stats' | 'calendar' | 'kanban' = 'list';
@@ -7044,21 +6944,6 @@ export class TasksComponent implements OnInit {
     }
   }
 
-  // Collaboration methods
-  openShareModal(task: Task): void {
-    this.selectedTaskForShare = task;
-    this.showShareModal = true;
-  }
-
-  onTaskShared(): void {
-    // Reload tasks to get updated sharing info and comment counts
-    this.loadTasks();
-  }
-
-  onCommentAdded(): void {
-    // Reload tasks to get updated comment counts
-    this.loadTasks();
-  }
 
   onTaskUpdated(updatedTask: Task): void {
     // Update the task in the local array
