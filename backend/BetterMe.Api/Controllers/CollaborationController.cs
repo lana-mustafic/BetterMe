@@ -30,6 +30,13 @@ namespace BetterMe.Api.Controllers
             return userId;
         }
 
+        // Test endpoint to verify controller is accessible
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "CollaborationController is working", timestamp = DateTime.UtcNow });
+        }
+
         // Sharing endpoints
         [HttpPost("tasks/{taskId}/share")]
         public async Task<IActionResult> ShareTask(int taskId, [FromBody] ShareTaskRequest request)

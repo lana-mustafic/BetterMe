@@ -113,11 +113,10 @@ builder.Services.AddScoped<ReminderBackgroundJob>();
 
 var app = builder.Build();
 
+// CORS must be very early in the pipeline to handle preflight requests
+app.UseCors();
 
 app.UseRouting();
-
-// CORS must be before Authentication/Authorization
-app.UseCors(); // This applies the default policy
 
 // Swagger UI only in development
 if (app.Environment.IsDevelopment())
