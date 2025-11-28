@@ -228,9 +228,10 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
   styles: [`
     .change-password-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-shapes {
@@ -277,12 +278,22 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
     .container {
       position: relative;
       z-index: 1;
+      background: transparent;
+    }
+
+    body.dark-mode .container {
+      background: transparent;
     }
 
     .change-password-container {
       max-width: 500px;
       margin: 0 auto;
       padding: 2rem 1rem;
+      background: transparent;
+    }
+
+    body.dark-mode .change-password-container {
+      background: transparent;
     }
 
     .header-nav {
@@ -346,6 +357,10 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       margin-bottom: 3rem;
     }
 
+    body.dark-mode .card-header {
+      background: transparent;
+    }
+
     .security-icon {
       font-size: 4rem;
       margin-bottom: 1rem;
@@ -374,6 +389,10 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       font-size: 1.1rem;
     }
 
+    body.dark-mode .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
     .password-form {
       display: flex;
       flex-direction: column;
@@ -397,6 +416,14 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
 
     .label-text {
       color: white;
+    }
+
+    body.dark-mode .label-text {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .required-indicator {
@@ -444,14 +471,28 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
     }
 
+    body.dark-mode .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     .form-input.input-error {
       border-color: #f87171;
       background: rgba(248, 113, 113, 0.1);
     }
 
+    body.dark-mode .form-input.input-error {
+      border-color: #f87171;
+      background: rgba(248, 113, 113, 0.15);
+    }
+
     .form-input.input-success {
       border-color: #4ade80;
       background: rgba(74, 222, 128, 0.1);
+    }
+
+    body.dark-mode .form-input.input-success {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.15);
     }
 
     .input-icon {
@@ -462,6 +503,10 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       font-size: 1.2rem;
       color: rgba(255, 255, 255, 0.7);
       z-index: 2;
+    }
+
+    body.dark-mode .input-icon {
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .password-toggle {
@@ -516,8 +561,16 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       color: #fecaca;
     }
 
+    body.dark-mode .error-message {
+      color: rgba(254, 202, 202, 0.9);
+    }
+
     .success-message {
       color: #bbf7d0;
+    }
+
+    body.dark-mode .success-message {
+      color: rgba(187, 247, 208, 0.9);
     }
 
     .requirements-card {
@@ -539,6 +592,10 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       font-size: 1rem;
     }
 
+    body.dark-mode .requirements-card h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
     .requirements-list {
       list-style: none;
       padding: 0;
@@ -556,8 +613,16 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
       font-size: 0.875rem;
     }
 
+    body.dark-mode .requirements-list li {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     .requirements-list li.requirement-met {
       color: #bbf7d0;
+    }
+
+    body.dark-mode .requirements-list li.requirement-met {
+      color: rgba(187, 247, 208, 0.9);
     }
 
     .requirement-icon {
@@ -691,12 +756,30 @@ function passwordMatchValidator(control: AbstractControl): ValidationErrors | nu
     .error-content h4, .success-content h4 {
       margin: 0 0 0.25rem 0;
       font-size: 1rem;
+      color: inherit;
+    }
+
+    body.dark-mode .error-content h4 {
+      color: rgba(254, 202, 202, 0.95);
+    }
+
+    body.dark-mode .success-content h4 {
+      color: rgba(187, 247, 208, 0.95);
     }
 
     .error-content p, .success-content p {
       margin: 0;
       font-size: 0.9rem;
       opacity: 0.9;
+      color: inherit;
+    }
+
+    body.dark-mode .error-content p {
+      color: rgba(254, 202, 202, 0.85);
+    }
+
+    body.dark-mode .success-content p {
+      color: rgba(187, 247, 208, 0.85);
     }
 
     @keyframes spin {
