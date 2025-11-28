@@ -5175,6 +5175,898 @@ interface Category {
       background: rgba(255, 255, 255, 0.2);
     }
 
+    /* ============================================
+       COMPREHENSIVE DARK MODE STYLES
+       ============================================ */
+
+    /* Task Cards Dark Mode */
+    body.dark-mode .task-card {
+      background: linear-gradient(135deg, rgba(30, 30, 40, 0.6), rgba(20, 20, 30, 0.6));
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    body.dark-mode .task-card:hover {
+      background: linear-gradient(135deg, rgba(40, 40, 55, 0.7), rgba(30, 30, 45, 0.7));
+      box-shadow: 
+        0 20px 60px rgba(139, 92, 246, 0.5),
+        0 0 40px rgba(124, 58, 237, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .task-card.completed {
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.15), rgba(6, 182, 212, 0.15));
+      opacity: 0.7;
+    }
+
+    /* Quick Filter Buttons Dark Mode */
+    body.dark-mode .quick-filter-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .quick-filter-btn:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .quick-filter-btn.active {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    }
+
+    /* Form Controls Dark Mode */
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+
+    body.dark-mode .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .filter-input,
+    body.dark-mode .filter-select {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .filter-input:focus,
+    body.dark-mode .filter-select:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .filter-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Modal Dark Mode */
+    body.dark-mode .modal-overlay {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    body.dark-mode .modal-content {
+      background: rgba(26, 26, 26, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .modal-body {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .modal-actions {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .close-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Form Labels Dark Mode */
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .filter-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Template Items Dark Mode */
+    body.dark-mode .template-item {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .template-item:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .template-item.favorite {
+      border-color: rgba(255, 215, 0, 0.4);
+      background: rgba(255, 215, 0, 0.05);
+    }
+
+    body.dark-mode .template-item-content h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .template-item-title {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    body.dark-mode .template-item-description {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .template-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .template-card:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .template-card.favorite {
+      border-color: rgba(255, 215, 0, 0.4);
+      background: rgba(255, 215, 0, 0.05);
+    }
+
+    /* Tag Manager Dark Mode */
+    body.dark-mode .tag-item {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .tag-badge {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .tag-count {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .tags-grid {
+      background: transparent;
+    }
+
+    body.dark-mode .empty-tags {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .tags-list-section h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Tag Dropdown Dark Mode */
+    body.dark-mode .tag-dropdown {
+      background: rgba(26, 26, 26, 0.95);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .tag-option {
+      color: rgba(255, 255, 255, 0.9);
+      border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .tag-option:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    body.dark-mode .tag-option.selected {
+      background: rgba(102, 126, 234, 0.2);
+    }
+
+    body.dark-mode .tag-checkbox {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .tag-option.selected .tag-checkbox {
+      background: rgba(102, 126, 234, 0.8);
+      border-color: rgba(102, 126, 234, 0.8);
+    }
+
+    body.dark-mode .tag-name {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .tag-count {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Active Filters Dark Mode */
+    body.dark-mode .active-filters {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .active-filters strong {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .active-filter {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .active-filter button {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .active-filter button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Sorting Controls Dark Mode */
+    body.dark-mode .sort-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .sort-btn:hover {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    body.dark-mode .sort-btn.active {
+      background: rgba(102, 126, 234, 0.4);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    /* Toggle Buttons Dark Mode */
+    body.dark-mode .toggle-btn.active {
+      background: rgba(26, 26, 26, 0.6);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .toggle-btn:hover:not(.active) {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    /* Task Meta Items Dark Mode */
+    body.dark-mode .meta-item {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.5), rgba(20, 20, 20, 0.5));
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .meta-item:hover {
+      background: linear-gradient(135deg, rgba(40, 40, 40, 0.6), rgba(30, 30, 30, 0.6));
+    }
+
+    body.dark-mode .meta-text {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    body.dark-mode .meta-item.date.overdue {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Task Description Dark Mode */
+    body.dark-mode .task-description {
+      background: rgba(26, 26, 26, 0.3);
+      border-color: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Task Attachments Dark Mode */
+    body.dark-mode .task-attachments {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.6), rgba(20, 20, 20, 0.6));
+      border-color: rgba(102, 126, 234, 0.2);
+    }
+
+    body.dark-mode .attachment-link {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .attachment-link:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(102, 126, 234, 0.4);
+    }
+
+    body.dark-mode .attachment-icon {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    body.dark-mode .attachment-size {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Context Menu Dark Mode */
+    body.dark-mode .context-menu {
+      background: rgba(26, 26, 26, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .context-menu-item {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .context-menu-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .context-menu-item.danger {
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    body.dark-mode .context-menu-item.danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    body.dark-mode .context-menu-divider {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Statistics Cards Dark Mode */
+    body.dark-mode .stat-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .stat-number {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .stat-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .stat-trend {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Priority Items Dark Mode */
+    body.dark-mode .priority-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .priority-item:hover {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    body.dark-mode .priority-header {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .priority-count {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .priority-percentage {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .priority-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .priority-completion {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Category Items Dark Mode */
+    body.dark-mode .category-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .category-item:hover {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    body.dark-mode .category-name {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .category-count {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .category-bar {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .category-percentage {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Activity Items Dark Mode */
+    body.dark-mode .activity-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .activity-item:hover {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    body.dark-mode .activity-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .activity-time {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .activity-category {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Insights Dark Mode */
+    body.dark-mode .insight-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .insight-title {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .insight-value {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Breakdown Items Dark Mode */
+    body.dark-mode .breakdown-item {
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .breakdown-count {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .breakdown-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Preset Preview Dark Mode */
+    body.dark-mode .preset-preview {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .preset-preview strong {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .preset-preview ul {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Pagination Dark Mode */
+    body.dark-mode .pagination-btn {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .pagination-btn:hover:not(:disabled) {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    body.dark-mode .page-info {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Template Picker Dark Mode */
+    body.dark-mode .template-picker {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .template-picker-header h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .template-header h5 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .template-title {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    body.dark-mode .template-description {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .no-templates {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Empty States Dark Mode */
+    body.dark-mode .empty-templates {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .empty-templates p {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Results Info Dark Mode */
+    body.dark-mode .results-info {
+      color: rgba(255, 255, 255, 0.7);
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .no-results {
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    /* Button Primary Dark Mode */
+    body.dark-mode .btn-primary {
+      background: rgba(102, 126, 234, 0.4);
+      border-color: rgba(102, 126, 234, 0.6);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .btn-primary:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.6);
+      border-color: rgba(102, 126, 234, 0.8);
+    }
+
+    /* Button Secondary Dark Mode */
+    body.dark-mode .btn-secondary {
+      background: rgba(108, 117, 125, 0.4);
+      border-color: rgba(108, 117, 125, 0.6);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .btn-secondary:hover:not(:disabled) {
+      background: rgba(108, 117, 125, 0.6);
+      border-color: rgba(108, 117, 125, 0.8);
+    }
+
+    /* Bulk Operations Dark Mode */
+    body.dark-mode .bulk-operations {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .bulk-header h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Checkbox Dark Mode */
+    body.dark-mode .checkmark {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(26, 26, 26, 0.4);
+    }
+
+    body.dark-mode .task-checkbox:checked + .checkmark {
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.8), rgba(8, 145, 178, 0.8));
+      border-color: rgba(5, 150, 105, 1);
+    }
+
+    /* Select Dark Mode */
+    body.dark-mode select.form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode select.form-control:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 255, 0.6);
+    }
+
+    /* Textarea Dark Mode */
+    body.dark-mode textarea.form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode textarea.form-control:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    /* Loading Spinner Dark Mode */
+    body.dark-mode .loading {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .loading-spinner {
+      border-color: rgba(255, 255, 255, 0.2);
+      border-top-color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Error Message Dark Mode */
+    body.dark-mode .error-message {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    /* Meta Badge Dark Mode */
+    body.dark-mode .meta-badge {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Tag Selected Display Dark Mode */
+    body.dark-mode .selected-tag {
+      background: rgba(102, 126, 234, 0.3);
+      border-color: rgba(102, 126, 234, 0.5);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .selected-tags-display {
+      background: transparent;
+    }
+
+    /* Presets Section Dark Mode */
+    body.dark-mode .saved-presets-section {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .presets-header h4 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .btn-preset-save {
+      background: rgba(102, 126, 234, 0.3);
+      border-color: rgba(102, 126, 234, 0.5);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-preset-save:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.5);
+    }
+
+    /* Tag Logic Toggle Dark Mode */
+    body.dark-mode .tag-logic-toggle {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .tag-logic-toggle label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Task Footer Dark Mode */
+    body.dark-mode .task-footer {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Tag Input Container Dark Mode */
+    body.dark-mode .tag-input-container {
+      background: transparent;
+    }
+
+    body.dark-mode .tag-search-input {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .tag-dropdown-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Date Range Inputs Dark Mode */
+    body.dark-mode .date-input {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .date-separator {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Templates List Dark Mode */
+    body.dark-mode .templates-list {
+      background: transparent;
+    }
+
+    body.dark-mode .template-item-actions button {
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .template-item-actions button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Tag Cloud Dark Mode */
+    body.dark-mode .tag-cloud-item {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.6), rgba(118, 75, 162, 0.6));
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+    }
+
+    body.dark-mode .tag-cloud-item:hover {
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .tags-cloud {
+      background: transparent;
+    }
+
+    /* Create Task Form Dark Mode */
+    body.dark-mode .create-task-form {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .create-task-form h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .form-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Form Input Dark Mode */
+    body.dark-mode .form-input {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-input:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+
+    body.dark-mode .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode select.form-input {
+      background-color: rgba(26, 26, 26, 0.4) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body.dark-mode select.form-input:focus {
+      background-color: rgba(35, 35, 35, 0.5) !important;
+    }
+
+    body.dark-mode select.form-input option {
+      background: rgba(26, 26, 26, 0.95) !important;
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body.dark-mode select.form-input option:checked {
+      background: rgba(102, 126, 234, 0.6) !important;
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    body.dark-mode textarea.form-input {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode textarea.form-input:focus {
+      background: rgba(35, 35, 35, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .form-help-text {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .form-label-small {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Button Clear Dark Mode */
+    body.dark-mode .btn-clear {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    body.dark-mode .btn-clear:hover {
+      background: rgba(239, 68, 68, 0.5);
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+
+    body.dark-mode .btn-clear-filters {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    body.dark-mode .btn-clear-filters:hover {
+      background: rgba(239, 68, 68, 0.5);
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+
+    /* Button Small Dark Mode */
+    body.dark-mode .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    body.dark-mode .btn-sm.btn-outline {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-sm.btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    body.dark-mode .btn-sm.btn-gradient {
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.8), rgba(8, 145, 178, 0.8));
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+    }
+
+    body.dark-mode .btn-sm.btn-gradient:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(6, 182, 212, 0.9));
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.6);
+    }
+
+    /* Form Actions Dark Mode */
+    body.dark-mode .form-actions {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Button Icon Small Dark Mode */
+    body.dark-mode .btn-icon-small {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-icon-small:hover {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Empty State Dark Mode */
+    body.dark-mode .empty-state {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .empty-state h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .empty-state p {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ============================================
+       END DARK MODE STYLES
+       ============================================ */
+
     /* Responsive Design */
     @media (max-width: 1200px) {
       .charts-section {
