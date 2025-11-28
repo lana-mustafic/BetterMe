@@ -694,9 +694,10 @@ interface KanbanColumn {
   styles: [`
     .kanban-page {
       min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--bg-gradient);
       position: relative;
       overflow-x: hidden;
+      transition: background 0.3s ease;
     }
 
     .background-animation {
@@ -713,6 +714,11 @@ interface KanbanColumn {
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.1);
       animation: float 6s ease-in-out infinite;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .floating-shape {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .shape-1 {
@@ -748,11 +754,21 @@ interface KanbanColumn {
       position: relative;
       z-index: 1;
       padding: 2rem 1rem;
+      background: transparent;
+    }
+
+    body.dark-mode .container {
+      background: transparent;
     }
 
     .kanban-container {
       max-width: 1400px;
       margin: 0 auto;
+      background: transparent;
+    }
+
+    body.dark-mode .kanban-container {
+      background: transparent;
     }
 
     .glass-card {
@@ -761,6 +777,13 @@ interface KanbanColumn {
       border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode .glass-card {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     }
 
     .kanban-header {
@@ -779,11 +802,24 @@ interface KanbanColumn {
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode .header-content h1 {
+      background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
       color: rgba(255, 255, 255, 0.8);
       font-size: 1.1rem;
+      transition: color 0.3s ease;
+    }
+
+    body.dark-mode .subtitle {
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .header-stats {
@@ -1522,6 +1558,376 @@ interface KanbanColumn {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    /* ============================================
+       COMPREHENSIVE DARK MODE STYLES
+       ============================================ */
+
+    /* Header Dark Mode */
+    body.dark-mode .kanban-header {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .header-content {
+      background: transparent;
+    }
+
+    body.dark-mode .stat-item {
+      background: transparent;
+    }
+
+    body.dark-mode .stat-number {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .stat-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Kanban Board Dark Mode */
+    body.dark-mode .kanban-board {
+      background: transparent;
+    }
+
+    body.dark-mode .kanban-column {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .kanban-column.todo {
+      border-top-color: rgba(231, 76, 60, 0.8);
+    }
+
+    body.dark-mode .kanban-column.in-progress {
+      border-top-color: rgba(243, 156, 18, 0.8);
+    }
+
+    body.dark-mode .kanban-column.done {
+      border-top-color: rgba(39, 174, 96, 0.8);
+    }
+
+    body.dark-mode .column-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .column-title h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .task-count {
+      background: rgba(26, 26, 26, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-icon {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .btn-icon:hover {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Task List Dark Mode */
+    body.dark-mode .task-list {
+      background: transparent;
+    }
+
+    body.dark-mode .task-list.cdk-drop-list-dragging {
+      background: rgba(26, 26, 26, 0.3);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Task Card Dark Mode */
+    body.dark-mode .task-card {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .task-card:hover {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    body.dark-mode .task-card.completed {
+      background: rgba(26, 26, 26, 0.3);
+      opacity: 0.7;
+    }
+
+    body.dark-mode .task-title {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .task-description {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    body.dark-mode .meta-text {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .overdue-badge {
+      background: rgba(231, 76, 60, 0.3);
+      border: 1px solid rgba(231, 76, 60, 0.5);
+      color: rgba(254, 202, 202, 0.9);
+    }
+
+    body.dark-mode .tag-more {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .task-loading {
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    body.dark-mode .task-preview {
+      background: rgba(26, 26, 26, 0.9);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    body.dark-mode .preview-content {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Empty Column Dark Mode */
+    body.dark-mode .empty-column {
+      background: rgba(26, 26, 26, 0.3);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    body.dark-mode .btn-add-task {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-add-task:hover {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Modal Dark Mode */
+    body.dark-mode .modal-overlay {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    body.dark-mode .modal-content {
+      background: rgba(26, 26, 26, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .modal-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .close-btn {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Form Controls Dark Mode */
+    body.dark-mode .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .form-control:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .form-control:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Select dropdowns - keep white background for visibility */
+    body.dark-mode select.form-control {
+      color: #1a1a1a !important;
+      background: #ffffff !important;
+    }
+
+    body.dark-mode select.form-control:focus {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+    }
+
+    body.dark-mode select.form-control option {
+      color: #1a1a1a !important;
+      background: white !important;
+    }
+
+    /* Buttons Dark Mode */
+    body.dark-mode .btn-primary {
+      background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.5);
+    }
+
+    body.dark-mode .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.7);
+    }
+
+    body.dark-mode .btn-secondary {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-secondary:hover:not(:disabled) {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Tags Dark Mode */
+    body.dark-mode .tag-badge {
+      background: rgba(26, 26, 26, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .tag-remove:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    body.dark-mode .form-help-text {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Subtasks Dark Mode */
+    body.dark-mode .subtask-item-form {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .subtask-item-form span {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Dependencies Dark Mode */
+    body.dark-mode .dependency-item-form {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .dependency-title {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .dependency-status {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    body.dark-mode .dependency-status.completed {
+      color: rgba(74, 222, 128, 0.9);
+    }
+
+    body.dark-mode .btn-icon-small {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .btn-icon-small:hover {
+      background: rgba(26, 26, 26, 0.5);
+    }
+
+    body.dark-mode .form-label-small {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Task Actions Dark Mode */
+    body.dark-mode .task-actions {
+      background: transparent;
+    }
+
+    body.dark-mode .complete-btn {
+      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    body.dark-mode .complete-btn:hover {
+      background: rgba(34, 197, 94, 0.5);
+      border-color: rgba(34, 197, 94, 0.7);
+    }
+
+    body.dark-mode .edit-btn {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    body.dark-mode .edit-btn:hover {
+      background: rgba(59, 130, 246, 0.5);
+      border-color: rgba(59, 130, 246, 0.7);
+    }
+
+    /* Form Row Dark Mode */
+    body.dark-mode .form-row {
+      background: transparent;
+    }
+
+    /* Header Stats Dark Mode */
+    body.dark-mode .header-stats {
+      background: transparent;
+    }
+
+    /* Column Actions Dark Mode */
+    body.dark-mode .column-actions {
+      background: transparent;
+    }
+
+    /* Task Meta Dark Mode */
+    body.dark-mode .task-meta {
+      background: transparent;
+    }
+
+    body.dark-mode .meta-item {
+      background: transparent;
+    }
+
+    /* Task Tags Dark Mode */
+    body.dark-mode .task-tags {
+      background: transparent;
+    }
+
+    /* Task Body Dark Mode */
+    body.dark-mode .task-body {
+      background: transparent;
+    }
+
+    /* Task Header Dark Mode */
+    body.dark-mode .task-header {
+      background: transparent;
+    }
+
+    /* ============================================
+       END DARK MODE STYLES
+       ============================================ */
 
     /* Responsive Design */
     @media (max-width: 1024px) {
