@@ -2,16 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
-import { TasksComponent } from './pages/tasks/tasks.component';
-import { TaskDetailComponent } from './pages/task-detail/task-detail.component';
-import { ProfileComponent } from './pages/profile/profile.component';
-import { EditTaskComponent } from './pages/edit-task/edit-task.component';
-import { EditProfileComponent } from './pages/edit-profile/edit-profile.component';
-import { ChangePasswordComponent } from './pages/password/change-password.component';
 import { authGuard } from './guards/auth.guard';
-import { HabitTrackerComponent } from './pages/habit-tracker/habit-tracker.component';
-import { FocusModeComponent } from './pages/focus-mode/focus-mode.component';
-import { MyDayComponent } from './pages/my-day/my-day.component';
 
 export const routes: Routes = [
   { 
@@ -30,10 +21,10 @@ export const routes: Routes = [
     data: { title: 'Register - TaskFlow' }
   },
 
-  // Tasks Routes
+  // Tasks Routes - Lazy Loaded
   { 
     path: 'tasks', 
-    component: TasksComponent,
+    loadComponent: () => import('./pages/tasks/tasks.component').then(m => m.TasksComponent),
     canActivate: [authGuard],
     data: { 
       title: 'My Tasks - TaskFlow',
@@ -42,7 +33,7 @@ export const routes: Routes = [
   },
   { 
     path: 'tasks/:id', 
-    component: TaskDetailComponent,
+    loadComponent: () => import('./pages/task-detail/task-detail.component').then(m => m.TaskDetailComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Task Details - TaskFlow',
@@ -51,7 +42,7 @@ export const routes: Routes = [
   },
   { 
     path: 'tasks/:id/edit',
-    component: EditTaskComponent,
+    loadComponent: () => import('./pages/edit-task/edit-task.component').then(m => m.EditTaskComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Edit Task - TaskFlow',
@@ -60,7 +51,7 @@ export const routes: Routes = [
   },
   { 
     path: 'tasks/new',
-    component: EditTaskComponent,
+    loadComponent: () => import('./pages/edit-task/edit-task.component').then(m => m.EditTaskComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Create Task - TaskFlow',
@@ -69,7 +60,7 @@ export const routes: Routes = [
   },
   { 
     path: 'tasks/kanban', 
-    component: TasksComponent,
+    loadComponent: () => import('./pages/tasks/tasks.component').then(m => m.TasksComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Kanban Board - TaskFlow',
@@ -77,10 +68,10 @@ export const routes: Routes = [
     }
   },
 
-  // Habits Route - MOVED BEFORE WILDCARD
+  // Habits Route - Lazy Loaded
   { 
     path: 'habits', 
-    component: HabitTrackerComponent,
+    loadComponent: () => import('./pages/habit-tracker/habit-tracker.component').then(m => m.HabitTrackerComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Habit Tracker - TaskFlow',
@@ -88,10 +79,10 @@ export const routes: Routes = [
     }
   },
 
-  // Focus Mode Route
+  // Focus Mode Route - Lazy Loaded
   { 
     path: 'focus', 
-    component: FocusModeComponent,
+    loadComponent: () => import('./pages/focus-mode/focus-mode.component').then(m => m.FocusModeComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Focus Mode - TaskFlow',
@@ -99,10 +90,10 @@ export const routes: Routes = [
     }
   },
 
-  // My Day Route
+  // My Day Route - Lazy Loaded
   { 
     path: 'my-day', 
-    component: MyDayComponent,
+    loadComponent: () => import('./pages/my-day/my-day.component').then(m => m.MyDayComponent),
     canActivate: [authGuard],
     data: { 
       title: 'My Day - TaskFlow',
@@ -110,10 +101,10 @@ export const routes: Routes = [
     }
   },
 
-  // Profile Routes
+  // Profile Routes - Lazy Loaded
   { 
     path: 'profile', 
-    component: ProfileComponent,
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard],
     data: { 
       title: 'My Profile - TaskFlow',
@@ -122,7 +113,7 @@ export const routes: Routes = [
   },
   { 
     path: 'profile/edit',
-    component: EditProfileComponent,
+    loadComponent: () => import('./pages/edit-profile/edit-profile.component').then(m => m.EditProfileComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Edit Profile - TaskFlow',
@@ -131,7 +122,7 @@ export const routes: Routes = [
   },
   { 
     path: 'profile/change-password',
-    component: ChangePasswordComponent,
+    loadComponent: () => import('./pages/password/change-password.component').then(m => m.ChangePasswordComponent),
     canActivate: [authGuard],
     data: { 
       title: 'Change Password - TaskFlow',
