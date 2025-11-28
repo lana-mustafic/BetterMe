@@ -3087,6 +3087,45 @@ interface EditModalData {
       color: rgba(255, 255, 255, 0.95);
     }
 
+    /* Time Block Modal Dark Mode */
+    body.dark-mode .time-block-modal {
+      background: rgba(26, 26, 26, 0.95);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .time-block-modal .modal-header {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body.dark-mode .time-block-modal .modal-header h3 {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    body.dark-mode .time-block-modal .form-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .time-block-modal .form-control {
+      background: rgba(26, 26, 26, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    body.dark-mode .time-block-modal .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.dark-mode .time-block-modal .form-control:focus {
+      background: rgba(26, 26, 26, 0.5);
+      border-color: rgba(102, 126, 234, 0.6);
+    }
+
+    body.dark-mode .time-block-modal .form-control[readonly] {
+      background: rgba(26, 26, 26, 0.3);
+      color: rgba(255, 255, 255, 0.7);
+      cursor: not-allowed;
+    }
+
     /* Tags Dark Mode */
     body.dark-mode .tag-badge {
       background: rgba(26, 26, 26, 0.4);
@@ -3246,6 +3285,11 @@ interface EditModalData {
     /* Time Block Indicators Dark Mode */
     body.dark-mode .time-block-indicators {
       background: transparent;
+    }
+
+    body.dark-mode .time-block-indicator {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
     }
 
     /* Task Indicators Dark Mode */
