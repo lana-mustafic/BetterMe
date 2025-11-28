@@ -122,6 +122,13 @@ namespace BetterMe.Api.Controllers
         }
 
         // Comment endpoints
+        // Handle OPTIONS preflight requests
+        [HttpOptions("tasks/{taskId}/comments")]
+        public IActionResult OptionsComment(int taskId)
+        {
+            return Ok();
+        }
+
         [HttpPost("tasks/{taskId}/comments")]
         [ProducesResponseType(typeof(TaskComment), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
