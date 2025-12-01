@@ -1022,8 +1022,8 @@ interface MonthMarker {
 
     /* Activity level colors - GitHub green scheme */
     .contribution-day.activity-level-0 {
-      background: #161b22;
-      outline-color: #30363d;
+      background: #0d1b0f;
+      outline-color: #0d1b0f;
     }
 
     .contribution-day.activity-level-1 {
@@ -1076,8 +1076,8 @@ interface MonthMarker {
     }
 
     .legend-square.level-0 {
-      background: #161b22;
-      outline-color: #30363d;
+      background: #0d1b0f;
+      outline-color: #0d1b0f;
     }
 
     .legend-square.level-1 {
@@ -2408,15 +2408,35 @@ export class HabitTrackerComponent implements OnInit {
     let currentWeek: ActivityDay[] = [];
 
     while (currentDate <= gridEnd) {
-      const dateString = currentDate.toISOString().split('T')[0];
+      // Format date as YYYY-MM-DD in local timezone to avoid UTC issues
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
       const isWithinRange = currentDate >= startDate && currentDate <= endDate;
 
+      // Normalize completedDates for comparison (handle both YYYY-MM-DD and ISO formats)
+      const normalizeDate = (dateStr: string): string => {
+        // If it's already YYYY-MM-DD, return as is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          return dateStr;
+        }
+        // If it's an ISO string, extract YYYY-MM-DD
+        return dateStr.split('T')[0];
+      };
+
       const completions = isWithinRange
-        ? this.habits.reduce((count, habit) => count + (habit.completedDates.includes(dateString) ? 1 : 0), 0)
+        ? this.habits.reduce((count, habit) => {
+            const normalizedDates = habit.completedDates.map(normalizeDate);
+            return count + (normalizedDates.includes(dateString) ? 1 : 0);
+          }, 0)
         : 0;
 
       const completedHabits = isWithinRange
-        ? this.habits.filter(habit => habit.completedDates.includes(dateString))
+        ? this.habits.filter(habit => {
+            const normalizedDates = habit.completedDates.map(normalizeDate);
+            return normalizedDates.includes(dateString);
+          })
         : [];
 
       let level: 0 | 1 | 2 | 3 | 4 = 0;
@@ -2569,6 +2589,8 @@ export class HabitTrackerComponent implements OnInit {
     this.habitService.completeHabit(habitId).subscribe({
       next: () => {
         this.loadHabits();
+        // Regenerate activity grid immediately to show the update
+        this.generateActivityGrid();
       },
       error: (error) => {
         console.error('Error completing habit:', error);
@@ -2578,10 +2600,18 @@ export class HabitTrackerComponent implements OnInit {
   }
 
   uncompleteHabit(habitId: string): void {
-    const today = new Date().toISOString().split('T')[0];
-    this.habitService.uncompleteHabit(habitId, today).subscribe({
+    // Format date as YYYY-MM-DD in local timezone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayString = `${year}-${month}-${day}`;
+    
+    this.habitService.uncompleteHabit(habitId, todayString).subscribe({
       next: () => {
         this.loadHabits();
+        // Regenerate activity grid immediately to show the update
+        this.generateActivityGrid();
       },
       error: (error) => {
         console.error('Error uncompleting habit:', error);
@@ -2604,8 +2634,23 @@ export class HabitTrackerComponent implements OnInit {
   }
 
   isHabitCompletedToday(habit: Habit): boolean {
-    const today = new Date().toISOString().split('T')[0];
-    return habit.completedDates.includes(today);
+    // Format date as YYYY-MM-DD in local timezone
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayString = `${year}-${month}-${day}`;
+    
+    // Normalize completedDates for comparison
+    const normalizeDate = (dateStr: string): string => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+      return dateStr.split('T')[0];
+    };
+    
+    const normalizedDates = habit.completedDates.map(normalizeDate);
+    return normalizedDates.includes(todayString);
   }
 
   getHabitCompletionRate(habit: Habit): number {

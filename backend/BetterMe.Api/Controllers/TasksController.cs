@@ -148,7 +148,7 @@ namespace BetterMe.Api.Controllers
             var dtos = new List<TaskResponse>();
             foreach (var task in rootTasks)
             {
-                var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId);
+                var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId, _mapper);
                 dto.AssignedToUserId = task.AssignedToUserId;
                 dto.AssignedToUserName = task.AssignedToUser?.Name;
                 dto.IsShared = task.UserId != userId || sharedTaskIds.Contains(task.Id);
@@ -180,7 +180,7 @@ namespace BetterMe.Api.Controllers
             if (!await _collaborationService.CanUserAccessTaskAsync(id, userId))
                 return Forbid();
 
-            var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId);
+            var dto = await TaskHierarchyHelper.BuildTaskResponseAsync(task, _context, userId, _mapper);
             dto.AssignedToUserId = task.AssignedToUserId;
             dto.AssignedToUserName = task.AssignedToUser?.Name;
             dto.IsShared = task.UserId != userId;

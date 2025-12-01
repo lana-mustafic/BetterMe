@@ -2,12 +2,13 @@ using BetterMe.Api.Data;
 using BetterMe.Api.DTOs.Task;
 using BetterMe.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace BetterMe.Api.Services.Concrete
 {
     public static class TaskHierarchyHelper
     {
-        public static async Task<TaskResponse> BuildTaskResponseAsync(TodoTask task, AppDbContext context, int? currentUserId = null)
+        public static async Task<TaskResponse> BuildTaskResponseAsync(TodoTask task, AppDbContext context, int? currentUserId = null, IMapper? mapper = null)
         {
             var response = new TaskResponse
             {
@@ -50,7 +51,7 @@ namespace BetterMe.Api.Services.Concrete
             // Build subtask responses recursively
             foreach (var subtask in subtasks)
             {
-                var subtaskResponse = await BuildTaskResponseAsync(subtask, context, currentUserId);
+                var subtaskResponse = await BuildTaskResponseAsync(subtask, context, currentUserId, mapper);
                 response.Subtasks.Add(subtaskResponse);
             }
 
@@ -75,6 +76,28 @@ namespace BetterMe.Api.Services.Concrete
             response.BlockingReasons = incompleteDependencies
                 .Select(td => $"'{td.DependsOnTask.Title}' must be completed first")
                 .ToList();
+
+            // Map attachments
+            if (task.Attachments != null && task.Attachments.Any())
+            {
+                if (mapper != null)
+                {
+                    response.Attachments = mapper.Map<List<AttachmentResponse>>(task.Attachments);
+                }
+                else
+                {
+                    // Manual mapping if AutoMapper is not available
+                    response.Attachments = task.Attachments.Select(a => new AttachmentResponse
+                    {
+                        Id = a.Id,
+                        Filename = a.Filename,
+                        ContentType = a.ContentType,
+                        FileSize = a.FileSize,
+                        Url = a.Url ?? $"/api/tasks/{a.TodoTaskId}/attachments/{a.Id}",
+                        UploadedAt = a.UploadedAt
+                    }).ToList();
+                }
+            }
 
             return response;
         }
