@@ -11,7 +11,6 @@ import { KanbanBoardComponent } from '../kanban-board/kanban-board.component';
 import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { CategoryPieChartComponent } from '../../components/category-pie-chart/category-pie-chart.component';
 import { WeeklyCompletionChartComponent } from '../../components/weekly-completion-chart/weekly-completion-chart.component';
-import { TaskActivityFeedComponent } from '../../components/task-activity-feed/task-activity-feed.component';
 import { QuickAddTaskComponent } from '../../components/quick-add-task/quick-add-task.component';
 import { TaskSubtasksComponent } from '../../components/task-subtasks/task-subtasks.component';
 import { AnalyticsService, CompletionTrend, CategoryDistribution, PriorityDistribution, ProductivityMetrics } from '../../services/analytics.service';
@@ -66,7 +65,6 @@ interface Category {
     FileUploadComponent,
     CategoryPieChartComponent,
     WeeklyCompletionChartComponent,
-    TaskActivityFeedComponent,
     QuickAddTaskComponent,
     TaskSubtasksComponent
   ],
@@ -1848,13 +1846,6 @@ interface Category {
                         
                         <div class="task-actions">
                           <button 
-                            class="btn-action btn-collab" 
-                            (click)="toggleTaskDetails(task.id); $event.stopPropagation()"
-                            [title]="expandedTasks.has(task.id) ? 'Hide details' : 'Show activity'"
-                          >
-                            {{ expandedTasks.has(task.id) ? '▼' : '▶' }} Details
-                          </button>
-                          <button 
                             class="btn-action btn-view" 
                             [routerLink]="['/tasks', task.id]"
                             (click)="$event.stopPropagation()"
@@ -1869,15 +1860,6 @@ interface Category {
                           </button>
                         </div>
                       </div>
-
-                      <!-- Expandable Collaboration Details -->
-                      @if (expandedTasks.has(task.id)) {
-                        <div class="task-collaboration-details">
-                          <div class="collab-section">
-                            <app-task-activity-feed [taskId]="task.id"></app-task-activity-feed>
-                          </div>
-                        </div>
-                      }
 
                       <!-- Completion Status Bar -->
                       <div class="completion-bar" [class.completed]="task.completed">
@@ -2756,31 +2738,6 @@ interface Category {
     }
 
 
-    .btn-action.btn-collab {
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.2));
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      color: #c4b5fd;
-      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
-    }
-
-    .btn-action.btn-collab:hover {
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(124, 58, 237, 0.4));
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3), 0 0 12px rgba(139, 92, 246, 0.2);
-    }
-
-    .task-collaboration-details {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .collab-section {
-      width: 100%;
-    }
 
     /* Task Description */
     .task-description {
@@ -6265,7 +6222,6 @@ export class TasksComponent implements OnInit {
   errorMessage: string = '';
   showCreateForm: boolean = false;
   showTagManager: boolean = false;
-  expandedTasks: Set<number> = new Set();
   newlyCreatedTasks: Set<number> = new Set();
   activeView: 'list' | 'stats' | 'calendar' | 'kanban' = 'list';
   editingTaskId: number | null = null;
@@ -7978,14 +7934,6 @@ export class TasksComponent implements OnInit {
 
   getTaskById(taskId: number): Task | undefined {
     return this.tasks.find(t => t.id === taskId);
-  }
-
-  toggleTaskDetails(taskId: number): void {
-    if (this.expandedTasks.has(taskId)) {
-      this.expandedTasks.delete(taskId);
-    } else {
-      this.expandedTasks.add(taskId);
-    }
   }
   
   // FIXED: Added missing formatDate method

@@ -2,9 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
-import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern, TaskDifficulty } from '../../models/task.model';
-import { CdkDrag, CdkDropList, CdkDragDrop } from '@angular/cdk/drag-drop';
-import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
+import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern, TaskDifficulty, Attachment } from '../../models/task.model';
+import { CdkDrag, CdkDropList, CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { firstValueFrom } from 'rxjs';
 
 // Productivity Interfaces
@@ -67,6 +67,7 @@ interface EditModalData {
     FormsModule,
     CdkDrag,
     CdkDropList,
+    CdkDropListGroup,
     FileUploadComponent
   ],
   template: `
@@ -349,7 +350,7 @@ interface EditModalData {
               <button class="close-btn" (click)="showEisenhowerModal = false">×</button>
             </div>
             
-            <div class="eisenhower-grid">
+            <div class="eisenhower-grid" cdkDropListGroup>
               @for (category of eisenhowerMatrix; track category.id) {
                 <div class="eisenhower-quadrant" [style.border-color]="category.color">
                   <div class="quadrant-header" [style.background]="category.color">
@@ -4513,9 +4514,16 @@ getFormattedBlockDate(dateString: string): string {
   }
 
   onEisenhowerDrop(event: CdkDragDrop<any>): void {
+    if (event.previousContainer === event.container) {
+      // Task dropped in the same container, no change needed
+      return;
+    }
+    
     const task: Task = event.item.data;
     const newCategoryId = event.container.id;
     
+    // Determine the priority based on the target quadrant
+    // User's explicit action should always be respected, regardless of current category
     let newPriority = task.priority;
     
     switch (newCategoryId) {
@@ -4533,7 +4541,10 @@ getFormattedBlockDate(dateString: string): string {
         break;
     }
     
-    this.updateTaskPriority(task.id, newPriority);
+    // Only update if priority actually changed
+    if (task.priority !== newPriority) {
+      this.updateTaskPriority(task.id, newPriority);
+    }
   }
 
   updateTaskPriority(taskId: number, priority: number): void {

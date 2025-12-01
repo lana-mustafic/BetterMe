@@ -3,14 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpEventType, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../services/auth';
 import { environment } from '../../../environments/environment';
-
-export interface Attachment {
-  id: number;
-  filename: string;
-  url?: string;
-  type: string;
-  size: number;
-}
+import { Attachment } from '../../models/task.model';
 
 @Component({
   selector: 'app-file-upload',
@@ -42,7 +35,7 @@ export interface Attachment {
         <div class="attachments-list">
           @for (attachment of attachments; track attachment.id) {
             <div class="attachment-item">
-              <span class="attachment-icon">{{ getFileIcon(attachment.type) }}</span>
+              <span class="attachment-icon">{{ getFileIcon(attachment.contentType || '') }}</span>
               <span class="attachment-name">{{ attachment.filename }}</span>
               <span class="attachment-size">{{ formatFileSize(attachment.size) }}</span>
               <button 
@@ -233,7 +226,7 @@ export class FileUploadComponent {
           this.attachments.push({
             id: Date.now() + Math.random(), // Temporary ID
             filename: file.name,
-            type: file.type,
+            contentType: file.type,
             size: file.size,
             url: e.target.result // Data URL for preview
           } as Attachment);

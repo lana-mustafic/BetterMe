@@ -69,9 +69,10 @@ export interface DependencyInfo {
 export interface Attachment {
   id: number;
   filename: string;
-  url: string;
-  type: string;
+  url?: string;
+  contentType: string;
   size: number;
+  uploadedAt?: string;
 }
 
 export interface Reminder {
