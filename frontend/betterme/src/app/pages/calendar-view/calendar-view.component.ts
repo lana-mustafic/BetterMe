@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TaskService } from '../../services/task.service';
 import { Task, CreateTaskRequest, UpdateTaskRequest, RecurrencePattern, TaskDifficulty, Attachment } from '../../models/task.model';
-import { CdkDrag, CdkDropList, CdkDragDrop, CdkDropListGroup } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule, transferArrayItem, moveItemInArray } from '@angular/cdk/drag-drop';
 import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { firstValueFrom } from 'rxjs';
 
@@ -65,9 +65,7 @@ interface EditModalData {
   imports: [
     CommonModule, 
     FormsModule,
-    CdkDrag,
-    CdkDropList,
-    CdkDropListGroup,
+    DragDropModule,
     FileUploadComponent
   ],
   template: `
@@ -356,7 +354,7 @@ interface EditModalData {
                   <div class="quadrant-header" [style.background]="category.color">
                     <span class="quadrant-icon">{{ category.icon }}</span>
                     <h4>{{ category.name }}</h4>
-                    <span class="quadrant-count">{{ getTasksByEisenhowerCategory(category.id).length }}</span>
+                    <span class="quadrant-count">{{ getEisenhowerTasksArray(category.id).length }}</span>
                   </div>
                   
                   <div class="quadrant-content">
@@ -364,10 +362,10 @@ interface EditModalData {
                     
                     <div class="quadrant-tasks" cdkDropList
                          [id]="category.id"
-                         [cdkDropListData]="category.id"
+                         [cdkDropListData]="getEisenhowerTasksArray(category.id)"
                          (cdkDropListDropped)="onEisenhowerDrop($event)">
                          
-                      @for (task of getTasksByEisenhowerCategory(category.id); track task.id) {
+                      @for (task of getEisenhowerTasksArray(category.id); track task.id) {
                         <div class="quadrant-task" cdkDrag [cdkDragData]="task">
                           <div class="quadrant-task-content">
                             <div class="quadrant-task-title">{{ task.title }}</div>
@@ -383,7 +381,7 @@ interface EditModalData {
                         </div>
                       }
                       
-                      @if (getTasksByEisenhowerCategory(category.id).length === 0) {
+                      @if (getEisenhowerTasksArray(category.id).length === 0) {
                         <div class="empty-quadrant">
                           Drop tasks here
                         </div>
@@ -3627,6 +3625,12 @@ export class CalendarViewComponent implements OnInit {
   showTimeBlockModal = false;
   selectedTaskForTimeBlock: Task | null = null;
   
+  // Eisenhower Matrix quadrant arrays for drag and drop
+  urgentImportantTasks: Task[] = [];
+  urgentNotImportantTasks: Task[] = [];
+  notUrgentImportantTasks: Task[] = [];
+  notUrgentNotImportantTasks: Task[] = [];
+  
   // Time Block Form
   selectedTimeBlockTaskId: number | null = null;
   newTimeBlockDate: string = '';
@@ -3637,6 +3641,7 @@ export class CalendarViewComponent implements OnInit {
     this.loadTasks();
     this.generateCalendar();
     this.initializeTimeBlocks();
+    this.updateEisenhowerArrays();
   }
 
   loadTasks(): void {
@@ -3644,6 +3649,7 @@ export class CalendarViewComponent implements OnInit {
       next: (tasks: Task[]) => {
         this.tasks = tasks;
         this.generateCalendar();
+        this.updateEisenhowerArrays();
       },
       error: (error: any) => {
         console.error('Error loading tasks for calendar:', error);
@@ -4151,11 +4157,13 @@ getFormattedBlockDate(dateString: string): string {
           if (index !== -1) {
             this.tasks[index] = updatedTask;
             this.generateCalendar();
+            this.updateEisenhowerArrays();
           }
         },
         error: (error) => {
           console.error('Error updating task date:', error);
           this.generateCalendar();
+          this.updateEisenhowerArrays();
         }
       });
     }
@@ -4175,6 +4183,7 @@ getFormattedBlockDate(dateString: string): string {
           this.tasks[index] = updatedTask;
           
           this.generateCalendar();
+          this.updateEisenhowerArrays();
           
           if (this.selectedDay) {
             this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
@@ -4208,6 +4217,7 @@ getFormattedBlockDate(dateString: string): string {
           this.tasks[index] = updatedTask;
           
           this.generateCalendar();
+          this.updateEisenhowerArrays();
           
           if (this.selectedDay) {
             this.selectedDay.tasks = this.getTasksForDate(this.selectedDay.date);
@@ -4343,6 +4353,7 @@ getFormattedBlockDate(dateString: string): string {
           this.closeEditModal();
           
           this.generateCalendar();
+          this.updateEisenhowerArrays();
           
           if (this.selectedDay) {
             const freshTasks = this.getTasksForDate(this.selectedDay.date);
@@ -4441,6 +4452,7 @@ getFormattedBlockDate(dateString: string): string {
         
         this.tasks.push(createdTask);
         this.generateCalendar();
+        this.updateEisenhowerArrays();
         this.closeCreateTaskModal();
       },
       error: (error) => {
@@ -4477,6 +4489,7 @@ getFormattedBlockDate(dateString: string): string {
 
   // Eisenhower Matrix Methods
   showEisenhowerMatrix(): void {
+    this.updateEisenhowerArrays();
     this.showEisenhowerModal = true;
   }
 
@@ -4513,14 +4526,49 @@ getFormattedBlockDate(dateString: string): string {
     });
   }
 
-  onEisenhowerDrop(event: CdkDragDrop<any>): void {
+  getEisenhowerTasksArray(categoryId: string): Task[] {
+    switch (categoryId) {
+      case 'urgent-important':
+        return this.urgentImportantTasks;
+      case 'urgent-not-important':
+        return this.urgentNotImportantTasks;
+      case 'not-urgent-important':
+        return this.notUrgentImportantTasks;
+      case 'not-urgent-not-important':
+        return this.notUrgentNotImportantTasks;
+      default:
+        return [];
+    }
+  }
+
+  updateEisenhowerArrays(): void {
+    this.urgentImportantTasks = this.getTasksByEisenhowerCategory('urgent-important');
+    this.urgentNotImportantTasks = this.getTasksByEisenhowerCategory('urgent-not-important');
+    this.notUrgentImportantTasks = this.getTasksByEisenhowerCategory('not-urgent-important');
+    this.notUrgentNotImportantTasks = this.getTasksByEisenhowerCategory('not-urgent-not-important');
+  }
+
+  onEisenhowerDrop(event: CdkDragDrop<Task[]>): void {
+    const task: Task = event.item.data;
+    const newCategoryId = event.container.id;
+    
     if (event.previousContainer === event.container) {
-      // Task dropped in the same container, no change needed
+      // Task dropped in the same container, reorder within the same quadrant
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
       return;
     }
     
-    const task: Task = event.item.data;
-    const newCategoryId = event.container.id;
+    // Move task between different quadrants
+    transferArrayItem(
+      event.previousContainer.data,
+      event.container.data,
+      event.previousIndex,
+      event.currentIndex
+    );
     
     // Determine the priority based on the target quadrant
     // User's explicit action should always be respected, regardless of current category
@@ -4541,7 +4589,7 @@ getFormattedBlockDate(dateString: string): string {
         break;
     }
     
-    // Only update if priority actually changed
+    // Update task priority to reflect the new quadrant
     if (task.priority !== newPriority) {
       this.updateTaskPriority(task.id, newPriority);
     }
@@ -4560,10 +4608,13 @@ getFormattedBlockDate(dateString: string): string {
           if (index !== -1) {
             this.tasks[index] = updatedTask;
             this.generateCalendar();
+            this.updateEisenhowerArrays();
           }
         },
         error: (error) => {
           console.error('Error updating task priority:', error);
+          // Revert the arrays if update failed
+          this.updateEisenhowerArrays();
         }
       });
     }

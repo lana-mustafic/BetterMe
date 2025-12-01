@@ -1768,7 +1768,7 @@ interface Category {
                                 class="attachment-link"
                                 (click)="$event.stopPropagation()"
                               >
-                                <span class="attachment-icon">{{ getFileIcon(attachment.type || '') }}</span>
+                                <span class="attachment-icon">{{ getFileIcon(attachment.contentType || '') }}</span>
                                 <span class="attachment-name">{{ attachment.filename }}</span>
                                 <span class="attachment-size">{{ formatFileSize(attachment.size) }}</span>
                                 <span class="attachment-download-icon">⬇️</span>
@@ -8004,7 +8004,7 @@ export class TasksComponent implements OnInit {
       id: att.id,
       filename: att.filename,
       url: att.url || '',
-      type: att.type || att.contentType || '',
+      contentType: att.contentType || att.type || '',
       size: att.size
     })) as Attachment[];
   }

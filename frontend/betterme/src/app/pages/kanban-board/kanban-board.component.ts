@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { TaskService } from '../../services/task.service';
-import { Task, UpdateTaskRequest, RecurrencePattern, TaskDifficulty } from '../../models/task.model';
-import { FileUploadComponent, Attachment } from '../../components/file-upload/file-upload.component';
+import { Task, UpdateTaskRequest, RecurrencePattern, TaskDifficulty, Attachment } from '../../models/task.model';
+import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 
 interface KanbanColumn {
   id: string;
