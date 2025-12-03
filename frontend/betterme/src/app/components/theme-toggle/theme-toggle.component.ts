@@ -256,9 +256,16 @@ export class ThemeToggleComponent implements OnInit {
   }
 
   setTheme(theme: Theme): void {
-    this.themeService.setTheme(theme);
+    // If clicking auto in dark mode, switch to light mode with purple accent
+    if (theme === 'auto' && this.themeService.isDarkMode()) {
+      this.themeService.setTheme('light');
+      this.themeService.setAccentColor('purple');
+    } else {
+      this.themeService.setTheme(theme);
+    }
     this.showMenu = false;
   }
+
 
   setAccentColor(color: AccentColor): void {
     this.themeService.setAccentColor(color);
