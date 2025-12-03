@@ -1152,8 +1152,7 @@ export class RegisterComponent implements OnDestroy {
     this.authService.register({
       displayName: this.displayName,
       email: this.email,
-      password: this.password,
-      confirmPassword: this.confirmPassword
+      password: this.password
     }).subscribe({
       next: (response) => {
         this.isLoading = false;

@@ -41,7 +41,7 @@ export interface RegisterRequest {
   displayName: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  confirmPassword?: string; // Optional - only used for client-side validation
 }
 
 export interface UpdateProfileRequest {
