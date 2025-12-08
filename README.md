@@ -6,13 +6,6 @@ With a clean UI, powerful task management, deep analytics, reminders, collaborat
 
 ---
 
-## Live Demo  
-👉 **https://betterme-frontend.onrender.com/**
-
-*(First load may take a few seconds due to Render free tier.)*
-
----
-
 # Features Overview
 
 BetterMe combines advanced backend engineering with a smooth, fast, and interactive Angular UI.
