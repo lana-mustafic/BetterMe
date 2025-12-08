@@ -6,6 +6,14 @@ With a clean UI, powerful task management, deep analytics, reminders, collaborat
 
 ---
 
+## Demo Video
+
+[![BetterMe Demo Video](https://img.youtube.com/vi/oWlCAHk0v_E/0.jpg)](https://youtu.be/oWlCAHk0v_E)
+
+> Full walkthrough of BetterMe — a full-stack productivity, habit tracking & focus platform built with **ASP.NET Core 8** and **Angular 20**.
+
+---
+
 # Features Overview
 
 BetterMe combines advanced backend engineering with a smooth, fast, and interactive Angular UI.
